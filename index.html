@@ -1,456 +1,512 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>The Iron Palace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <!-- Firebase v9 modular SDK -->
+  <script type="module">
+  import { initializeApp }                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+           signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged }
+                                                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, updateDoc,
+           collection, addDoc, getDocs, deleteDoc, query, orderBy }
+                                                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  /* ════════════════════════════════════════════════════════
+     🔥 FIREBASE SETUP — REPLACE WITH YOUR CONFIG
+     ──────────────────────────────────────────────────────
+     1. Go to https://console.firebase.google.com
+     2. Create a project → Add a web app → copy config below
+     3. In Firebase Console:
+        • Firestore Database → Create database (start in test mode)
+        • Authentication → Sign-in method → Enable Email/Password & Google
+        • Authentication → Settings → Authorized domains → add "localhost"
+     ════════════════════════════════════════════════════════ */
+  const firebaseConfig = {
+    apiKey: "AIzaSyDGdecWngN_zZFlJyq_L0_BLD8KEMcBpgI",
+  authDomain: "theironpalace-ffb85.firebaseapp.com",
+  projectId: "theironpalace-ffb85",
+  storageBucket: "theironpalace-ffb85.firebasestorage.app",
+  messagingSenderId: "708398928493",
+  appId: "1:708398928493:web:79ac3030178c938af9a564"
+
+  };
+
+  const app      = initializeApp(firebaseConfig);
+  const auth     = getAuth(app);
+  const db       = getFirestore(app);
+  const gProvider = new GoogleAuthProvider();
+
+  /* ── expose to global scope so non-module code can call ── */
+  window._FB = { auth, db, gProvider,
+    createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    signInWithPopup, signOut, onAuthStateChanged,
+    doc, setDoc, getDoc, updateDoc,
+    collection, addDoc, getDocs, deleteDoc, query, orderBy };
+  window.dispatchEvent(new Event('fb-ready'));
+  </script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-    :root {
-      --black: #000000;
-      --white: #ffffff;
-      --white-10: rgba(255,255,255,0.10);
-      --white-20: rgba(255,255,255,0.20);
-      --white-40: rgba(255,255,255,0.40);
-      --white-60: rgba(255,255,255,0.60);
-      --white-80: rgba(255,255,255,0.80);
-      --red: #dc2626;
+    :root{
+      --bg:        #0d0800;
+      --surface:   #160e04;
+      --card:      #1e1208;
+      --border:    rgba(196,121,32,0.18);
+      --border-hi: rgba(196,121,32,0.55);
+      --amber:     #c47920;
+      --gold:      #d4a340;
+      --cream:     #f2e4cc;
+      --latte:     #c09a78;
+      --mist:      #7a6050;
+      --mahogany:  rgba(196,121,32,0.12);
+      --red:       #dc2626;
       --red-faint: rgba(220,38,38,0.08);
-      --red-border: rgba(220,38,38,0.40);
-      --green: #16a34a;
-      --yellow: #eab308;
-      --blue: #2563eb;
-      --orange: #ea580c;
+      --red-border:rgba(220,38,38,0.40);
+      --yellow:    #eab308;
+      --white-10:  rgba(242,228,204,0.08);
+      --white-20:  rgba(242,228,204,0.18);
+      --white-40:  rgba(242,228,204,0.40);
+      --white-60:  rgba(242,228,204,0.60);
+      --white-80:  rgba(242,228,204,0.80);
     }
 
-    html, body {
-      background: #000000;
-      color: #ffffff;
-      font-family: 'Inter', sans-serif;
-      min-height: 100%;
-      -webkit-font-smoothing: antialiased;
+    html,body{background:var(--bg);color:var(--cream);font-family:'DM Sans',sans-serif;
+      font-weight:300;min-height:100%;-webkit-font-smoothing:antialiased}
+
+    /* ── GRAIN OVERLAY ── */
+    body::after{content:'';position:fixed;inset:0;opacity:0.045;pointer-events:none;z-index:9000;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+    /* ════════════════════════════════════
+       3D AUTH SCREEN
+    ════════════════════════════════════ */
+    .login-overlay{
+      position:fixed;inset:0;z-index:9999;
+      display:flex;align-items:center;justify-content:center;padding:20px;
+      overflow:hidden;
+    }
+    .login-overlay.hidden{display:none}
+
+    /* animated warm background */
+    .auth-bg{
+      position:absolute;inset:0;
+      background:radial-gradient(ellipse at 30% 40%,#2b1a05 0%,#0d0800 55%),
+                 radial-gradient(ellipse at 75% 70%,#1e0f03 0%,transparent 55%);
+    }
+    /* floating orbs */
+    .auth-orb{
+      position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;
+      animation:orb-drift 12s ease-in-out infinite;
+    }
+    .auth-orb:nth-child(1){width:420px;height:420px;top:-10%;left:-8%;
+      background:rgba(196,121,32,0.12);animation-duration:14s}
+    .auth-orb:nth-child(2){width:320px;height:320px;bottom:-5%;right:-5%;
+      background:rgba(212,163,64,0.08);animation-duration:10s;animation-delay:-4s}
+    .auth-orb:nth-child(3){width:200px;height:200px;top:50%;left:60%;
+      background:rgba(150,80,20,0.1);animation-duration:16s;animation-delay:-8s}
+    @keyframes orb-drift{
+      0%,100%{transform:translate(0,0) scale(1)}
+      33%{transform:translate(30px,-20px) scale(1.05)}
+      66%{transform:translate(-20px,25px) scale(0.95)}
     }
 
-    .serif { font-family: 'Playfair Display', serif; }
-    .app { display: flex; flex-direction: column; min-height: 100vh; }
+    /* card — 3D tilt container */
+    .auth-card-wrap{
+      position:relative;z-index:1;
+      perspective:1200px;width:100%;max-width:480px;
+    }
+    .login-box{
+      background:rgba(22,14,4,0.92);
+      border:1px solid var(--border);
+      padding:52px 44px;text-align:center;
+      backdrop-filter:blur(24px);
+      transform-style:preserve-3d;
+      transition:transform 0.12s ease,box-shadow 0.12s ease;
+      will-change:transform;
+      box-shadow:0 32px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(196,121,32,0.08);
+    }
+    .login-box:hover{box-shadow:0 40px 100px rgba(0,0,0,0.8),0 0 60px rgba(196,121,32,0.06)}
 
-    /* ── LOGIN OVERLAY ── */
-    .login-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.98);
-      z-index: 9999;
-      display: flex; align-items: center; justify-content: center; padding: 20px;
+    .login-title{
+      font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:300;
+      letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;color:var(--cream);
+      animation:fade-up 0.8s ease both;
     }
-    .login-overlay.hidden { display: none; }
+    .login-subtitle{
+      font-size:9px;letter-spacing:0.48em;text-transform:uppercase;
+      color:var(--amber);margin-bottom:40px;
+      animation:fade-up 0.8s 0.1s ease both;
+    }
+    @keyframes fade-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 
-    .login-box {
-      max-width: 460px; width: 100%;
-      background: #000; border: 1px solid var(--white-20);
-      padding: 50px 40px; text-align: center;
+    /* auth tabs */
+    .auth-tabs{display:flex;margin-bottom:32px;border:1px solid var(--border)}
+    .auth-tab{
+      flex:1;padding:12px;background:transparent;border:none;color:var(--mist);
+      font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:0.32em;text-transform:uppercase;
+      cursor:pointer;transition:all 0.25s;
     }
-    .login-title {
-      font-family: 'Playfair Display', serif; font-size: 2.5rem;
-      letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px;
-    }
-    .login-subtitle {
-      font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase;
-      color: var(--white-40); margin-bottom: 36px;
-    }
+    .auth-tab.active{background:var(--amber);color:var(--bg)}
+    .auth-tab:not(.active):hover{color:var(--cream);background:var(--white-10)}
 
-    /* Auth tab toggle */
-    .auth-tabs {
-      display: flex; gap: 0; margin-bottom: 32px;
-      border: 1px solid var(--white-20);
-    }
-    .auth-tab {
-      flex: 1; padding: 12px;
-      background: transparent; border: none; color: var(--white-40);
-      font-family: 'Inter', sans-serif; font-size: 10px;
-      letter-spacing: 0.3em; text-transform: uppercase;
-      cursor: pointer; transition: all 0.2s;
-    }
-    .auth-tab.active { background: #fff; color: #000; }
-    .auth-tab:not(.active):hover { color: var(--white-80); background: var(--white-10); }
+    .auth-panel{display:none}
+    .auth-panel.active{display:block}
 
-    .auth-panel { display: none; }
-    .auth-panel.active { display: block; }
-
-    .login-input {
-      width: 100%; background: transparent;
-      border: 1px solid var(--white-20); color: #fff;
-      padding: 16px 20px; font-family: 'Inter', sans-serif; font-size: 14px;
-      margin-bottom: 12px; transition: border-color 0.2s;
+    .login-input{
+      width:100%;background:rgba(255,255,255,0.04);
+      border:1px solid var(--border);color:var(--cream);
+      padding:15px 18px;font-family:'DM Sans',sans-serif;font-size:14px;
+      margin-bottom:12px;transition:border-color 0.2s,background 0.2s;
     }
-    .login-input:focus { outline: none; border-color: var(--white-60); }
-    .login-input::placeholder { color: var(--white-40); }
+    .login-input:focus{outline:none;border-color:var(--amber);background:rgba(196,121,32,0.06)}
+    .login-input::placeholder{color:var(--mist)}
 
-    .btn-login {
-      width: 100%; height: 56px; background: #fff; border: none; color: #000;
-      font-family: 'Playfair Display', serif; font-size: 11px;
-      letter-spacing: 0.4em; text-transform: uppercase;
-      cursor: pointer; transition: background 0.3s; margin-bottom: 0;
+    .btn-login{
+      width:100%;height:54px;background:var(--amber);border:none;color:var(--bg);
+      font-family:'Cormorant Garamond',serif;font-size:13px;
+      letter-spacing:0.44em;text-transform:uppercase;
+      cursor:pointer;transition:background 0.3s;margin-bottom:0;
     }
-    .btn-login:hover { background: var(--white-80); }
+    .btn-login:hover{background:var(--gold)}
 
-    .login-error {
-      font-size: 11px; color: var(--red); letter-spacing: 0.1em;
-      margin-top: 12px; min-height: 16px;
-    }
+    .login-error{font-size:11px;color:var(--red);letter-spacing:0.1em;margin-top:12px;min-height:16px}
 
-    /* ── NAV ── */
-    nav {
-      display: flex; background: #000;
-      border-bottom: 1px solid var(--white-10);
-      position: sticky; top: 0; z-index: 100; overflow-x: auto;
+    /* social */
+    .social-divider{display:flex;align-items:center;gap:14px;margin:26px 0 18px}
+    .social-divider::before,.social-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+    .social-divider-text{font-size:8px;letter-spacing:0.35em;color:var(--mist);text-transform:uppercase;white-space:nowrap}
+    .btn-social{
+      width:100%;height:50px;background:transparent;border:1px solid var(--border);color:var(--cream);
+      font-family:'DM Sans',sans-serif;font-size:12px;letter-spacing:0.08em;
+      cursor:pointer;transition:all 0.25s;margin-bottom:10px;
+      display:flex;align-items:center;justify-content:center;gap:12px;
     }
-    .nav-btn {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; gap: 4px; padding: 14px 8px;
-      background: none; border: none; color: var(--white-40);
-      font-family: 'Inter', sans-serif; font-size: 9px;
-      letter-spacing: 0.25em; text-transform: uppercase;
-      cursor: pointer; transition: color 0.2s, background 0.2s; white-space: nowrap;
-    }
-    .nav-btn svg { width: 18px; height: 18px; }
-    .nav-btn.active { color: #fff; background: rgba(255,255,255,0.06); }
-    .nav-btn:hover:not(.active) { color: var(--white-80); }
+    .btn-social:hover{background:rgba(196,121,32,0.08);border-color:var(--border-hi)}
+    .btn-social:last-child{margin-bottom:0}
 
-    .page { display: none; padding: 40px 24px 80px; max-width: 680px; margin: 0 auto; width: 100%; }
-    .page.visible { display: block; }
-
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2rem, 8vw, 3.5rem);
-      letter-spacing: 0.08em; text-transform: uppercase;
-      margin-bottom: 40px; line-height: 1.1;
+    /* complete profile */
+    .google-user-preview{
+      display:flex;align-items:center;gap:14px;
+      border:1px solid var(--border);padding:14px 16px;margin-bottom:22px;text-align:left;
     }
-    .label {
-      font-size: 9px; letter-spacing: 0.3em;
-      text-transform: uppercase; color: var(--white-40);
+    .google-avatar{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);flex-shrink:0}
+    .google-avatar-placeholder{
+      width:36px;height:36px;border-radius:50%;background:var(--mahogany);
+      border:1px solid var(--border);flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--amber);
+    }
+    .google-user-name{font-family:'Cormorant Garamond',serif;font-size:14px;letter-spacing:0.05em}
+    .google-user-email{font-size:10px;color:var(--mist);letter-spacing:0.1em;margin-top:2px}
+    .complete-profile-note{font-size:12px;color:var(--mist);line-height:1.7;margin-bottom:18px;text-align:left}
+    .skip-btn{
+      background:none;border:none;color:var(--mist);font-size:11px;letter-spacing:0.15em;
+      cursor:pointer;margin-top:14px;text-decoration:underline;text-underline-offset:3px;
     }
 
-    .user-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 40px; padding-bottom: 20px;
-      border-bottom: 1px solid var(--white-10);
+    /* loading spinner on auth box */
+    .auth-loading{
+      position:absolute;inset:0;background:rgba(22,14,4,0.92);
+      display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;
     }
-    .user-name { font-family: 'Playfair Display', serif; font-size: 1.2rem; letter-spacing: 0.06em; text-transform: uppercase; }
-    .user-bw { font-size: 10px; color: var(--white-40); letter-spacing: 0.15em; margin-top: 4px; }
+    .auth-loading.show{display:flex}
+    .spinner{
+      width:32px;height:32px;border:2px solid var(--border);
+      border-top-color:var(--amber);border-radius:50%;
+      animation:spin 0.8s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .spinner-text{font-size:9px;letter-spacing:0.4em;text-transform:uppercase;color:var(--mist)}
 
-    .btn-logout {
-      background: none; border: 1px solid var(--white-20); color: var(--white-60);
-      padding: 8px 16px; font-size: 9px; letter-spacing: 0.2em;
-      text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+    /* ════════════════════════════════════
+       NAV
+    ════════════════════════════════════ */
+    nav{
+      display:flex;background:rgba(13,8,0,0.96);
+      border-bottom:1px solid var(--border);
+      position:sticky;top:0;z-index:100;overflow-x:auto;
+      backdrop-filter:blur(12px);
     }
-    .btn-logout:hover { color: #fff; border-color: var(--white-40); }
+    .nav-btn{
+      flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;
+      background:none;border:none;color:var(--mist);
+      font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:0.25em;text-transform:uppercase;
+      cursor:pointer;transition:color 0.2s,background 0.2s;white-space:nowrap;
+    }
+    .nav-btn svg{width:18px;height:18px}
+    .nav-btn.active{color:var(--amber);background:rgba(196,121,32,0.06)}
+    .nav-btn:hover:not(.active){color:var(--cream)}
 
-    .activity-grid {
-      display: grid; grid-template-columns: repeat(2, 1fr);
-      gap: 12px; margin-bottom: 40px;
-    }
-    .activity-card { border: 1px solid var(--white-10); padding: 20px; transition: border-color 0.2s; }
-    .activity-card:hover { border-color: var(--white-40); }
-    .activity-label { font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--white-40); margin-bottom: 12px; }
-    .activity-value { font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 4px; }
-    .activity-unit { font-size: 11px; color: var(--white-60); letter-spacing: 0.1em; }
+    .page{display:none;padding:40px 24px 80px;max-width:680px;margin:0 auto;width:100%}
+    .page.visible{display:block}
 
-    .streak-number { font-family: 'Playfair Display', serif; font-size: clamp(4rem, 15vw, 7rem); line-height: 1; margin-bottom: 8px; }
-    .streak-label { font-size: 10px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--white-60); margin-bottom: 40px; }
+    h1{
+      font-family:'Cormorant Garamond',serif;
+      font-size:clamp(2rem,8vw,3.5rem);font-weight:300;
+      letter-spacing:0.08em;text-transform:uppercase;
+      margin-bottom:40px;line-height:1.1;color:var(--cream);
+    }
+    .label{font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:var(--mist)}
 
-    .btn-main {
-      width: 100%; height: 72px; background: transparent;
-      border: 0.5px solid var(--white-20); color: #fff;
-      font-family: 'Playfair Display', serif; font-size: 11px;
-      letter-spacing: 0.5em; text-transform: uppercase;
-      cursor: pointer; transition: background 0.5s, color 0.5s; margin-bottom: 16px;
+    .user-header{
+      display:flex;justify-content:space-between;align-items:center;
+      margin-bottom:40px;padding-bottom:20px;border-bottom:1px solid var(--border);
     }
-    .btn-main:hover:not(:disabled) { background: #fff; color: #000; }
-    .btn-main:disabled { opacity: 0.22; cursor: not-allowed; }
+    .user-name{font-family:'Cormorant Garamond',serif;font-size:1.2rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--cream)}
+    .user-bw{font-size:10px;color:var(--mist);letter-spacing:0.15em;margin-top:4px}
+    .btn-logout{
+      background:none;border:1px solid var(--border);color:var(--mist);
+      padding:8px 16px;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;
+      cursor:pointer;transition:all 0.2s;
+    }
+    .btn-logout:hover{color:var(--cream);border-color:var(--border-hi)}
 
-    .activity-form {
-      border: 1px solid var(--white-10); padding: 28px;
-      margin-bottom: 40px; display: none;
-    }
-    .activity-form.visible { display: block; }
+    .activity-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:40px}
+    .activity-card{border:1px solid var(--border);padding:20px;background:var(--card);transition:border-color 0.2s}
+    .activity-card:hover{border-color:var(--border-hi)}
+    .activity-label{font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:var(--mist);margin-bottom:12px}
+    .activity-value{font-family:'Cormorant Garamond',serif;font-size:2rem;margin-bottom:4px;color:var(--cream)}
+    .activity-unit{font-size:11px;color:var(--mist);letter-spacing:0.1em}
 
-    .form-title {
-      font-family: 'Playfair Display', serif; font-size: 1.2rem;
-      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 24px;
-    }
-    .form-group { margin-bottom: 20px; }
-    .form-label {
-      font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase;
-      color: var(--white-40); margin-bottom: 8px; display: block;
-    }
-    .form-input, .form-select {
-      width: 100%; background: transparent;
-      border: 1px solid var(--white-20); color: #fff;
-      padding: 14px 16px; font-family: 'Inter', sans-serif; font-size: 14px;
-    }
-    .form-input:focus, .form-select:focus { outline: none; border-color: var(--white-60); }
-    .form-select option { background: #000; color: #fff; }
+    .streak-number{font-family:'Cormorant Garamond',serif;font-size:clamp(4rem,15vw,7rem);line-height:1;margin-bottom:8px;color:var(--amber)}
+    .streak-label{font-size:10px;letter-spacing:0.35em;text-transform:uppercase;color:var(--mist);margin-bottom:40px}
 
-    /* ── RECORDING TIMER ── */
-    .record-section { margin-bottom: 20px; }
-    .record-display {
-      display: flex; align-items: center; justify-content: space-between;
-      border: 1px solid var(--white-20); padding: 18px 20px; margin-bottom: 12px;
+    .btn-main{
+      width:100%;height:72px;background:transparent;border:1px solid var(--border);color:var(--cream);
+      font-family:'Cormorant Garamond',serif;font-size:13px;letter-spacing:0.5em;text-transform:uppercase;
+      cursor:pointer;transition:background 0.4s,color 0.4s,border-color 0.4s;margin-bottom:16px;
     }
-    .record-time {
-      font-family: 'Playfair Display', serif; font-size: 2.5rem;
-      letter-spacing: 0.05em; line-height: 1;
-    }
-    .record-status {
-      font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase;
-      color: var(--white-40);
-    }
-    .record-status.recording { color: var(--red); animation: blink 1.2s infinite; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .btn-main:hover:not(:disabled){background:var(--amber);color:var(--bg);border-color:var(--amber)}
+    .btn-main:disabled{opacity:0.22;cursor:not-allowed}
 
-    .record-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--white-20); display: inline-block; margin-right: 8px;
-      transition: background 0.3s;
+    .activity-form{border:1px solid var(--border);background:var(--card);padding:28px;margin-bottom:40px;display:none}
+    .activity-form.visible{display:block}
+    .form-title{font-family:'Cormorant Garamond',serif;font-size:1.2rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:24px;color:var(--cream)}
+    .form-group{margin-bottom:20px}
+    .form-label{font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:var(--mist);margin-bottom:8px;display:block}
+    .form-input,.form-select{
+      width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border);color:var(--cream);
+      padding:14px 16px;font-family:'DM Sans',sans-serif;font-size:14px;
+      transition:border-color 0.2s;
     }
-    .record-dot.active { background: var(--red); }
+    .form-input:focus,.form-select:focus{outline:none;border-color:var(--amber)}
+    .form-select option{background:var(--surface);color:var(--cream)}
 
-    .btn-record {
-      width: 100%; height: 60px; background: transparent;
-      border: 1px solid var(--white-40); color: #fff;
-      font-family: 'Playfair Display', serif; font-size: 11px;
-      letter-spacing: 0.4em; text-transform: uppercase;
-      cursor: pointer; transition: all 0.3s;
+    /* recording timer */
+    .record-display{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);padding:18px 20px;margin-bottom:12px;background:var(--surface)}
+    .record-time{font-family:'Cormorant Garamond',serif;font-size:2.5rem;letter-spacing:0.05em;line-height:1;color:var(--cream)}
+    .record-status{font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:var(--mist)}
+    .record-status.recording{color:var(--red);animation:blink 1.2s infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+    .record-dot{width:8px;height:8px;border-radius:50%;background:var(--border);display:inline-block;margin-right:8px;transition:background 0.3s}
+    .record-dot.active{background:var(--red)}
+    .btn-record{
+      width:100%;height:56px;background:transparent;border:1px solid var(--border);color:var(--cream);
+      font-family:'Cormorant Garamond',serif;font-size:11px;letter-spacing:0.4em;text-transform:uppercase;
+      cursor:pointer;transition:all 0.3s;
     }
-    .btn-record:hover { background: var(--white-10); }
-    .btn-record.recording { border-color: var(--red); color: var(--red); }
-    .btn-record.recording:hover { background: var(--red-faint); }
+    .btn-record:hover{background:var(--mahogany);border-color:var(--border-hi)}
+    .btn-record.recording{border-color:var(--red);color:var(--red)}
+    .btn-record.recording:hover{background:var(--red-faint)}
 
-    /* ── WEIGHT WARNING ── */
-    .weight-warning {
-      padding: 16px 18px; margin-top: 10px; display: none;
-      font-size: 12px; line-height: 1.6; letter-spacing: 0.03em;
-    }
-    .weight-warning.visible { display: block; }
-    .weight-warning.warn-yellow { border: 1px solid var(--yellow); background: rgba(234,179,8,0.06); color: var(--yellow); }
-    .weight-warning.warn-red { border: 1px solid var(--red); background: var(--red-faint); color: #f87171; }
-    .weight-warning-title { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; margin-bottom: 6px; font-weight: 500; }
+    /* weight warning */
+    .weight-warning{padding:14px 16px;margin-top:10px;display:none;font-size:12px;line-height:1.6}
+    .weight-warning.visible{display:block}
+    .weight-warning.warn-yellow{border:1px solid var(--yellow);background:rgba(234,179,8,0.06);color:var(--yellow)}
+    .weight-warning.warn-red{border:1px solid var(--red);background:var(--red-faint);color:#f87171}
+    .weight-warning-title{font-size:10px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:6px;font-weight:500}
 
-    /* ── BUTTONS ── */
-    .btn-submit {
-      width: 100%; height: 56px; background: #fff; border: none; color: #000;
-      font-family: 'Playfair Display', serif; font-size: 11px;
-      letter-spacing: 0.4em; text-transform: uppercase; cursor: pointer; transition: background 0.3s;
+    .btn-submit{
+      width:100%;height:54px;background:var(--amber);border:none;color:var(--bg);
+      font-family:'Cormorant Garamond',serif;font-size:13px;letter-spacing:0.4em;text-transform:uppercase;
+      cursor:pointer;transition:background 0.3s;
     }
-    .btn-submit:hover { background: var(--white-80); }
-    .btn-cancel {
-      width: 100%; height: 48px; background: transparent;
-      border: 1px solid var(--white-20); color: var(--white-60);
-      font-family: 'Inter', sans-serif; font-size: 10px;
-      letter-spacing: 0.3em; text-transform: uppercase; cursor: pointer;
-      margin-top: 12px; transition: all 0.2s;
+    .btn-submit:hover{background:var(--gold)}
+    .btn-cancel{
+      width:100%;height:46px;background:transparent;border:1px solid var(--border);color:var(--mist);
+      font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:0.3em;text-transform:uppercase;
+      cursor:pointer;margin-top:12px;transition:all 0.2s;
     }
-    .btn-cancel:hover { color: #fff; border-color: var(--white-40); }
+    .btn-cancel:hover{color:var(--cream);border-color:var(--border-hi)}
 
-    .divider { border: none; border-top: 1px solid var(--white-10); margin: 0 0 40px; }
-    .divider-label {
-      text-align: center; font-size: 9px; letter-spacing: 0.4em;
-      text-transform: uppercase; color: var(--white-20); margin-bottom: 40px;
-    }
+    .divider{border:none;border-top:1px solid var(--border);margin:0 0 40px}
+    .divider-label{text-align:center;font-size:9px;letter-spacing:0.4em;text-transform:uppercase;color:var(--mist);margin-bottom:40px}
 
-    .archive-item { margin-bottom: 16px; border: 1px solid var(--white-10); padding: 20px; }
-    .archive-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-    .archive-date { font-family: 'Playfair Display', serif; font-size: 14px; letter-spacing: 0.1em; margin-bottom: 4px; }
-    .archive-time { font-size: 9px; letter-spacing: 0.2em; color: var(--white-40); }
-    .archive-type {
-      font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
-      padding: 4px 12px; border: 1px solid var(--white-20); color: var(--white-60);
-    }
-    .archive-details { display: flex; gap: 20px; font-size: 11px; color: var(--white-60); }
-    .empty-state { text-align: center; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--white-20); padding: 40px 0; }
+    .archive-item{margin-bottom:12px;border:1px solid var(--border);padding:20px;background:var(--card)}
+    .archive-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+    .archive-date{font-family:'Cormorant Garamond',serif;font-size:14px;letter-spacing:0.1em;margin-bottom:4px;color:var(--cream)}
+    .archive-time{font-size:9px;letter-spacing:0.2em;color:var(--mist)}
+    .archive-type{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;padding:4px 12px;border:1px solid var(--border);color:var(--amber)}
+    .archive-details{display:flex;gap:20px;font-size:11px;color:var(--mist)}
+    .empty-state{text-align:center;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--mist);padding:40px 0;opacity:0.6}
 
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
-    .stat-box { border: 1px solid var(--white-10); padding: 24px; }
-    .stat-box .label { margin-bottom: 12px; display: block; }
-    .stat-value { font-family: 'Playfair Display', serif; font-size: 3rem; }
+    .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:48px}
+    .stat-box{border:1px solid var(--border);background:var(--card);padding:24px}
+    .stat-box .label{margin-bottom:12px;display:block}
+    .stat-value{font-family:'Cormorant Garamond',serif;font-size:3rem;color:var(--amber)}
 
-    .track-item { border: 1px solid var(--white-10); padding: 20px 24px; margin-bottom: 12px; transition: border-color 0.2s; }
-    .track-item:hover { border-color: var(--white-40); }
-    .track-date { font-family: 'Playfair Display', serif; font-size: 14px; margin-bottom: 4px; }
-    .track-day { font-size: 11px; color: var(--white-40); letter-spacing: 0.1em; }
+    .track-item{border:1px solid var(--border);background:var(--card);padding:20px 24px;margin-bottom:12px;transition:border-color 0.2s}
+    .track-item:hover{border-color:var(--border-hi)}
+    .track-date{font-family:'Cormorant Garamond',serif;font-size:14px;margin-bottom:4px;color:var(--cream)}
+    .track-day{font-size:11px;color:var(--mist);letter-spacing:0.1em}
 
-    .goal-card { border: 1px solid var(--white-10); padding: 28px; margin-bottom: 16px; position: relative; }
-    .goal-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; margin-bottom: 8px; }
-    .goal-desc { font-size: 13px; color: var(--white-60); margin-bottom: 24px; line-height: 1.6; }
-    .progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .progress-track { background: var(--white-10); height: 2px; }
-    .progress-fill { height: 2px; background: #fff; transition: width 1s ease; }
+    .goal-card{border:1px solid var(--border);background:var(--card);padding:28px;margin-bottom:16px;position:relative}
+    .goal-title{font-family:'Cormorant Garamond',serif;font-size:1.1rem;margin-bottom:8px;color:var(--cream)}
+    .goal-desc{font-size:13px;color:var(--mist);margin-bottom:24px;line-height:1.6}
+    .progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .progress-track{background:var(--white-10);height:2px}
+    .progress-fill{height:2px;background:var(--amber);transition:width 1s ease}
+    .btn-delete-goal{position:absolute;top:20px;right:20px;background:none;border:1px solid var(--red-border);color:var(--red);padding:6px 12px;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;transition:all 0.2s}
+    .btn-delete-goal:hover{background:var(--red-faint)}
 
-    .btn-delete-goal {
-      position: absolute; top: 20px; right: 20px;
-      background: none; border: 1px solid var(--red-border); color: var(--red);
-      padding: 6px 12px; font-size: 9px; letter-spacing: 0.2em;
-      text-transform: uppercase; cursor: pointer; transition: all 0.2s;
-    }
-    .btn-delete-goal:hover { background: var(--red-faint); }
+    .warning-card{border:1.5px solid var(--yellow);background:rgba(234,179,8,0.05);padding:24px;margin-bottom:16px}
+    .warning-title{font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--yellow);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+    .warning-text{font-size:13px;color:var(--white-80);line-height:1.7}
+    .recovery-card{border:1px solid var(--border);background:var(--card);padding:24px;margin-bottom:16px}
 
-    /* RECOVERY/WARNING CARDS */
-    .warning-card {
-      border: 1.5px solid var(--yellow); background: rgba(234,179,8,0.05);
-      padding: 24px; margin-bottom: 16px;
+    /* body map */
+    .body-map-container{
+      display:flex;justify-content:center;align-items:center;
+      margin:40px 0;padding:50px 20px;
+      border:1px solid var(--border);background:var(--card);
+      background-image:linear-gradient(90deg,rgba(196,121,32,0.03) 1px,transparent 1px),
+                       linear-gradient(rgba(196,121,32,0.03) 1px,transparent 1px);
+      background-size:20px 20px;position:relative;
     }
-    .warning-title {
-      font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--yellow);
-      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;
-      display: flex; align-items: center; gap: 10px;
-    }
-    .warning-text { font-size: 13px; color: var(--white-80); line-height: 1.7; }
-    .recovery-card { border: 1px solid var(--white-10); padding: 24px; margin-bottom: 16px; }
+    .body-map-container::before{content:"ANATOMICAL REFERENCE — INJURY ZONES";position:absolute;top:15px;left:20px;font-size:8px;letter-spacing:0.3em;color:var(--mist)}
+    .body-map-container::after{content:"REV 1.0";position:absolute;top:15px;right:20px;font-size:8px;letter-spacing:0.3em;color:var(--mist)}
+    .body-svg{max-width:320px;width:100%;height:auto}
+    .skeleton-line{stroke:rgba(196,121,32,0.2);stroke-width:1;fill:none}
+    .structure-line{stroke:rgba(196,121,32,0.3);stroke-width:0.5;fill:none;stroke-dasharray:2,2}
+    .reference-line{stroke:rgba(196,121,32,0.08);stroke-width:0.5}
+    .anatomy-label{fill:rgba(192,154,120,0.4);font-size:7px;font-family:'DM Sans',sans-serif;letter-spacing:0.1em;text-transform:uppercase}
+    .zone-label{fill:rgba(192,154,120,0.6);font-size:6px;font-family:'DM Sans',sans-serif;letter-spacing:0.15em}
+    .hit-zone{cursor:pointer;transition:all 0.3s;stroke:rgba(196,121,32,0.5);fill:rgba(196,121,32,0.04);stroke-width:1;stroke-dasharray:3,2}
+    .hit-zone:hover{stroke:var(--amber);fill:rgba(196,121,32,0.15);stroke-width:1.5;stroke-dasharray:none;filter:drop-shadow(0 0 8px rgba(196,121,32,0.5))}
+    .hit-zone.active{stroke:#dc2626;fill:rgba(220,38,38,0.15);stroke-dasharray:none;filter:drop-shadow(0 0 12px rgba(220,38,38,0.6))}
+    .crosshair{stroke:rgba(196,121,32,0.15);stroke-width:0.5}
 
-    /* BODY MAP */
-    .body-map-container {
-      display: flex; justify-content: center; align-items: center;
-      margin: 40px 0; padding: 50px 20px;
-      border: 1px solid var(--white-20);
-      background: linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
-                  linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
-      background-size: 20px 20px; position: relative;
-    }
-    .body-map-container::before {
-      content: "ANATOMICAL REFERENCE — INJURY ZONES";
-      position: absolute; top: 15px; left: 20px;
-      font-size: 8px; letter-spacing: 0.3em; color: var(--white-20);
-    }
-    .body-map-container::after {
-      content: "REV 1.0"; position: absolute; top: 15px; right: 20px;
-      font-size: 8px; letter-spacing: 0.3em; color: var(--white-20);
-    }
-    .body-svg { max-width: 320px; width: 100%; height: auto; filter: drop-shadow(0 0 20px rgba(255,255,255,0.03)); }
-    .skeleton-line { stroke: rgba(255,255,255,0.15); stroke-width: 1; fill: none; }
-    .structure-line { stroke: rgba(255,255,255,0.25); stroke-width: 0.5; fill: none; stroke-dasharray: 2,2; }
-    .reference-line { stroke: rgba(255,255,255,0.08); stroke-width: 0.5; }
-    .anatomy-label { fill: rgba(255,255,255,0.3); font-size: 7px; font-family: 'Inter', sans-serif; letter-spacing: 0.1em; text-transform: uppercase; }
-    .zone-label { fill: rgba(255,255,255,0.5); font-size: 6px; font-family: 'Inter', sans-serif; letter-spacing: 0.15em; }
-    .hit-zone { cursor: pointer; transition: all 0.3s; stroke: rgba(255,255,255,0.5); fill: rgba(255,255,255,0.03); stroke-width: 1; stroke-dasharray: 3,2; }
-    .hit-zone:hover { stroke: rgba(255,255,255,1); fill: rgba(255,255,255,0.12); stroke-width: 1.5; stroke-dasharray: none; filter: drop-shadow(0 0 8px rgba(255,255,255,0.4)); }
-    .hit-zone.active { stroke: #dc2626; fill: rgba(220,38,38,0.15); stroke-dasharray: none; filter: drop-shadow(0 0 12px rgba(220,38,38,0.6)); }
-    .crosshair { stroke: rgba(255,255,255,0.15); stroke-width: 0.5; }
+    /* injury overlay */
+    .injury-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:999;display:none;align-items:center;justify-content:center;padding:20px}
+    .injury-overlay.visible{display:flex}
+    .overlay-content{max-width:600px;width:100%;background:var(--surface);border:1px solid var(--border);padding:40px;max-height:90vh;overflow-y:auto;position:relative}
+    .overlay-close{position:absolute;top:20px;right:20px;background:none;border:none;color:var(--mist);font-size:24px;cursor:pointer;padding:10px;line-height:1;transition:color 0.2s}
+    .overlay-close:hover{color:var(--cream)}
+    .overlay-diagnosis{font-family:'Cormorant Garamond',serif;font-size:1.8rem;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:32px;padding-bottom:20px;border-bottom:1px solid var(--border);color:var(--cream)}
+    .overlay-section{margin-bottom:32px}
+    .overlay-section-title{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--amber);margin-bottom:16px}
+    .overlay-text{font-size:14px;line-height:1.8;color:var(--latte)}
+    .protocol-list{list-style:none;padding:0}
+    .protocol-list li{font-size:14px;line-height:1.8;color:var(--latte);padding-left:24px;margin-bottom:12px;position:relative}
+    .protocol-list li:before{content:"→";position:absolute;left:0;color:var(--amber)}
 
-    /* OVERLAY */
-    .injury-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.95); z-index: 999;
-      display: none; align-items: center; justify-content: center;
-      padding: 20px; animation: fadeIn 0.3s;
-    }
-    .injury-overlay.visible { display: flex; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .overlay-content {
-      max-width: 600px; width: 100%; background: #000;
-      border: 1px solid var(--white-20); padding: 40px;
-      max-height: 90vh; overflow-y: auto; position: relative; animation: slideUp 0.4s;
-    }
-    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .overlay-close {
-      position: absolute; top: 20px; right: 20px;
-      background: none; border: none; color: var(--white-60);
-      font-size: 24px; cursor: pointer; padding: 10px; line-height: 1; transition: color 0.2s;
-    }
-    .overlay-close:hover { color: #fff; }
-    .overlay-diagnosis { font-family: 'Playfair Display', serif; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--white-10); }
-    .overlay-section { margin-bottom: 32px; }
-    .overlay-section-title { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--white-40); margin-bottom: 16px; }
-    .overlay-text { font-size: 14px; line-height: 1.8; color: var(--white-80); }
-    .protocol-list { list-style: none; padding: 0; }
-    .protocol-list li { font-size: 14px; line-height: 1.8; color: var(--white-80); padding-left: 24px; margin-bottom: 12px; position: relative; }
-    .protocol-list li:before { content: "→"; position: absolute; left: 0; color: var(--white-40); }
+    .category-toggle{width:100%;background:none;border:1px solid var(--border);color:var(--cream);font-family:'Cormorant Garamond',serif;font-size:1rem;letter-spacing:0.06em;text-transform:uppercase;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;text-align:left;transition:background 0.2s;margin-bottom:4px}
+    .category-toggle:hover{background:var(--mahogany)}
+    .category-toggle.serious{border-color:var(--red-border)}
+    .chevron{font-size:16px;transition:transform 0.3s;display:inline-block}
+    .chevron.open{transform:rotate(180deg)}
+    .injury-list{display:none;margin-bottom:16px}
+    .injury-list.open{display:block}
+    .injury-card{border:1px solid var(--border);background:var(--card);margin-left:24px;margin-top:8px;padding:20px 24px;transition:border-color 0.2s}
+    .injury-card:hover{border-color:var(--border-hi)}
+    .injury-name{font-family:'Cormorant Garamond',serif;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;color:var(--cream)}
+    .injury-solution{font-size:13px;color:var(--mist);line-height:1.7}
 
-    /* INJURY CATEGORIES */
-    .category-toggle {
-      width: 100%; background: none; border: 1px solid var(--white-10); color: #fff;
-      font-family: 'Playfair Display', serif; font-size: 1rem; letter-spacing: 0.06em;
-      text-transform: uppercase; padding: 20px 24px;
-      display: flex; justify-content: space-between; align-items: center;
-      cursor: pointer; text-align: left; transition: background 0.2s; margin-bottom: 4px;
-    }
-    .category-toggle:hover { background: rgba(255,255,255,0.04); }
-    .category-toggle.serious { border-color: var(--red-border); }
-    .chevron { font-size: 16px; transition: transform 0.3s; display: inline-block; }
-    .chevron.open { transform: rotate(180deg); }
-    .injury-list { display: none; margin-bottom: 16px; }
-    .injury-list.open { display: block; }
-    .injury-card { border: 1px solid var(--white-10); margin-left: 24px; margin-top: 8px; padding: 20px 24px; transition: border-color 0.2s; }
-    .injury-card:hover { border-color: var(--white-40); }
-    .injury-name { font-family: 'Playfair Display', serif; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
-    .injury-solution { font-size: 13px; color: var(--white-60); line-height: 1.7; }
+    .emergency-box{border:1.5px solid var(--red-border);background:var(--red-faint);padding:32px;margin-top:40px}
+    .emergency-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:24px}
+    .emergency-icon{font-size:22px;flex-shrink:0;margin-top:2px}
+    .emergency-title{font-family:'Cormorant Garamond',serif;font-size:1.2rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;color:var(--cream)}
+    .emergency-text{font-size:13px;color:rgba(220,38,38,0.85);line-height:1.6}
+    .emergency-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .btn-emergency{height:64px;background:#dc2626;border:none;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;transition:background 0.2s}
+    .btn-emergency:hover{background:#b91c1c}
 
-    .emergency-box { border: 1.5px solid var(--red-border); background: var(--red-faint); padding: 32px; margin-top: 40px; }
-    .emergency-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 24px; }
-    .emergency-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
-    .emergency-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-    .emergency-text { font-size: 13px; color: rgba(220,38,38,0.85); line-height: 1.6; }
-    .emergency-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .btn-emergency {
-      height: 64px; background: #dc2626; border: none; color: #fff;
-      font-family: 'Inter', sans-serif; font-size: 12px; letter-spacing: 0.2em;
-      text-transform: uppercase; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-      text-decoration: none; transition: background 0.2s;
-    }
-    .btn-emergency:hover { background: #b91c1c; }
+    #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--amber);color:var(--bg);padding:12px 24px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;opacity:0;pointer-events:none;transition:opacity 0.3s,transform 0.3s;white-space:nowrap;z-index:9998}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    #toast.error{background:#dc2626;color:#fff}
 
-    #toast {
-      position: fixed; bottom: 80px; left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: #fff; color: #000; padding: 12px 24px;
-      font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.3s, transform 0.3s; white-space: nowrap; z-index: 999;
-    }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    #toast.error { background: #dc2626; color: #fff; }
-
-    @media (min-width: 640px) {
-      .nav-btn { flex-direction: row; gap: 8px; font-size: 10px; padding: 16px 20px; }
-      .page { padding: 60px 40px 60px; }
-      .activity-grid { grid-template-columns: repeat(4, 1fr); }
-      .body-svg { max-width: 320px; }
-      .overlay-content { padding: 50px; }
+    @media(min-width:640px){
+      .nav-btn{flex-direction:row;gap:8px;font-size:10px;padding:16px 20px}
+      .page{padding:60px 40px 60px}
+      .activity-grid{grid-template-columns:repeat(4,1fr)}
+      .body-svg{max-width:320px}
+      .overlay-content{padding:50px}
     }
   </style>
 </head>
 <body>
 
-<!-- LOGIN OVERLAY -->
+<!-- ── LOGIN OVERLAY ── -->
 <div class="login-overlay" id="login-overlay">
-  <div class="login-box">
-    <h1 class="login-title">The Iron Palace</h1>
-    <div class="login-subtitle">Your Fortress of Discipline</div>
+  <div class="auth-bg">
+    <div class="auth-orb"></div>
+    <div class="auth-orb"></div>
+    <div class="auth-orb"></div>
+  </div>
+  <div class="auth-card-wrap" id="auth-card-wrap">
+    <div class="login-box" id="login-box">
+      <h1 class="login-title">The Iron Palace</h1>
+      <div class="login-subtitle">Your Fortress of Discipline</div>
 
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
-      <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
-    </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
+        <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
+      </div>
 
-    <!-- SIGN IN PANEL -->
-    <div class="auth-panel active" id="panel-signin">
-      <input type="email" class="login-input" id="si-email" placeholder="Email Address" autocomplete="email" />
-      <input type="password" class="login-input" id="si-password" placeholder="Password" autocomplete="current-password" />
-      <button class="btn-login" onclick="signIn()">Enter Palace</button>
-      <div class="login-error" id="signin-error"></div>
-    </div>
+      <!-- SIGN IN -->
+      <div class="auth-panel active" id="panel-signin">
+        <input type="email" class="login-input" id="si-email" placeholder="Email Address" autocomplete="email"/>
+        <input type="password" class="login-input" id="si-password" placeholder="Password" autocomplete="current-password"/>
+        <button class="btn-login" onclick="signInEmail()">Enter Palace</button>
+        <div class="login-error" id="signin-error"></div>
+        <div class="social-divider"><span class="social-divider-text">Or continue with</span></div>
+        <button class="btn-social" onclick="signInGoogle()">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continue with Google
+        </button>
+      </div>
 
-    <!-- SIGN UP PANEL -->
-    <div class="auth-panel" id="panel-signup">
-      <input type="text" class="login-input" id="su-name" placeholder="Your Name" autocomplete="name" />
-      <input type="email" class="login-input" id="su-email" placeholder="Email Address" autocomplete="email" />
-      <input type="password" class="login-input" id="su-password" placeholder="Password (min 4 chars)" autocomplete="new-password" />
-      <input type="number" class="login-input" id="su-bodyweight" placeholder="Your Body Weight (kg) — for warnings" min="30" max="300" />
-      <button class="btn-login" onclick="signUp()">Create Account</button>
-      <div class="login-error" id="signup-error"></div>
+      <!-- SIGN UP -->
+      <div class="auth-panel" id="panel-signup">
+        <input type="text" class="login-input" id="su-name" placeholder="Your Name" autocomplete="name"/>
+        <input type="email" class="login-input" id="su-email" placeholder="Email Address" autocomplete="email"/>
+        <input type="password" class="login-input" id="su-password" placeholder="Password (min 6 chars)" autocomplete="new-password"/>
+        <input type="number" class="login-input" id="su-bodyweight" placeholder="Body Weight (kg) — for warnings" min="30" max="300"/>
+        <button class="btn-login" onclick="signUpEmail()">Create Account</button>
+        <div class="login-error" id="signup-error"></div>
+        <div class="social-divider"><span class="social-divider-text">Or sign up with</span></div>
+        <button class="btn-social" onclick="signInGoogle()">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Sign Up with Google
+        </button>
+      </div>
+
+      <!-- COMPLETE PROFILE (Google new user) -->
+      <div class="auth-panel" id="panel-complete-profile">
+        <div class="google-user-preview">
+          <div class="google-avatar-placeholder" id="google-avatar-wrap">G</div>
+          <div>
+            <div class="google-user-name" id="google-display-name">—</div>
+            <div class="google-user-email" id="google-display-email">—</div>
+          </div>
+        </div>
+        <p class="complete-profile-note">One last thing — enter your body weight so JARVIS can calculate accurate calories and give you safe lifting warnings.</p>
+        <input type="number" class="login-input" id="cp-bodyweight" placeholder="Body Weight (kg)" min="30" max="300"/>
+        <button class="btn-login" onclick="completeProfile()">Enter the Palace</button>
+        <div class="login-error" id="cp-error"></div>
+        <button class="skip-btn" onclick="completeProfile(true)">Skip for now</button>
+      </div>
+
+      <!-- loading state -->
+      <div class="auth-loading" id="auth-loading">
+        <div class="spinner"></div>
+        <div class="spinner-text" id="spinner-text">Signing in...</div>
+      </div>
     </div>
   </div>
 </div>
@@ -488,43 +544,21 @@
       </div>
       <button class="btn-logout" onclick="logout()">Logout</button>
     </div>
-
     <div class="label" style="margin-bottom:20px;">Today's Summary</div>
     <div class="activity-grid">
-      <div class="activity-card">
-        <div class="activity-label">Weightlifting</div>
-        <div class="activity-value" id="stat-weight">0</div>
-        <div class="activity-unit">Minutes</div>
-      </div>
-      <div class="activity-card">
-        <div class="activity-label">Cardio</div>
-        <div class="activity-value" id="stat-cardio">0</div>
-        <div class="activity-unit">Minutes</div>
-      </div>
-      <div class="activity-card">
-        <div class="activity-label">Calories</div>
-        <div class="activity-value" id="stat-calories">0</div>
-        <div class="activity-unit">Burnt</div>
-      </div>
-      <div class="activity-card">
-        <div class="activity-label">This Week</div>
-        <div class="activity-value" id="stat-week">0</div>
-        <div class="activity-unit">Sessions</div>
-      </div>
+      <div class="activity-card"><div class="activity-label">Weightlifting</div><div class="activity-value" id="stat-weight">0</div><div class="activity-unit">Minutes</div></div>
+      <div class="activity-card"><div class="activity-label">Cardio</div><div class="activity-value" id="stat-cardio">0</div><div class="activity-unit">Minutes</div></div>
+      <div class="activity-card"><div class="activity-label">Calories</div><div class="activity-value" id="stat-calories">0</div><div class="activity-unit">Burnt</div></div>
+      <div class="activity-card"><div class="activity-label">This Week</div><div class="activity-value" id="stat-week">0</div><div class="activity-unit">Sessions</div></div>
     </div>
-
-    <div class="label" style="margin-bottom:20px; text-align:center;">Current Streak</div>
+    <div class="label" style="margin-bottom:20px;text-align:center;">Current Streak</div>
     <div style="text-align:center;">
-      <div class="streak-number serif" id="streak-display">0</div>
+      <div class="streak-number" id="streak-display">0</div>
       <div class="streak-label">Days Consecutive</div>
     </div>
-
     <button class="btn-main" onclick="toggleActivityForm()">Log Activity</button>
-
-    <!-- ACTIVITY FORM -->
     <div class="activity-form" id="activity-form">
       <div class="form-title">Record Activity</div>
-
       <div class="form-group">
         <label class="form-label">Activity Type</label>
         <select class="form-select" id="activity-type" onchange="onActivityTypeChange()">
@@ -538,40 +572,28 @@
           <option value="sports">Sports</option>
         </select>
       </div>
-
-      <!-- RECORDING TIMER (replaces manual duration input) -->
       <div class="form-group record-section">
         <label class="form-label">Session Duration — Record Live</label>
         <div class="record-display">
-          <div>
-            <div class="record-time" id="record-time">00:00:00</div>
-          </div>
+          <div class="record-time" id="record-time">00:00:00</div>
           <div class="record-status" id="record-status">
             <span class="record-dot" id="record-dot"></span>
             <span id="record-status-text">Ready</span>
           </div>
         </div>
-        <button class="btn-record" id="btn-record" onclick="toggleRecording()">
-          ▶ &nbsp; Start Recording
-        </button>
+        <button class="btn-record" id="btn-record" onclick="toggleRecording()">▶ &nbsp; Start Recording</button>
       </div>
-
-      <!-- LIFTING WEIGHT — only shown for weightlifting -->
       <div class="form-group" id="lifting-weight-group">
         <label class="form-label">Weight Being Lifted (kg)</label>
-        <input type="number" class="form-input" id="activity-lifting-weight"
-               min="1" max="1000" placeholder="e.g. 80"
-               oninput="checkLiftingWarning()" />
+        <input type="number" class="form-input" id="activity-lifting-weight" min="1" max="1000" placeholder="e.g. 80" oninput="checkLiftingWarning()"/>
         <div class="weight-warning" id="weight-warning">
           <div class="weight-warning-title" id="weight-warning-title">⚠️ Warning</div>
           <div id="weight-warning-text"></div>
         </div>
       </div>
-
-      <button class="btn-submit" id="btn-log-activity" onclick="logActivity()">Save Session</button>
+      <button class="btn-submit" onclick="logActivity()">Save Session</button>
       <button class="btn-cancel" onclick="cancelActivityForm()">Cancel</button>
     </div>
-
     <hr class="divider">
     <div class="divider-label">Recent Activity</div>
     <div id="archive-list"></div>
@@ -581,22 +603,10 @@
   <div class="page" id="section-tracks">
     <h1>Tracks</h1>
     <div class="stats-grid">
-      <div class="stat-box">
-        <span class="label">Total Sessions</span>
-        <div class="stat-value serif" id="track-total">0</div>
-      </div>
-      <div class="stat-box">
-        <span class="label">This Month</span>
-        <div class="stat-value serif" id="track-month">0</div>
-      </div>
-      <div class="stat-box">
-        <span class="label">Total Calories</span>
-        <div class="stat-value serif" id="track-calories">0</div>
-      </div>
-      <div class="stat-box">
-        <span class="label">Avg / Week</span>
-        <div class="stat-value serif" id="track-avg">0</div>
-      </div>
+      <div class="stat-box"><span class="label">Total Sessions</span><div class="stat-value" id="track-total">0</div></div>
+      <div class="stat-box"><span class="label">This Month</span><div class="stat-value" id="track-month">0</div></div>
+      <div class="stat-box"><span class="label">Total Calories</span><div class="stat-value" id="track-calories">0</div></div>
+      <div class="stat-box"><span class="label">Avg / Week</span><div class="stat-value" id="track-avg">0</div></div>
     </div>
     <div class="label" style="margin-bottom:20px;">Complete History</div>
     <div id="tracks-list"></div>
@@ -608,21 +618,13 @@
     <div id="warnings-section"></div>
     <hr class="divider">
     <div class="divider-label">Rest Day Suggestions</div>
-    <div class="recovery-card">
-      <div class="goal-title">Intelligent Rest Planning</div>
-      <div class="goal-desc" id="rest-suggestion">Loading recommendations...</div>
-    </div>
+    <div class="recovery-card"><div class="goal-title">Intelligent Rest Planning</div><div class="goal-desc" id="rest-suggestion">Loading recommendations...</div></div>
     <hr class="divider">
     <div class="divider-label">Recovery Tracking</div>
     <div class="recovery-card">
       <div class="goal-title">Recovery Status</div>
-      <div class="progress-row">
-        <span class="label">Estimated Recovery</span>
-        <span style="font-family:'Playfair Display',serif;font-size:14px;" id="recovery-percent">0%</span>
-      </div>
-      <div class="progress-track">
-        <div class="progress-fill" style="width:0%" id="recovery-bar"></div>
-      </div>
+      <div class="progress-row"><span class="label">Estimated Recovery</span><span style="font-family:'Cormorant Garamond',serif;font-size:14px;" id="recovery-percent">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:0%" id="recovery-bar"></div></div>
       <div class="goal-desc" style="margin-top:20px;" id="recovery-status">Based on your recent activity patterns...</div>
     </div>
   </div>
@@ -630,25 +632,13 @@
   <!-- GOALS -->
   <div class="page" id="section-goals">
     <h1>Goals</h1>
-    <button class="btn-main" style="margin-bottom: 40px;" onclick="toggleGoalForm()">Create Custom Goal</button>
+    <button class="btn-main" style="margin-bottom:40px;" onclick="toggleGoalForm()">Create Custom Goal</button>
     <div class="activity-form" id="goal-form">
       <div class="form-title">Create New Goal</div>
-      <div class="form-group">
-        <label class="form-label">Goal Title</label>
-        <input type="text" class="form-input" id="goal-title" placeholder="e.g., 50 Workouts This Month" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Description</label>
-        <input type="text" class="form-input" id="goal-desc" placeholder="What are you working toward?" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Target Number</label>
-        <input type="number" class="form-input" id="goal-target" min="1" placeholder="50" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Current Progress</label>
-        <input type="number" class="form-input" id="goal-current" min="0" placeholder="0" />
-      </div>
+      <div class="form-group"><label class="form-label">Goal Title</label><input type="text" class="form-input" id="goal-title" placeholder="e.g., 50 Workouts This Month"/></div>
+      <div class="form-group"><label class="form-label">Description</label><input type="text" class="form-input" id="goal-desc" placeholder="What are you working toward?"/></div>
+      <div class="form-group"><label class="form-label">Target Number</label><input type="number" class="form-input" id="goal-target" min="1" placeholder="50"/></div>
+      <div class="form-group"><label class="form-label">Current Progress</label><input type="number" class="form-input" id="goal-current" min="0" placeholder="0"/></div>
       <button class="btn-submit" onclick="createGoal()">Create Goal</button>
       <button class="btn-cancel" onclick="toggleGoalForm()">Cancel</button>
     </div>
@@ -657,860 +647,576 @@
 
   <!-- INJURIES -->
   <div class="page" id="section-injuries">
-    <h1>Prevent Athletic Injuries</h1>
-
-    <div class="label" style="margin-bottom:20px; text-align:center;">Interactive Anatomical Reference</div>
+    <h1>Injuries &amp; Recovery</h1>
+    <div class="label" style="margin-bottom:20px;text-align:center;">Interactive Anatomical Reference</div>
     <div class="body-map-container">
       <svg class="body-svg" viewBox="0 0 240 440" xmlns="http://www.w3.org/2000/svg">
-        <line x1="0" y1="30" x2="240" y2="30" class="reference-line"/>
-        <line x1="0" y1="80" x2="240" y2="80" class="reference-line"/>
-        <line x1="0" y1="150" x2="240" y2="150" class="reference-line"/>
-        <line x1="0" y1="220" x2="240" y2="220" class="reference-line"/>
-        <line x1="0" y1="340" x2="240" y2="340" class="reference-line"/>
-        <line x1="120" y1="0" x2="120" y2="440" class="reference-line"/>
-        <line x1="60" y1="0" x2="60" y2="440" class="reference-line"/>
-        <line x1="180" y1="0" x2="180" y2="440" class="reference-line"/>
-        <line x1="120" y1="0" x2="120" y2="440" stroke="rgba(255,255,255,0.2)" stroke-width="0.5" stroke-dasharray="4,4"/>
-        <!-- HEAD & CERVICAL SPINE -->
-        <circle cx="120" cy="30" r="22" class="skeleton-line"/>
-        <circle cx="120" cy="30" r="18" class="skeleton-line"/>
-        <line x1="120" y1="52" x2="120" y2="72" class="skeleton-line" stroke-width="2"/>
-        <line x1="110" y1="30" x2="130" y2="30" class="crosshair"/>
-        <line x1="120" y1="20" x2="120" y2="40" class="crosshair"/>
-        <!-- THORACIC CAGE -->
-        <path d="M 90 72 Q 85 110 90 148 L 150 148 Q 155 110 150 72 Z" class="skeleton-line"/>
-        <line x1="90" y1="85" x2="150" y2="85" class="structure-line"/>
-        <line x1="90" y1="100" x2="150" y2="100" class="structure-line"/>
-        <line x1="90" y1="115" x2="150" y2="115" class="structure-line"/>
-        <line x1="90" y1="130" x2="150" y2="130" class="structure-line"/>
-        <!-- CLAVICLE & SCAPULA -->
-        <line x1="75" y1="75" x2="105" y2="72" class="skeleton-line"/>
-        <line x1="165" y1="75" x2="135" y2="72" class="skeleton-line"/>
-        <ellipse cx="75" cy="85" rx="12" ry="18" class="structure-line"/>
-        <ellipse cx="165" cy="85" rx="12" ry="18" class="structure-line"/>
-        <!-- LEFT SHOULDER -->
-        <g>
-          <circle cx="75" cy="85" r="20" class="hit-zone" data-injury="shoulder" onclick="showInjuryDetail('shoulder')"/>
-          <text x="75" y="68" class="zone-label" text-anchor="middle">RC-L</text>
-          <line x1="65" y1="85" x2="85" y2="85" class="crosshair"/>
-          <line x1="75" y1="75" x2="75" y2="95" class="crosshair"/>
-        </g>
-        <!-- RIGHT SHOULDER -->
-        <g>
-          <circle cx="165" cy="85" r="20" class="hit-zone" data-injury="shoulder" onclick="showInjuryDetail('shoulder')"/>
-          <text x="165" y="68" class="zone-label" text-anchor="middle">RC-R</text>
-          <line x1="155" y1="85" x2="175" y2="85" class="crosshair"/>
-          <line x1="165" y1="75" x2="165" y2="95" class="crosshair"/>
-        </g>
-        <!-- UPPER ARMS -->
-        <line x1="75" y1="105" x2="50" y2="155" class="skeleton-line" stroke-width="2.5"/>
-        <line x1="165" y1="105" x2="190" y2="155" class="skeleton-line" stroke-width="2.5"/>
-        <!-- LEFT ELBOW -->
-        <g>
-          <circle cx="50" cy="155" r="14" class="hit-zone" data-injury="elbow" onclick="showInjuryDetail('elbow')"/>
-          <text x="50" y="141" class="zone-label" text-anchor="middle">EPIC-L</text>
-          <circle cx="50" cy="155" r="8" class="structure-line"/>
-          <line x1="42" y1="155" x2="58" y2="155" class="crosshair"/>
-          <line x1="50" y1="147" x2="50" y2="163" class="crosshair"/>
-        </g>
-        <!-- RIGHT ELBOW -->
-        <g>
-          <circle cx="190" cy="155" r="14" class="hit-zone" data-injury="elbow" onclick="showInjuryDetail('elbow')"/>
-          <text x="190" y="141" class="zone-label" text-anchor="middle">EPIC-R</text>
-          <circle cx="190" cy="155" r="8" class="structure-line"/>
-          <line x1="182" y1="155" x2="198" y2="155" class="crosshair"/>
-          <line x1="190" y1="147" x2="190" y2="163" class="crosshair"/>
-        </g>
-        <!-- FOREARMS -->
-        <line x1="50" y1="169" x2="42" y2="205" class="skeleton-line" stroke-width="2"/>
-        <line x1="50" y1="169" x2="48" y2="205" class="skeleton-line" stroke-width="1.5"/>
-        <line x1="190" y1="169" x2="198" y2="205" class="skeleton-line" stroke-width="2"/>
-        <line x1="190" y1="169" x2="192" y2="205" class="skeleton-line" stroke-width="1.5"/>
-        <!-- LEFT WRIST -->
-        <g>
-          <ellipse cx="42" cy="210" rx="12" ry="8" class="hit-zone" data-injury="wrist" onclick="showInjuryDetail('wrist')"/>
-          <text x="42" y="198" class="zone-label" text-anchor="middle">CRP-L</text>
-          <rect x="36" y="207" width="12" height="6" class="structure-line"/>
-          <line x1="34" y1="210" x2="50" y2="210" class="crosshair"/>
-        </g>
-        <!-- RIGHT WRIST -->
-        <g>
-          <ellipse cx="198" cy="210" rx="12" ry="8" class="hit-zone" data-injury="wrist" onclick="showInjuryDetail('wrist')"/>
-          <text x="198" y="198" class="zone-label" text-anchor="middle">CRP-R</text>
-          <rect x="192" y="207" width="12" height="6" class="structure-line"/>
-          <line x1="190" y1="210" x2="206" y2="210" class="crosshair"/>
-        </g>
-        <!-- LUMBAR SPINE -->
-        <line x1="120" y1="148" x2="120" y2="168" class="skeleton-line" stroke-width="2.5"/>
-        <ellipse cx="120" cy="168" rx="28" ry="12" class="skeleton-line"/>
-        <!-- LOWER BACK -->
-        <g>
-          <ellipse cx="120" cy="155" rx="26" ry="20" class="hit-zone" data-injury="back" onclick="showInjuryDetail('back')"/>
-          <text x="120" y="138" class="zone-label" text-anchor="middle">L1-L5</text>
-          <line x1="100" y1="155" x2="140" y2="155" class="crosshair"/>
-          <line x1="120" y1="140" x2="120" y2="170" class="crosshair"/>
-          <circle cx="120" cy="145" r="2" fill="rgba(255,255,255,0.3)"/>
-          <circle cx="120" cy="150" r="2" fill="rgba(255,255,255,0.3)"/>
-          <circle cx="120" cy="155" r="2" fill="rgba(255,255,255,0.3)"/>
-          <circle cx="120" cy="160" r="2" fill="rgba(255,255,255,0.3)"/>
-          <circle cx="120" cy="165" r="2" fill="rgba(255,255,255,0.3)"/>
-        </g>
-        <!-- THIGHS -->
-        <line x1="105" y1="175" x2="95" y2="240" class="skeleton-line" stroke-width="3"/>
-        <line x1="135" y1="175" x2="145" y2="240" class="skeleton-line" stroke-width="3"/>
-        <!-- LEFT KNEE -->
-        <g>
-          <circle cx="95" cy="245" r="16" class="hit-zone" data-injury="knee" onclick="showInjuryDetail('knee')"/>
-          <text x="95" y="227" class="zone-label" text-anchor="middle">PAT-L</text>
-          <ellipse cx="95" cy="245" r="10" rx="8" ry="11" class="structure-line"/>
-          <line x1="95" y1="234" x2="95" y2="256" class="structure-line"/>
-          <line x1="83" y1="245" x2="107" y2="245" class="crosshair"/>
-          <line x1="95" y1="233" x2="95" y2="257" class="crosshair"/>
-        </g>
-        <!-- RIGHT KNEE -->
-        <g>
-          <circle cx="145" cy="245" r="16" class="hit-zone" data-injury="knee" onclick="showInjuryDetail('knee')"/>
-          <text x="145" y="227" class="zone-label" text-anchor="middle">PAT-R</text>
-          <ellipse cx="145" cy="245" r="10" rx="8" ry="11" class="structure-line"/>
-          <line x1="145" y1="234" x2="145" y2="256" class="structure-line"/>
-          <line x1="133" y1="245" x2="157" y2="245" class="crosshair"/>
-          <line x1="145" y1="233" x2="145" y2="257" class="crosshair"/>
-        </g>
-        <!-- LOWER LEGS -->
-        <line x1="95" y1="261" x2="90" y2="360" class="skeleton-line" stroke-width="2.5"/>
-        <line x1="95" y1="261" x2="92" y2="360" class="skeleton-line" stroke-width="1"/>
-        <line x1="145" y1="261" x2="150" y2="360" class="skeleton-line" stroke-width="2.5"/>
-        <line x1="145" y1="261" x2="148" y2="360" class="skeleton-line" stroke-width="1"/>
-        <!-- ANKLES & FEET -->
-        <ellipse cx="90" cy="370" rx="10" ry="6" class="skeleton-line"/>
-        <path d="M 85 375 L 80 385 L 85 390" class="skeleton-line"/>
-        <ellipse cx="150" cy="370" rx="10" ry="6" class="skeleton-line"/>
-        <path d="M 155 375 L 160 385 L 155 390" class="skeleton-line"/>
-        <!-- LABELS -->
-        <text x="10" y="30" class="anatomy-label">CERVICAL</text>
-        <text x="10" y="110" class="anatomy-label">THORACIC</text>
-        <text x="10" y="155" class="anatomy-label">LUMBAR</text>
-        <text x="10" y="245" class="anatomy-label">FEMORAL</text>
-        <text x="10" y="310" class="anatomy-label">TIBIAL</text>
-        <text x="200" y="85" class="zone-label" fill="rgba(255,255,255,0.25)">85mm</text>
-        <text x="200" y="155" class="zone-label" fill="rgba(255,255,255,0.25)">155mm</text>
-        <text x="200" y="245" class="zone-label" fill="rgba(255,255,255,0.25)">245mm</text>
+        <line x1="0" y1="30" x2="240" y2="30" class="reference-line"/><line x1="0" y1="80" x2="240" y2="80" class="reference-line"/><line x1="0" y1="150" x2="240" y2="150" class="reference-line"/><line x1="0" y1="220" x2="240" y2="220" class="reference-line"/><line x1="0" y1="340" x2="240" y2="340" class="reference-line"/><line x1="120" y1="0" x2="120" y2="440" class="reference-line"/><line x1="60" y1="0" x2="60" y2="440" class="reference-line"/><line x1="180" y1="0" x2="180" y2="440" class="reference-line"/>
+        <line x1="120" y1="0" x2="120" y2="440" stroke="rgba(196,121,32,0.2)" stroke-width="0.5" stroke-dasharray="4,4"/>
+        <circle cx="120" cy="30" r="22" class="skeleton-line"/><circle cx="120" cy="30" r="18" class="skeleton-line"/><line x1="120" y1="52" x2="120" y2="72" class="skeleton-line" stroke-width="2"/><line x1="110" y1="30" x2="130" y2="30" class="crosshair"/><line x1="120" y1="20" x2="120" y2="40" class="crosshair"/>
+        <path d="M 90 72 Q 85 110 90 148 L 150 148 Q 155 110 150 72 Z" class="skeleton-line"/><line x1="90" y1="85" x2="150" y2="85" class="structure-line"/><line x1="90" y1="100" x2="150" y2="100" class="structure-line"/><line x1="90" y1="115" x2="150" y2="115" class="structure-line"/><line x1="90" y1="130" x2="150" y2="130" class="structure-line"/>
+        <line x1="75" y1="75" x2="105" y2="72" class="skeleton-line"/><line x1="165" y1="75" x2="135" y2="72" class="skeleton-line"/><ellipse cx="75" cy="85" rx="12" ry="18" class="structure-line"/><ellipse cx="165" cy="85" rx="12" ry="18" class="structure-line"/>
+        <g><circle cx="75" cy="85" r="20" class="hit-zone" onclick="showInjuryDetail('shoulder')"/><text x="75" y="68" class="zone-label" text-anchor="middle">RC-L</text><line x1="65" y1="85" x2="85" y2="85" class="crosshair"/><line x1="75" y1="75" x2="75" y2="95" class="crosshair"/></g>
+        <g><circle cx="165" cy="85" r="20" class="hit-zone" onclick="showInjuryDetail('shoulder')"/><text x="165" y="68" class="zone-label" text-anchor="middle">RC-R</text><line x1="155" y1="85" x2="175" y2="85" class="crosshair"/><line x1="165" y1="75" x2="165" y2="95" class="crosshair"/></g>
+        <line x1="75" y1="105" x2="50" y2="155" class="skeleton-line" stroke-width="2.5"/><line x1="165" y1="105" x2="190" y2="155" class="skeleton-line" stroke-width="2.5"/>
+        <g><circle cx="50" cy="155" r="14" class="hit-zone" onclick="showInjuryDetail('elbow')"/><text x="50" y="141" class="zone-label" text-anchor="middle">EPIC-L</text><circle cx="50" cy="155" r="8" class="structure-line"/><line x1="42" y1="155" x2="58" y2="155" class="crosshair"/><line x1="50" y1="147" x2="50" y2="163" class="crosshair"/></g>
+        <g><circle cx="190" cy="155" r="14" class="hit-zone" onclick="showInjuryDetail('elbow')"/><text x="190" y="141" class="zone-label" text-anchor="middle">EPIC-R</text><circle cx="190" cy="155" r="8" class="structure-line"/><line x1="182" y1="155" x2="198" y2="155" class="crosshair"/><line x1="190" y1="147" x2="190" y2="163" class="crosshair"/></g>
+        <line x1="50" y1="169" x2="42" y2="205" class="skeleton-line" stroke-width="2"/><line x1="50" y1="169" x2="48" y2="205" class="skeleton-line" stroke-width="1.5"/><line x1="190" y1="169" x2="198" y2="205" class="skeleton-line" stroke-width="2"/><line x1="190" y1="169" x2="192" y2="205" class="skeleton-line" stroke-width="1.5"/>
+        <g><ellipse cx="42" cy="210" rx="12" ry="8" class="hit-zone" onclick="showInjuryDetail('wrist')"/><text x="42" y="198" class="zone-label" text-anchor="middle">CRP-L</text><line x1="34" y1="210" x2="50" y2="210" class="crosshair"/></g>
+        <g><ellipse cx="198" cy="210" rx="12" ry="8" class="hit-zone" onclick="showInjuryDetail('wrist')"/><text x="198" y="198" class="zone-label" text-anchor="middle">CRP-R</text><line x1="190" y1="210" x2="206" y2="210" class="crosshair"/></g>
+        <line x1="120" y1="148" x2="120" y2="168" class="skeleton-line" stroke-width="2.5"/><ellipse cx="120" cy="168" rx="28" ry="12" class="skeleton-line"/>
+        <g><ellipse cx="120" cy="155" rx="26" ry="20" class="hit-zone" onclick="showInjuryDetail('back')"/><text x="120" y="138" class="zone-label" text-anchor="middle">L1-L5</text><line x1="100" y1="155" x2="140" y2="155" class="crosshair"/><line x1="120" y1="140" x2="120" y2="170" class="crosshair"/><circle cx="120" cy="145" r="2" fill="rgba(196,121,32,0.4)"/><circle cx="120" cy="150" r="2" fill="rgba(196,121,32,0.4)"/><circle cx="120" cy="155" r="2" fill="rgba(196,121,32,0.4)"/><circle cx="120" cy="160" r="2" fill="rgba(196,121,32,0.4)"/><circle cx="120" cy="165" r="2" fill="rgba(196,121,32,0.4)"/></g>
+        <line x1="105" y1="175" x2="95" y2="240" class="skeleton-line" stroke-width="3"/><line x1="135" y1="175" x2="145" y2="240" class="skeleton-line" stroke-width="3"/>
+        <g><circle cx="95" cy="245" r="16" class="hit-zone" onclick="showInjuryDetail('knee')"/><text x="95" y="227" class="zone-label" text-anchor="middle">PAT-L</text><line x1="83" y1="245" x2="107" y2="245" class="crosshair"/><line x1="95" y1="233" x2="95" y2="257" class="crosshair"/></g>
+        <g><circle cx="145" cy="245" r="16" class="hit-zone" onclick="showInjuryDetail('knee')"/><text x="145" y="227" class="zone-label" text-anchor="middle">PAT-R</text><line x1="133" y1="245" x2="157" y2="245" class="crosshair"/><line x1="145" y1="233" x2="145" y2="257" class="crosshair"/></g>
+        <line x1="95" y1="261" x2="90" y2="360" class="skeleton-line" stroke-width="2.5"/><line x1="95" y1="261" x2="92" y2="360" class="skeleton-line" stroke-width="1"/><line x1="145" y1="261" x2="150" y2="360" class="skeleton-line" stroke-width="2.5"/><line x1="145" y1="261" x2="148" y2="360" class="skeleton-line" stroke-width="1"/>
+        <ellipse cx="90" cy="370" rx="10" ry="6" class="skeleton-line"/><path d="M 85 375 L 80 385 L 85 390" class="skeleton-line"/><ellipse cx="150" cy="370" rx="10" ry="6" class="skeleton-line"/><path d="M 155 375 L 160 385 L 155 390" class="skeleton-line"/>
+        <text x="10" y="30" class="anatomy-label">CERVICAL</text><text x="10" y="110" class="anatomy-label">THORACIC</text><text x="10" y="155" class="anatomy-label">LUMBAR</text><text x="10" y="245" class="anatomy-label">FEMORAL</text><text x="10" y="310" class="anatomy-label">TIBIAL</text>
       </svg>
     </div>
-
     <hr class="divider">
-
-    <button class="category-toggle" onclick="toggleCategory('common')">
-      Common Injuries <span class="chevron open" id="chevron-common">&#8964;</span>
-    </button>
+    <button class="category-toggle" onclick="toggleCategory('common')">Common Injuries <span class="chevron open" id="chevron-common">&#8964;</span></button>
     <div class="injury-list open" id="list-common">
       <div class="injury-card"><div class="injury-name">Muscle Soreness (DOMS)</div><div class="injury-solution">Delayed Onset Muscle Soreness is normal 24-72 hours after intense exercise. Rest, hydration, light stretching, foam rolling, and massage help. Active recovery like walking accelerates healing. Usually resolves in 2–4 days.</div></div>
-      <div class="injury-card"><div class="injury-name">Muscle Cramps</div><div class="injury-solution">Stay hydrated and maintain electrolyte balance (sodium, potassium, magnesium). Stretch affected muscle gently and hold for 30 seconds. Apply heat or ice. Reduce workout intensity temporarily. Ensure proper warm-up before exercise.</div></div>
-      <div class="injury-card"><div class="injury-name">Stiff Joints</div><div class="injury-solution">Warm up properly before exercising with dynamic stretches. Use static stretching post-workout. Stay active with light movement throughout the day. Consider foam rolling and mobility work. Heat therapy can help loosen tight joints.</div></div>
-      <div class="injury-card"><div class="injury-name">Minor Bruises</div><div class="injury-solution">Apply ice for 15-20 minutes every 2-3 hours for first 48 hours. Elevate the area if possible. Use compression wrap. Avoid massaging the bruise initially. Usually heals in 1-2 weeks. If pain worsens or bruise spreads significantly, consult doctor.</div></div>
-      <div class="injury-card"><div class="injury-name">Blisters</div><div class="injury-solution">Do not pop unless painful or interfering with activity. Clean with antiseptic if it pops naturally. Apply antibiotic ointment and bandage. Prevent with proper footwear, moisture-wicking socks, and addressing hot spots early. Heals in 3-7 days.</div></div>
-      <div class="injury-card"><div class="injury-name">Shin Splints</div><div class="injury-solution">Rest from impact activities for 2-3 weeks. Ice shins for 15-20 minutes after activity. Strengthen calf and shin muscles with toe raises and alphabet exercises. Ensure proper running shoes with arch support. Gradually increase training intensity. Stretch calves regularly.</div></div>
+      <div class="injury-card"><div class="injury-name">Muscle Cramps</div><div class="injury-solution">Stay hydrated and maintain electrolyte balance (sodium, potassium, magnesium). Stretch affected muscle gently and hold for 30 seconds. Apply heat or ice. Reduce workout intensity temporarily.</div></div>
+      <div class="injury-card"><div class="injury-name">Shin Splints</div><div class="injury-solution">Rest from impact activities for 2-3 weeks. Ice shins for 15-20 minutes after activity. Strengthen calf and shin muscles. Ensure proper running shoes with arch support.</div></div>
     </div>
-
-    <button class="category-toggle" onclick="toggleCategory('moderate')">
-      Moderate Injuries <span class="chevron" id="chevron-moderate">&#8964;</span>
-    </button>
+    <button class="category-toggle" onclick="toggleCategory('moderate')">Moderate Injuries <span class="chevron" id="chevron-moderate">&#8964;</span></button>
     <div class="injury-list" id="list-moderate">
-      <div class="injury-card"><div class="injury-name">Tendonitis (General)</div><div class="injury-solution">Rest the affected area for 2-4 weeks, apply ice for 15-20 minutes 3-4 times daily. Use anti-inflammatory medication as directed. Gradually return to exercise with reduced intensity. Physical therapy with eccentric exercises highly beneficial. Avoid complete immobilization. May take 6-12 weeks for full recovery.</div></div>
-      <div class="injury-card"><div class="injury-name">Ankle Sprain (Mild-Moderate)</div><div class="injury-solution">RICE protocol: Rest, Ice (20 min every 2-3 hours), Compression wrap, Elevate above heart. Avoid weight-bearing for 48-72 hours. Use ankle brace when returning to activity. Perform balance exercises on wobble board. Strengthen with resistance band exercises. Most heal in 2-6 weeks.</div></div>
-      <div class="injury-card"><div class="injury-name">Plantar Fasciitis</div><div class="injury-solution">Stretch plantar fascia and Achilles tendon multiple times daily. Roll foot over frozen water bottle. Wear supportive shoes with arch support. Use night splints. Reduce impact activities temporarily. Strengthen foot muscles with towel scrunches. May require 6-18 months for full recovery. Consider orthotic inserts.</div></div>
-      <div class="injury-card"><div class="injury-name">IT Band Syndrome</div><div class="injury-solution">Reduce running volume immediately. Ice outer knee for 15-20 minutes post-activity. Foam roll IT band and hip muscles daily. Strengthen hip abductors and glutes with clamshells and side leg raises. Stretch hip flexors. Gradually return to running with shorter distances. May take 4-8 weeks to resolve.</div></div>
-      <div class="injury-card"><div class="injury-name">Rotator Cuff Strain</div><div class="injury-solution">Rest shoulder and avoid overhead activities for 2-4 weeks. Ice for 15-20 minutes every 2-3 hours initially. Perform gentle pendulum exercises after 48 hours. Progress to resistance band exercises focusing on external rotation. Strengthen scapular stabilizers. Physical therapy recommended. Full recovery may take 6-12 weeks.</div></div>
-      <div class="injury-card"><div class="injury-name">Hamstring Strain</div><div class="injury-solution">RICE protocol immediately. Avoid stretching aggressively initially. Begin gentle stretching after 48-72 hours. Strengthen with Nordic hamstring curls once pain subsides. Gradually increase running intensity. Ensure proper warm-up. Grade 1 strains heal in 2-3 weeks, Grade 2 in 4-8 weeks. Rushing recovery risks re-injury.</div></div>
+      <div class="injury-card"><div class="injury-name">Tendonitis (General)</div><div class="injury-solution">Rest the affected area for 2-4 weeks, apply ice 3-4 times daily. Use anti-inflammatory medication as directed. Physical therapy with eccentric exercises highly beneficial. May take 6-12 weeks for full recovery.</div></div>
+      <div class="injury-card"><div class="injury-name">Ankle Sprain</div><div class="injury-solution">RICE protocol: Rest, Ice (20 min every 2-3 hours), Compression wrap, Elevate above heart. Avoid weight-bearing for 48-72 hours. Most heal in 2-6 weeks.</div></div>
+      <div class="injury-card"><div class="injury-name">Hamstring Strain</div><div class="injury-solution">RICE protocol immediately. Avoid aggressive stretching initially. Begin gentle stretching after 48-72 hours. Grade 1 strains heal in 2-3 weeks, Grade 2 in 4-8 weeks.</div></div>
     </div>
-
-    <button class="category-toggle serious" onclick="toggleCategory('serious')">
-      Serious Injuries — Medical Attention Required <span class="chevron" id="chevron-serious">&#8964;</span>
-    </button>
+    <button class="category-toggle serious" onclick="toggleCategory('serious')">Serious Injuries — Medical Attention Required <span class="chevron" id="chevron-serious">&#8964;</span></button>
     <div class="injury-list" id="list-serious">
-      <div class="injury-card" style="border-color:var(--red-border);"><div class="injury-name">ACL / MCL Tear</div><div class="injury-solution">SEEK IMMEDIATE MEDICAL ATTENTION. This requires professional diagnosis via MRI and potentially surgical reconstruction. Do not attempt to exercise or bear weight. Follow RICE protocol until medical evaluation. Rehabilitation takes 6-12 months post-surgery. Follow doctor's rehabilitation plan strictly. High risk of re-injury without proper recovery.</div></div>
-      <div class="injury-card" style="border-color:var(--red-border);"><div class="injury-name">Severe Ligament Sprain (Grade 3)</div><div class="injury-solution">URGENT: Get immediate medical evaluation. Complete ligament tear may require surgical repair. Do not bear weight on affected limb. Use crutches and immobilization as directed. Follow RICE protocol. Consult orthopedic specialist within 24-48 hours. Recovery may take 3-6 months with surgery, longer without. Physical therapy essential.</div></div>
-      <div class="injury-card" style="border-color:var(--red-border);"><div class="injury-name">Stress Fracture</div><div class="injury-solution">SEEK MEDICAL EVALUATION IMMEDIATELY. X-ray or MRI needed for diagnosis. Complete rest from impact activities for 6-8 weeks minimum. May require walking boot or crutches. Non-weight bearing initially. Calcium and vitamin D supplementation. Address underlying causes (overtraining, nutrition, biomechanics). Gradual return to activity only after medical clearance.</div></div>
-      <div class="injury-card" style="border-color:var(--red-border);"><div class="injury-name">Acute Nerve Injury</div><div class="injury-solution">SEEK IMMEDIATE MEDICAL CARE. Do not apply pressure to affected area. Immobilize if possible. Go to emergency room for full neurological evaluation. May require imaging (MRI, nerve conduction studies). Treatment depends on severity and location. Some nerve injuries require surgical intervention. Follow-up with neurologist essential.</div></div>
-      <div class="injury-card" style="border-color:var(--red-border);"><div class="injury-name">Herniated Disc</div><div class="injury-solution">URGENT MEDICAL ATTENTION. Especially if experiencing numbness, tingling, or weakness in legs. MRI required for diagnosis. Conservative treatment: rest, physical therapy, pain management. May require epidural steroid injections. Surgery needed if severe symptoms or neurological deficits. Avoid heavy lifting and twisting. Recovery varies: 6 weeks to 6 months.</div></div>
-      <div class="injury-card" style="border-color:var(--red-border);"><div class="injury-name">Complete Muscle Tear</div><div class="injury-solution">IMMEDIATE MEDICAL EVALUATION REQUIRED. Often requires surgical repair depending on muscle and tear severity. Immobilize affected area. Apply ice. Elevate if possible. Do not attempt to use muscle. MRI and ultrasound needed for diagnosis. Post-surgery rehabilitation takes 3-6 months. Risk of permanent weakness if not treated properly.</div></div>
-      <div class="injury-card" style="border-color:var(--red-border);"><div class="injury-name">Severe Concussion</div><div class="injury-solution">EMERGENCY ROOM IMMEDIATELY if loss of consciousness, severe headache, vomiting, confusion, or worsening symptoms. Complete physical and cognitive rest required. No screens, reading, or stimulation initially. Gradual return-to-play protocol under medical supervision. May take weeks to months. Second impact syndrome can be fatal - do not return to sports without medical clearance.</div></div>
+      <div class="injury-card" style="border-color:var(--red-border)"><div class="injury-name">ACL / MCL Tear</div><div class="injury-solution">SEEK IMMEDIATE MEDICAL ATTENTION. Requires professional diagnosis via MRI and potentially surgical reconstruction. Do not exercise or bear weight. Rehabilitation takes 6-12 months post-surgery.</div></div>
+      <div class="injury-card" style="border-color:var(--red-border)"><div class="injury-name">Stress Fracture</div><div class="injury-solution">SEEK MEDICAL EVALUATION IMMEDIATELY. X-ray or MRI needed. Complete rest from impact activities for 6-8 weeks minimum. Gradual return to activity only after medical clearance.</div></div>
+      <div class="injury-card" style="border-color:var(--red-border)"><div class="injury-name">Severe Concussion</div><div class="injury-solution">EMERGENCY ROOM IMMEDIATELY if loss of consciousness, severe headache, vomiting, or confusion. Complete physical and cognitive rest. Never return to sports without medical clearance.</div></div>
     </div>
-
     <div class="emergency-box">
-      <div class="emergency-header">
-        <div class="emergency-icon">⚠️</div>
-        <div>
-          <div class="emergency-title">Emergency Protocol</div>
-          <div class="emergency-text">If experiencing severe pain, loss of consciousness, difficulty breathing, chest pain, suspected fracture, severe bleeding, or any life-threatening symptoms — seek immediate medical attention. Do not delay.</div>
-        </div>
-      </div>
+      <div class="emergency-header"><div class="emergency-icon">⚠️</div><div><div class="emergency-title">Emergency Protocol</div><div class="emergency-text">If experiencing severe pain, loss of consciousness, difficulty breathing, chest pain, suspected fracture, or severe bleeding — seek immediate medical attention. Do not delay.</div></div></div>
       <div class="emergency-btns">
-        <a href="tel:102" class="btn-emergency">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 11.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.06 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 5.45 5.45l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          Call 102 (Ambulance)
-        </a>
-        <a href="tel:108" class="btn-emergency">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          Call 108 (Emergency)
-        </a>
+        <a href="tel:102" class="btn-emergency"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 11.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.06 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 5.45 5.45l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call 102 (Ambulance)</a>
+        <a href="tel:108" class="btn-emergency"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Call 108 (Emergency)</a>
       </div>
     </div>
   </div>
 </div>
 
-<!-- INJURY DETAIL OVERLAY -->
 <div class="injury-overlay" id="injury-overlay" onclick="closeOverlay(event)">
   <div class="overlay-content" onclick="event.stopPropagation()">
     <button class="overlay-close" onclick="closeOverlay()">&times;</button>
     <h2 class="overlay-diagnosis" id="overlay-title"></h2>
-    <div class="overlay-section">
-      <div class="overlay-section-title">Symptoms</div>
-      <p class="overlay-text" id="overlay-symptoms"></p>
-    </div>
-    <div class="overlay-section">
-      <div class="overlay-section-title">Risk Factors</div>
-      <p class="overlay-text" id="overlay-risks"></p>
-    </div>
-    <div class="overlay-section">
-      <div class="overlay-section-title">The Protocol</div>
-      <ul class="protocol-list" id="overlay-protocol"></ul>
-    </div>
+    <div class="overlay-section"><div class="overlay-section-title">Symptoms</div><p class="overlay-text" id="overlay-symptoms"></p></div>
+    <div class="overlay-section"><div class="overlay-section-title">Risk Factors</div><p class="overlay-text" id="overlay-risks"></p></div>
+    <div class="overlay-section"><div class="overlay-section-title">The Protocol</div><ul class="protocol-list" id="overlay-protocol"></ul></div>
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-  /* ────────────────────────────────────────────────
-     STORAGE HELPERS
-  ──────────────────────────────────────────────── */
-  const LS = {
-    get: (k, fb) => { try { const v = localStorage.getItem(k); return v !== null ? JSON.parse(v) : fb; } catch { return fb; } },
-    set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
-    del: (k) => { try { localStorage.removeItem(k); } catch {} }
-  };
+/* ════════════════════════════════════════════════════════
+   WAIT FOR FIREBASE THEN BOOT
+════════════════════════════════════════════════════════ */
+let FB = null;
+let currentUser = null;
+let activities  = [];
+let customGoals = [];
+let pendingGoogleUser = null;
 
-  /* ────────────────────────────────────────────────
-     AUTH STATE
-     iron_users  → [{ name, email, password, bodyWeight }]
-     iron_session → currently logged-in email
-     Per-user keys: iron_acts_{email}, iron_goals_{email}
-  ──────────────────────────────────────────────── */
-  let currentUser = null;
-  let activities = [];
-  let customGoals = [];
+window.addEventListener('fb-ready', () => {
+  FB = window._FB;
+  bootAuth();
+});
 
-  function userKey(email, type) { return `iron_${type}_${email.toLowerCase()}`; }
-  function loadUserData(email) {
-    activities  = LS.get(userKey(email, 'acts'), []);
-    customGoals = LS.get(userKey(email, 'goals'), []);
+/* ════════════════════════════════════════════════════════
+   AUTH — 3D CARD TILT
+════════════════════════════════════════════════════════ */
+const wrap = document.getElementById('auth-card-wrap');
+const box  = document.getElementById('login-box');
+wrap.addEventListener('mousemove', e => {
+  const r  = wrap.getBoundingClientRect();
+  const x  = e.clientX - r.left;
+  const y  = e.clientY - r.top;
+  const cx = r.width / 2, cy = r.height / 2;
+  const rotX = ((y - cy) / cy) * -10;
+  const rotY = ((x - cx) / cx) * 10;
+  box.style.transform = `perspective(1200px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+});
+wrap.addEventListener('mouseleave', () => {
+  box.style.transition = 'transform 0.6s ease';
+  box.style.transform  = 'perspective(1200px) rotateX(0) rotateY(0)';
+  setTimeout(() => box.style.transition = 'transform 0.12s ease,box-shadow 0.12s ease', 600);
+});
+
+/* ════════════════════════════════════════════════════════
+   AUTH TABS
+════════════════════════════════════════════════════════ */
+function switchTab(tab) {
+  ['signin','signup','complete-profile'].forEach(p => {
+    document.getElementById('panel-' + p).classList.toggle('active', p === tab);
+  });
+  document.getElementById('tab-signin').classList.toggle('active', tab === 'signin');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('signin-error').textContent = '';
+  document.getElementById('signup-error').textContent = '';
+  pendingGoogleUser = null;
+}
+
+function showLoading(msg = 'Signing in...') {
+  document.getElementById('spinner-text').textContent = msg;
+  document.getElementById('auth-loading').classList.add('show');
+}
+function hideLoading() {
+  document.getElementById('auth-loading').classList.remove('show');
+}
+
+/* ════════════════════════════════════════════════════════
+   FIRESTORE HELPERS
+════════════════════════════════════════════════════════ */
+async function saveUserProfile(uid, data) {
+  await FB.setDoc(FB.doc(FB.db, 'users', uid), data, { merge: true });
+}
+async function getUserProfile(uid) {
+  const snap = await FB.getDoc(FB.doc(FB.db, 'users', uid));
+  return snap.exists() ? snap.data() : null;
+}
+async function loadActivities(uid) {
+  const q   = FB.query(FB.collection(FB.db, 'users', uid, 'activities'), FB.orderBy('timestamp', 'desc'));
+  const snap = await FB.getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+async function addActivity(uid, act) {
+  const ref = await FB.addDoc(FB.collection(FB.db, 'users', uid, 'activities'), act);
+  return ref.id;
+}
+async function loadGoals(uid) {
+  const snap = await FB.getDocs(FB.collection(FB.db, 'users', uid, 'goals'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+async function addGoalDB(uid, goal) {
+  const ref = await FB.addDoc(FB.collection(FB.db, 'users', uid, 'goals'), goal);
+  return ref.id;
+}
+async function deleteGoalDB(uid, goalId) {
+  await FB.deleteDoc(FB.doc(FB.db, 'users', uid, 'goals', goalId));
+}
+
+/* ════════════════════════════════════════════════════════
+   SIGN IN — EMAIL
+════════════════════════════════════════════════════════ */
+async function signInEmail() {
+  const email    = document.getElementById('si-email').value.trim();
+  const password = document.getElementById('si-password').value;
+  const errEl    = document.getElementById('signin-error');
+  if (!email || !password) { errEl.textContent = 'Email and password are required.'; return; }
+  showLoading('Signing in...');
+  try {
+    await FB.signInWithEmailAndPassword(FB.auth, email, password);
+    // onAuthStateChanged handles the rest
+  } catch(e) {
+    hideLoading();
+    errEl.textContent = friendlyError(e.code);
   }
-  function saveActivities()  { LS.set(userKey(currentUser.email, 'acts'),  activities); }
-  function saveGoals()       { LS.set(userKey(currentUser.email, 'goals'), customGoals); }
+}
 
-  /* ────────────────────────────────────────────────
-     AUTH TABS
-  ──────────────────────────────────────────────── */
-  function switchTab(tab) {
-    document.getElementById('tab-signin').classList.toggle('active', tab === 'signin');
-    document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
-    document.getElementById('panel-signin').classList.toggle('active', tab === 'signin');
-    document.getElementById('panel-signup').classList.toggle('active', tab === 'signup');
-    document.getElementById('signin-error').textContent = '';
-    document.getElementById('signup-error').textContent = '';
+/* ════════════════════════════════════════════════════════
+   SIGN UP — EMAIL
+════════════════════════════════════════════════════════ */
+async function signUpEmail() {
+  const name   = document.getElementById('su-name').value.trim();
+  const email  = document.getElementById('su-email').value.trim();
+  const pw     = document.getElementById('su-password').value;
+  const bw     = parseFloat(document.getElementById('su-bodyweight').value);
+  const errEl  = document.getElementById('signup-error');
+  if (!name)              { errEl.textContent = 'Name is required.'; return; }
+  if (!email)             { errEl.textContent = 'Email is required.'; return; }
+  if (pw.length < 6)      { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+  if (!bw || bw < 30)     { errEl.textContent = 'Enter a valid body weight (min 30 kg).'; return; }
+  showLoading('Creating account...');
+  try {
+    const cred = await FB.createUserWithEmailAndPassword(FB.auth, email, pw);
+    await saveUserProfile(cred.user.uid, { name, email, bodyWeight: bw, provider: 'email', createdAt: Date.now() });
+    // onAuthStateChanged fires and loads the app
+  } catch(e) {
+    hideLoading();
+    errEl.textContent = friendlyError(e.code);
   }
+}
 
-  /* ────────────────────────────────────────────────
-     SIGN UP
-  ──────────────────────────────────────────────── */
-  function signUp() {
-    const name       = document.getElementById('su-name').value.trim();
-    const email      = document.getElementById('su-email').value.trim().toLowerCase();
-    const password   = document.getElementById('su-password').value;
-    const bodyWeight = parseFloat(document.getElementById('su-bodyweight').value);
-    const errEl      = document.getElementById('signup-error');
-
-    if (!name)                          { errEl.textContent = 'Name is required.'; return; }
-    if (!email || !email.includes('@')) { errEl.textContent = 'Enter a valid email.'; return; }
-    if (password.length < 4)           { errEl.textContent = 'Password must be at least 4 characters.'; return; }
-    if (!bodyWeight || bodyWeight < 30) { errEl.textContent = 'Enter a valid body weight (min 30 kg).'; return; }
-
-    const users = LS.get('iron_users', []);
-    if (users.find(u => u.email === email)) {
-      errEl.textContent = 'An account with this email already exists. Sign in instead.';
-      return;
-    }
-
-    const newUser = { name, email, password, bodyWeight };
-    users.push(newUser);
-    LS.set('iron_users', users);
-    LS.set('iron_session', email);
-
-    currentUser = newUser;
-    loadUserData(email);
-    finishLogin();
-    showToast('Welcome to the Iron Palace, ' + name + '!');
-  }
-
-  /* ────────────────────────────────────────────────
-     SIGN IN
-  ──────────────────────────────────────────────── */
-  function signIn() {
-    const email    = document.getElementById('si-email').value.trim().toLowerCase();
-    const password = document.getElementById('si-password').value;
-    const errEl    = document.getElementById('signin-error');
-
-    if (!email || !password) { errEl.textContent = 'Email and password are required.'; return; }
-
-    const users = LS.get('iron_users', []);
-    const user  = users.find(u => u.email === email && u.password === password);
-
-    if (!user) {
-      errEl.textContent = 'Incorrect email or password.';
-      return;
-    }
-
-    LS.set('iron_session', email);
-    currentUser = user;
-    loadUserData(email);
-    finishLogin();
-    showToast('Welcome back, ' + user.name + '!');
-  }
-
-  /* ────────────────────────────────────────────────
-     LOGOUT
-  ──────────────────────────────────────────────── */
-  function logout() {
-    if (!confirm('Are you sure you want to logout?')) return;
-    stopRecording();
-    LS.del('iron_session');
-    currentUser = null;
-    activities  = [];
-    customGoals = [];
-    location.reload();
-  }
-
-  /* ────────────────────────────────────────────────
-     FINISH LOGIN → SHOW APP
-  ──────────────────────────────────────────────── */
-  function finishLogin() {
-    document.getElementById('login-overlay').classList.add('hidden');
-    initApp();
-  }
-
-  function initApp() {
-    if (!currentUser) return;
-    document.getElementById('user-name-display').textContent = currentUser.name;
-    document.getElementById('user-bw-display').textContent =
-      currentUser.bodyWeight ? `Body Weight: ${currentUser.bodyWeight} kg` : '';
-    renderDashboard();
-    renderGoals();
-    renderTracks();
-    renderRecovery();
-  }
-
-  /* ────────────────────────────────────────────────
-     MET VALUES
-  ──────────────────────────────────────────────── */
-  const MET_VALUES = {
-    weightlifting: 6.0, running: 9.8, walking: 3.5,
-    cycling: 7.5, swimming: 9.0, yoga: 3.0, hiit: 10.0, sports: 8.0
-  };
-
-  function calculateCalories(type, duration, bodyWeight) {
-    const bw  = bodyWeight || currentUser?.bodyWeight || 70;
-    const met = MET_VALUES[type] || 6.0;
-    return Math.round(met * bw * (duration / 60));
-  }
-
-  /* ────────────────────────────────────────────────
-     RECORDING TIMER
-  ──────────────────────────────────────────────── */
-  let recordingInterval = null;
-  let recordStartTime   = null;
-  let recordedSeconds   = 0;
-  let isRecording       = false;
-
-  function toggleRecording() {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
-  }
-
-  function startRecording() {
-    if (isRecording) return;
-    isRecording     = true;
-    recordStartTime = Date.now() - recordedSeconds * 1000; // resume support
-    recordingInterval = setInterval(updateRecordDisplay, 1000);
-
-    const btn    = document.getElementById('btn-record');
-    const dot    = document.getElementById('record-dot');
-    const status = document.getElementById('record-status-text');
-    const statEl = document.getElementById('record-status');
-
-    btn.textContent    = '■  Stop Recording';
-    btn.classList.add('recording');
-    dot.classList.add('active');
-    statEl.classList.add('recording');
-    status.textContent = 'Recording';
-  }
-
-  function stopRecording() {
-    if (!isRecording) return;
-    clearInterval(recordingInterval);
-    isRecording = false;
-
-    if (recordStartTime) {
-      recordedSeconds = Math.floor((Date.now() - recordStartTime) / 1000);
-    }
-
-    const btn    = document.getElementById('btn-record');
-    const dot    = document.getElementById('record-dot');
-    const status = document.getElementById('record-status-text');
-    const statEl = document.getElementById('record-status');
-
-    btn.textContent = '▶  Start Recording';
-    btn.classList.remove('recording');
-    dot.classList.remove('active');
-    statEl.classList.remove('recording');
-
-    const mins = Math.floor(recordedSeconds / 60);
-    const secs = recordedSeconds % 60;
-    status.textContent = `Stopped — ${mins}m ${secs}s logged`;
-    updateRecordDisplay();
-  }
-
-  function updateRecordDisplay() {
-    const elapsed = isRecording
-      ? Math.floor((Date.now() - recordStartTime) / 1000)
-      : recordedSeconds;
-    const h = Math.floor(elapsed / 3600);
-    const m = Math.floor((elapsed % 3600) / 60);
-    const s = elapsed % 60;
-    document.getElementById('record-time').textContent =
-      `${pad(h)}:${pad(m)}:${pad(s)}`;
-  }
-
-  function pad(n) { return String(n).padStart(2, '0'); }
-
-  function resetRecorder() {
-    stopRecording();
-    recordedSeconds = 0;
-    recordStartTime = null;
-    document.getElementById('record-time').textContent = '00:00:00';
-    document.getElementById('record-status-text').textContent = 'Ready';
-    document.getElementById('record-status').classList.remove('recording');
-    document.getElementById('record-dot').classList.remove('active');
-    document.getElementById('btn-record').textContent = '▶  Start Recording';
-    document.getElementById('btn-record').classList.remove('recording');
-  }
-
-  /* ────────────────────────────────────────────────
-     WEIGHT LIFTING WARNING
-  ──────────────────────────────────────────────── */
-  function checkLiftingWarning() {
-    const liftingKg  = parseFloat(document.getElementById('activity-lifting-weight').value);
-    const bodyWeight = currentUser?.bodyWeight || 0;
-    const warnEl     = document.getElementById('weight-warning');
-    const warnTitle  = document.getElementById('weight-warning-title');
-    const warnText   = document.getElementById('weight-warning-text');
-
-    // Remove all classes
-    warnEl.className = 'weight-warning';
-
-    if (!liftingKg || liftingKg <= 0) return;
-
-    // No body weight stored — just validate the number
-    if (!bodyWeight) {
-      if (liftingKg > 300) {
-        warnEl.classList.add('visible', 'warn-red');
-        warnTitle.textContent = '🚨 Extreme Load';
-        warnText.textContent = 'This is an exceptionally high weight. Ensure this is intentional and you have expert spotters.';
+/* ════════════════════════════════════════════════════════
+   SIGN IN — GOOGLE
+════════════════════════════════════════════════════════ */
+async function signInGoogle() {
+  showLoading('Opening Google...');
+  try {
+    const result = await FB.signInWithPopup(FB.auth, FB.gProvider);
+    const user   = result.auth.currentUser || result.user;
+    const uid    = user.uid;
+    // Check if profile already exists
+    const profile = await getUserProfile(uid);
+    if (!profile) {
+      // New Google user — ask for body weight
+      hideLoading();
+      pendingGoogleUser = { uid, name: user.displayName || 'Athlete', email: user.email, photo: user.photoURL };
+      document.getElementById('google-display-name').textContent  = pendingGoogleUser.name;
+      document.getElementById('google-display-email').textContent = pendingGoogleUser.email;
+      const avatarWrap = document.getElementById('google-avatar-wrap');
+      if (pendingGoogleUser.photo) {
+        avatarWrap.innerHTML = `<img class="google-avatar" src="${pendingGoogleUser.photo}" onerror="this.parentElement.textContent='G'"/>`;
+      } else {
+        avatarWrap.textContent = pendingGoogleUser.name[0].toUpperCase();
       }
-      return;
+      ['signin','signup'].forEach(p => document.getElementById('panel-' + p).classList.remove('active'));
+      document.getElementById('panel-complete-profile').classList.add('active');
+      ['tab-signin','tab-signup'].forEach(t => document.getElementById(t).classList.remove('active'));
     }
-
-    const ratio = liftingKg / bodyWeight;
-
-    if (ratio > 2.5) {
-      warnEl.classList.add('visible', 'warn-red');
-      warnTitle.textContent = '🚨 Danger — Extreme Overload';
-      warnText.textContent = `${liftingKg} kg is ${(ratio).toFixed(1)}× your body weight (${bodyWeight} kg). This is an extreme load that poses serious injury risk. Only elite, experienced athletes should attempt weights at this ratio. Mandatory use of a professional spotter and proper safety equipment required.`;
-    } else if (ratio > 1.5) {
-      warnEl.classList.add('visible', 'warn-yellow');
-      warnTitle.textContent = '⚠️ Heavy Load — Proceed with Caution';
-      warnText.textContent = `${liftingKg} kg is ${(ratio).toFixed(1)}× your body weight (${bodyWeight} kg). This is a heavy load. Use a spotter, prioritise form over weight, and only attempt if you have significant experience with this lift.`;
-    } else if (ratio > 1.0) {
-      warnEl.classList.add('visible', 'warn-yellow');
-      warnTitle.textContent = '⚡ Moderate-Heavy Load';
-      warnText.textContent = `${liftingKg} kg exceeds your body weight (${bodyWeight} kg). This is doable but demands strict form. Warm up properly and consider a spotter for safety.`;
-    }
-    // Under 1× body weight — no warning needed
-  }
-
-  /* ────────────────────────────────────────────────
-     ACTIVITY FORM
-  ──────────────────────────────────────────────── */
-  function onActivityTypeChange() {
-    const type = document.getElementById('activity-type').value;
-    const wlGroup = document.getElementById('lifting-weight-group');
-    wlGroup.style.display = (type === 'weightlifting') ? 'block' : 'none';
-    // hide warning if switching away
-    if (type !== 'weightlifting') {
-      document.getElementById('weight-warning').className = 'weight-warning';
+    // If profile exists, onAuthStateChanged handles it
+  } catch(e) {
+    hideLoading();
+    if (e.code !== 'auth/popup-closed-by-user') {
+      showToast('Google sign-in failed. ' + friendlyError(e.code), true);
     }
   }
+}
 
-  function toggleActivityForm() {
-    const form = document.getElementById('activity-form');
-    const isVisible = form.classList.contains('visible');
-    if (isVisible) {
-      cancelActivityForm();
-    } else {
-      form.classList.add('visible');
-      resetRecorder();
-      document.getElementById('activity-lifting-weight').value = '';
-      document.getElementById('weight-warning').className = 'weight-warning';
-      onActivityTypeChange(); // set correct field visibility
-    }
-  }
+async function completeProfile(skip = false) {
+  if (!pendingGoogleUser) return;
+  const bw    = skip ? null : parseFloat(document.getElementById('cp-bodyweight').value);
+  const errEl = document.getElementById('cp-error');
+  if (!skip && (!bw || bw < 30)) { errEl.textContent = 'Enter a valid body weight (min 30 kg) or tap Skip.'; return; }
+  showLoading('Setting up your palace...');
+  await saveUserProfile(pendingGoogleUser.uid, {
+    name: pendingGoogleUser.name, email: pendingGoogleUser.email,
+    bodyWeight: bw || null, provider: 'google', createdAt: Date.now()
+  });
+  pendingGoogleUser = null;
+  // onAuthStateChanged now fires and loads the app
+}
 
-  function cancelActivityForm() {
-    stopRecording();
-    resetRecorder();
-    document.getElementById('activity-form').classList.remove('visible');
-  }
-
-  function logActivity() {
-    const type = document.getElementById('activity-type').value;
-
-    // Use recorded time
-    const elapsed = isRecording
-      ? Math.floor((Date.now() - recordStartTime) / 1000)
-      : recordedSeconds;
-
-    if (elapsed < 10) {
-      showToast('Record at least 10 seconds of activity first!', true);
-      return;
-    }
-
-    const duration      = Math.max(1, Math.round(elapsed / 60)); // in minutes, min 1
-    const liftingWeight = type === 'weightlifting'
-      ? (parseFloat(document.getElementById('activity-lifting-weight').value) || null)
-      : null;
-
-    const calories = calculateCalories(type, duration);
-
-    const activity = {
-      type, duration, liftingWeight,
-      bodyWeight: currentUser?.bodyWeight || 70,
-      calories, timestamp: new Date().toISOString()
-    };
-
-    // If still recording, stop it
-    stopRecording();
-
-    activities.push(activity);
-    saveActivities();
-
-    cancelActivityForm();
-    renderDashboard();
-    renderTracks();
-    renderRecovery();
-
-    const liftStr = liftingWeight ? ` • ${liftingWeight} kg lifted` : '';
-    showToast(`${duration} min ${type} logged • ${calories} cal${liftStr}`);
-  }
-
-  /* ────────────────────────────────────────────────
-     GOAL FORM
-  ──────────────────────────────────────────────── */
-  function toggleGoalForm() {
-    document.getElementById('goal-form').classList.toggle('visible');
-  }
-
-  function createGoal() {
-    const title   = document.getElementById('goal-title').value.trim();
-    const desc    = document.getElementById('goal-desc').value.trim();
-    const target  = parseInt(document.getElementById('goal-target').value);
-    const current = parseInt(document.getElementById('goal-current').value) || 0;
-
-    if (!title || !desc || !target) { showToast('Please fill all fields', true); return; }
-
-    customGoals.push({ id: Date.now(), title, desc, target, current });
-    saveGoals();
-
-    document.getElementById('goal-form').classList.remove('visible');
-    ['goal-title','goal-desc','goal-target','goal-current'].forEach(id => document.getElementById(id).value = '');
-    renderGoals();
-    showToast('Goal created');
-  }
-
-  function deleteGoal(id) {
-    if (!confirm('Delete this goal?')) return;
-    customGoals = customGoals.filter(g => g.id !== id);
-    saveGoals();
-    renderGoals();
-    showToast('Goal deleted');
-  }
-
-  /* ────────────────────────────────────────────────
-     UTILITY
-  ──────────────────────────────────────────────── */
-  function toDateStr(d) { return d.toISOString().slice(0,10); }
-  function today()      { return toDateStr(new Date()); }
-  function formatDate(iso) {
-    return new Date(iso).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
-  }
-  function showToast(msg, isError = false) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className   = 'show' + (isError ? ' error' : '');
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => { t.className = ''; }, 2800);
-  }
-  function calcStreak() {
-    if (!activities.length) return 0;
-    const days = [...new Set(activities.map(a => toDateStr(new Date(a.timestamp))))].sort().reverse();
-    const todayStr = today();
-    const yest     = toDateStr(new Date(Date.now() - 86400000));
-    if (days[0] !== todayStr && days[0] !== yest) return 0;
-    let streak = 0, expected = new Date(days[0]);
-    for (const d of days) {
-      if (toDateStr(expected) === d) { streak++; expected = new Date(+expected - 86400000); }
-      else break;
-    }
-    return streak;
-  }
-
-  /* ────────────────────────────────────────────────
-     RENDER DASHBOARD
-  ──────────────────────────────────────────────── */
-  function renderDashboard() {
-    const todayStr     = today();
-    const weekAgo      = Date.now() - 7 * 86400000;
-    const todayActs    = activities.filter(a => toDateStr(new Date(a.timestamp)) === todayStr);
-    const weekActs     = activities.filter(a => new Date(a.timestamp) >= weekAgo);
-    const todayWeight  = todayActs.filter(a => a.type === 'weightlifting').reduce((s,a) => s + a.duration, 0);
-    const todayCardio  = todayActs.filter(a => ['running','walking','cycling','swimming'].includes(a.type)).reduce((s,a) => s + a.duration, 0);
-    const todayCal     = todayActs.reduce((s,a) => s + a.calories, 0);
-
-    document.getElementById('stat-weight').textContent   = todayWeight;
-    document.getElementById('stat-cardio').textContent   = todayCardio;
-    document.getElementById('stat-calories').textContent = todayCal;
-    document.getElementById('stat-week').textContent     = weekActs.length;
-    document.getElementById('streak-display').textContent = calcStreak();
-
-    const sorted   = [...activities].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-    const archiveEl = document.getElementById('archive-list');
-
-    if (!sorted.length) {
-      archiveEl.innerHTML = '<div class="empty-state">No activities logged yet</div>';
-      return;
-    }
-    archiveEl.innerHTML = sorted.slice(0,10).map(a => {
-      const d       = new Date(a.timestamp);
-      const liftStr = a.liftingWeight ? `<span>•</span><span>${a.liftingWeight} kg lifted</span>` : '';
-      return `
-        <div class="archive-item">
-          <div class="archive-header">
-            <div>
-              <div class="archive-date">${formatDate(a.timestamp)}</div>
-              <div class="archive-time">${d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</div>
-            </div>
-            <div class="archive-type">${a.type.toUpperCase()}</div>
-          </div>
-          <div class="archive-details">
-            <span>${a.duration} min</span>
-            <span>•</span>
-            <span>${a.calories} cal</span>
-            ${liftStr}
-          </div>
-        </div>`;
-    }).join('');
-  }
-
-  /* ────────────────────────────────────────────────
-     RENDER TRACKS
-  ──────────────────────────────────────────────── */
-  function renderTracks() {
-    const monthAgo     = Date.now() - 30 * 86400000;
-    const monthActs    = activities.filter(a => new Date(a.timestamp) >= monthAgo);
-    const totalCal     = activities.reduce((s,a) => s + a.calories, 0);
-    const weeks        = Math.max(1, Math.floor(activities.length > 0 ? (Date.now() - new Date(activities[0].timestamp)) / (7*86400000) : 1));
-    const avgPerWeek   = Math.round(activities.length / weeks);
-
-    document.getElementById('track-total').textContent   = activities.length;
-    document.getElementById('track-month').textContent   = monthActs.length;
-    document.getElementById('track-calories').textContent = totalCal;
-    document.getElementById('track-avg').textContent     = avgPerWeek;
-
-    const sorted = [...activities].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-    const el     = document.getElementById('tracks-list');
-
-    if (!sorted.length) { el.innerHTML = '<div class="empty-state">No sessions recorded yet</div>'; return; }
-
-    el.innerHTML = sorted.map(a => {
-      const liftStr = a.liftingWeight ? ` • ${a.liftingWeight} kg lifted` : '';
-      return `
-        <div class="track-item">
-          <div class="track-date">${formatDate(a.timestamp)}</div>
-          <div class="track-day">${a.type} • ${a.duration} min • ${a.calories} cal${liftStr}</div>
-        </div>`;
-    }).join('');
-  }
-
-  /* ────────────────────────────────────────────────
-     RENDER RECOVERY
-  ──────────────────────────────────────────────── */
-  function renderRecovery() {
-    const last7Days    = Date.now() - 7 * 86400000;
-    const recentActs   = activities.filter(a => new Date(a.timestamp) >= last7Days);
-    const warnings     = [];
-
-    if (recentActs.length >= 7) warnings.push({ title: '⚠️ Overtraining Risk Detected', text: 'You have trained 7+ days in a row. Consider taking a rest day to prevent injury and allow muscle recovery. Overtraining can lead to fatigue, decreased performance, and increased injury risk.' });
-
-    const last3 = recentActs.slice(-3);
-    if (last3.length === 3 && last3.every(a => a.type === 'weightlifting')) {
-      warnings.push({ title: '⚠️ Muscle Group Fatigue Warning', text: 'You have done weightlifting 3 days in a row. Same muscle groups need 48-72 hours recovery. Consider alternating with cardio or taking a rest day to prevent overuse injuries.' });
-    }
-
-    const weekMins = recentActs.reduce((s,a) => s + a.duration, 0);
-    if (weekMins > 600) warnings.push({ title: '⚠️ High Training Volume', text: `You have logged ${weekMins} minutes this week (10+ hours). Ensure adequate sleep, nutrition, and hydration. Monitor for signs of fatigue or decreased performance.` });
-
-    const warningsEl = document.getElementById('warnings-section');
-    warningsEl.innerHTML = warnings.length
-      ? warnings.map(w => `<div class="warning-card"><div class="warning-title">${w.title}</div><div class="warning-text">${w.text}</div></div>`).join('')
-      : '<div class="recovery-card"><div class="goal-title">✓ No Injury Risks Detected</div><div class="goal-desc">Your training volume and frequency are within safe limits. Keep maintaining this balance!</div></div>';
-
-    const daysSinceRest = calcDaysSinceRest();
-    let restSuggestion  = '';
-    if (daysSinceRest >= 7)      restSuggestion = `🛑 URGENT: You haven't taken a rest day in ${daysSinceRest} days. Take a complete rest day tomorrow to prevent burnout and injury.`;
-    else if (daysSinceRest >= 5) restSuggestion = `⚠️ RECOMMENDED: Consider taking a rest day within the next 2 days. You've trained ${daysSinceRest} consecutive days.`;
-    else if (daysSinceRest >= 3) restSuggestion = `You've trained ${daysSinceRest} days in a row. Monitor how you feel. If experiencing fatigue or soreness, take a rest day.`;
-    else                          restSuggestion = 'Your rest pattern looks good! Continue balancing training with recovery days for optimal results.';
-    document.getElementById('rest-suggestion').textContent = restSuggestion;
-
-    const recoveryPct = Math.max(0, Math.min(100, 100 - daysSinceRest * 15));
-    document.getElementById('recovery-percent').textContent = recoveryPct + '%';
-    document.getElementById('recovery-bar').style.width     = recoveryPct + '%';
-
-    let rs = '';
-    if (recoveryPct >= 80)      rs = 'Well rested! Your body is recovered and ready for intense training. This is optimal for performance and muscle growth.';
-    else if (recoveryPct >= 50) rs = 'Moderately recovered. You can continue training but monitor fatigue levels.';
-    else                         rs = 'Low recovery status. Your body needs rest. Take 1-2 complete rest days.';
-    document.getElementById('recovery-status').textContent = rs;
-  }
-
-  function calcDaysSinceRest() {
-    if (!activities.length) return 0;
-    const days     = [...new Set(activities.map(a => toDateStr(new Date(a.timestamp))))].sort().reverse();
-    const todayStr = today();
-    if (days[0] !== todayStr) return 0;
-    let count = 0, expected = new Date(todayStr);
-    for (const d of days) {
-      if (toDateStr(expected) === d) { count++; expected = new Date(+expected - 86400000); }
-      else break;
-    }
-    return count;
-  }
-
-  /* ────────────────────────────────────────────────
-     RENDER GOALS
-  ──────────────────────────────────────────────── */
-  function renderGoals() {
-    const total    = activities.length;
-    const weekAgo  = Date.now() - 7 * 86400000;
-    const thisWeek = activities.filter(a => new Date(a.timestamp) >= weekAgo).length;
-    const streak   = calcStreak();
-
-    const defaultGoals = [
-      { title: 'Weekly Consistency', desc: 'Log at least 5 workouts per week', pct: Math.min(100, Math.round((thisWeek/5)*100)) },
-      { title: '30-Day Streak', desc: 'Maintain a 30-day consecutive streak', pct: Math.min(100, Math.round((streak/30)*100)) },
-      { title: '100 Total Sessions', desc: 'Reach 100 total workout sessions', pct: Math.min(100, Math.round((total/100)*100)) },
-    ];
-
-    const customCards = customGoals.map(g => {
-      const pct = Math.min(100, Math.round((g.current/g.target)*100));
-      return `<div class="goal-card"><button class="btn-delete-goal" onclick="deleteGoal(${g.id})">Delete</button><div class="goal-title">${g.title}</div><div class="goal-desc">${g.desc}</div><div class="progress-row"><span class="label">Progress: ${g.current} / ${g.target}</span><span style="font-family:'Playfair Display',serif;font-size:14px;">${pct}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>`;
-    }).join('');
-
-    const defaultCards = defaultGoals.map(g => `<div class="goal-card"><div class="goal-title">${g.title}</div><div class="goal-desc">${g.desc}</div><div class="progress-row"><span class="label">Progress</span><span style="font-family:'Playfair Display',serif;font-size:14px;">${g.pct}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${g.pct}%"></div></div></div>`).join('');
-
-    document.getElementById('goals-list').innerHTML = customCards + defaultCards;
-  }
-
-  /* ────────────────────────────────────────────────
-     INJURY DETAIL OVERLAY
-  ──────────────────────────────────────────────── */
-  const injuryData = {
-    shoulder: { title:"Rotator Cuff Injury", symptoms:"Pain when lifting arm overhead, weakness in shoulder, difficulty sleeping on affected side, clicking or popping sounds, limited range of motion. Often caused by overhead movements or repetitive stress.", risks:"Increases risk of: frozen shoulder, arthritis, chronic pain, permanent weakness. Common in athletes, swimmers, weightlifters. Age 40+ at higher risk. Improper form and overuse are primary causes.", protocol:["Rest and avoid overhead activities for 2-3 weeks. Apply ice for 15-20 minutes every 2-3 hours to reduce inflammation.","Perform gentle pendulum exercises and wall walks to maintain mobility. Start with 2-3 sets of 10 reps daily, gradually increasing range.","Strengthen with resistance bands once pain subsides. Focus on external rotation and scapular stabilization exercises. Consult physical therapist if pain persists beyond 2 weeks."] },
-    elbow: { title:"Tennis/Golfer's Elbow", symptoms:"Pain on outer (tennis) or inner (golfer's) elbow, weakness in grip strength, pain when lifting objects or shaking hands, stiffness in the morning, burning sensation along forearm.", risks:"Risk of chronic tendon degeneration, permanent grip weakness, difficulty with daily activities. Common in racket sports, golf, weightlifting. Overuse and poor technique are main causes.", protocol:["Rest from aggravating activities and apply ice 3-4 times daily for 15 minutes. Use compression sleeve or brace during activities to reduce strain on tendons.","Perform wrist flexor and extensor stretches holding each for 30 seconds, repeat 3 times daily. Use eccentric strengthening exercises with light weights once acute pain subsides.","Gradually return to activities with modified technique and lighter resistance. Consider forearm massage and use proper grip technique. Consult doctor if no improvement after 6 weeks."] },
-    wrist: { title:"Wrist Strain / Carpal Tunnel", symptoms:"Numbness or tingling in thumb, index, and middle fingers, pain radiating to forearm, weakness in hand grip, dropping objects frequently, worse at night or after repetitive use.", risks:"May lead to permanent nerve damage, chronic pain, loss of hand function. Common in office workers, gamers, athletes. Prolonged computer use and repetitive motions increase risk significantly.", protocol:["Wear wrist splint at night to keep wrist in neutral position. Take frequent breaks from repetitive activities every 30 minutes to rest and stretch hands.","Perform nerve gliding exercises 3 times daily: make fist, then extend fingers and bend wrist back, hold 5 seconds. Ice wrist after activities if inflamed.","Adjust workstation ergonomics: keyboard at elbow height, neutral wrist position. If symptoms persist or worsen after 2 weeks, consult doctor for possible corticosteroid injection or surgery evaluation."] },
-    back: { title:"Lower Back (Lumbar) Strain", symptoms:"Dull ache or sharp pain in lower back, muscle spasms, stiffness especially in morning, pain worsens with bending or twisting, difficulty standing up straight, pain may radiate to buttocks.", risks:"Can lead to chronic back pain, disc herniation, sciatica, mobility limitations. Poor lifting technique, weak core, and prolonged sitting are major risk factors. Very common injury.", protocol:["Avoid bed rest beyond 1-2 days. Apply ice first 48 hours, then alternate with heat. Maintain gentle activity like walking 10-15 minutes every few hours to prevent stiffness.","Perform pelvic tilts, knee-to-chest stretches, and cat-cow stretches 2-3 times daily. Focus on core strengthening with planks and bird dogs once acute pain subsides.","Use proper lifting technique: bend knees, keep back straight, hold object close. Sleep on side with pillow between knees. See doctor if pain persists beyond 2 weeks or radiates down leg with numbness."] },
-    knee: { title:"Patellar Tendonitis / Runner's Knee", symptoms:"Pain below or around kneecap, especially when jumping, running, or climbing stairs. Swelling or stiffness, tenderness to touch, pain worsens with activity and improves with rest, clicking sensation.", risks:"Can progress to chronic tendinopathy, patellar tracking issues, arthritis. Common in runners, jumpers, cyclists. Overtraining and poor biomechanics increase risk significantly.", protocol:["Rest from high-impact activities for 1-2 weeks. Ice knee for 15-20 minutes after activities. Use patellar strap or knee sleeve for compression and support during activities.","Strengthen quadriceps and hamstrings with leg extensions, hamstring curls, and wall sits. Hold stretches for hip flexors, quads, and IT band for 30 seconds, 3 times daily.","Gradually return to activity with low-impact exercises like swimming or cycling. Ensure proper footwear with good arch support. If pain persists or knee gives out, consult orthopedic specialist immediately."] }
-  };
-
-  function showInjuryDetail(type) {
-    const data = injuryData[type];
-    if (!data) return;
-    document.getElementById('overlay-title').textContent    = data.title;
-    document.getElementById('overlay-symptoms').textContent = data.symptoms;
-    document.getElementById('overlay-risks').textContent    = data.risks;
-    document.getElementById('overlay-protocol').innerHTML   = data.protocol.map(p => `<li>${p}</li>`).join('');
-    document.getElementById('injury-overlay').classList.add('visible');
-    document.querySelectorAll('.hit-zone').forEach(z => z.classList.remove('active'));
-    event.target.classList.add('active');
-  }
-
-  function closeOverlay(event) {
-    if (!event || event.target.id === 'injury-overlay' || event.target.classList.contains('overlay-close')) {
-      document.getElementById('injury-overlay').classList.remove('visible');
-      document.querySelectorAll('.hit-zone').forEach(z => z.classList.remove('active'));
-    }
-  }
-
-  function toggleCategory(cat) {
-    const list    = document.getElementById('list-' + cat);
-    const chevron = document.getElementById('chevron-' + cat);
-    const isOpen  = list.classList.contains('open');
-    list.classList.toggle('open', !isOpen);
-    chevron.classList.toggle('open', !isOpen);
-  }
-
-  const SECTIONS = ['dashboard','tracks','recovery','goals','injuries'];
-  function showSection(id) {
-    SECTIONS.forEach(s => {
-      document.getElementById('section-' + s).classList.toggle('visible', s === id);
-      document.getElementById('nav-' + s).classList.toggle('active', s === id);
-    });
-    if (id === 'goals')    renderGoals();
-    if (id === 'tracks')   renderTracks();
-    if (id === 'recovery') renderRecovery();
-  }
-
-  /* ────────────────────────────────────────────────
-     BOOT — check session
-  ──────────────────────────────────────────────── */
-  (function boot() {
-    const sessionEmail = LS.get('iron_session', null);
-    if (sessionEmail) {
-      const users = LS.get('iron_users', []);
-      const user  = users.find(u => u.email === sessionEmail);
-      if (user) {
-        currentUser = user;
-        loadUserData(sessionEmail);
+/* ════════════════════════════════════════════════════════
+   AUTH STATE LISTENER — THE HEART
+════════════════════════════════════════════════════════ */
+function bootAuth() {
+  FB.onAuthStateChanged(FB.auth, async user => {
+    if (user) {
+      // Signed in
+      showLoading('Loading your data...');
+      try {
+        const profile = await getUserProfile(user.uid);
+        if (!profile) {
+          // Google user who hasn't completed profile yet — wait
+          hideLoading(); return;
+        }
+        currentUser = { uid: user.uid, ...profile };
+        activities  = await loadActivities(user.uid);
+        customGoals = await loadGoals(user.uid);
         document.getElementById('login-overlay').classList.add('hidden');
+        hideLoading();
         initApp();
-        return;
+      } catch(e) {
+        hideLoading();
+        showToast('Error loading data. Check your Firebase setup.', true);
+        console.error(e);
       }
+    } else {
+      // Signed out
+      currentUser = null; activities = []; customGoals = [];
+      document.getElementById('login-overlay').classList.remove('hidden');
+      hideLoading();
     }
-    // No valid session — show login
-    document.getElementById('login-overlay').classList.remove('hidden');
-  })();
+  });
+}
+
+/* ════════════════════════════════════════════════════════
+   LOGOUT
+════════════════════════════════════════════════════════ */
+async function logout() {
+  if (!confirm('Are you sure you want to logout?')) return;
+  stopRecording();
+  await FB.signOut(FB.auth);
+  location.reload();
+}
+
+/* ════════════════════════════════════════════════════════
+   INIT APP
+════════════════════════════════════════════════════════ */
+function initApp() {
+  document.getElementById('user-name-display').textContent = currentUser.name || 'Athlete';
+  document.getElementById('user-bw-display').textContent   = currentUser.bodyWeight ? `Body Weight: ${currentUser.bodyWeight} kg` : '';
+  renderDashboard(); renderGoals(); renderTracks(); renderRecovery();
+}
+
+/* ════════════════════════════════════════════════════════
+   MET VALUES & CALORIE CALC
+════════════════════════════════════════════════════════ */
+const MET = { weightlifting:6.0, running:9.8, walking:3.5, cycling:7.5, swimming:9.0, yoga:3.0, hiit:10.0, sports:8.0 };
+function calcCal(type, duration) {
+  const bw = currentUser?.bodyWeight || 70;
+  return Math.round((MET[type]||6) * bw * (duration/60));
+}
+
+/* ════════════════════════════════════════════════════════
+   RECORDING TIMER
+════════════════════════════════════════════════════════ */
+let recInterval=null, recStart=null, recSecs=0, isRec=false;
+function toggleRecording() { isRec ? stopRecording() : startRecording(); }
+function startRecording() {
+  isRec=true; recStart=Date.now()-recSecs*1000;
+  recInterval=setInterval(updateRecDisp,1000);
+  const btn=document.getElementById('btn-record');
+  btn.textContent='■  Stop Recording'; btn.classList.add('recording');
+  document.getElementById('record-dot').classList.add('active');
+  document.getElementById('record-status').classList.add('recording');
+  document.getElementById('record-status-text').textContent='Recording';
+}
+function stopRecording() {
+  if(!isRec)return; clearInterval(recInterval); isRec=false;
+  if(recStart) recSecs=Math.floor((Date.now()-recStart)/1000);
+  const btn=document.getElementById('btn-record');
+  btn.textContent='▶  Start Recording'; btn.classList.remove('recording');
+  document.getElementById('record-dot').classList.remove('active');
+  document.getElementById('record-status').classList.remove('recording');
+  document.getElementById('record-status-text').textContent=`Stopped — ${Math.floor(recSecs/60)}m ${recSecs%60}s`;
+  updateRecDisp();
+}
+function updateRecDisp() {
+  const e=isRec?Math.floor((Date.now()-recStart)/1000):recSecs;
+  document.getElementById('record-time').textContent=`${pad(Math.floor(e/3600))}:${pad(Math.floor((e%3600)/60))}:${pad(e%60)}`;
+}
+function resetRecorder() {
+  stopRecording(); recSecs=0; recStart=null;
+  document.getElementById('record-time').textContent='00:00:00';
+  document.getElementById('record-status-text').textContent='Ready';
+  document.getElementById('record-status').classList.remove('recording');
+  document.getElementById('record-dot').classList.remove('active');
+  const btn=document.getElementById('btn-record');
+  btn.textContent='▶  Start Recording'; btn.classList.remove('recording');
+}
+function pad(n){return String(n).padStart(2,'0')}
+
+/* ════════════════════════════════════════════════════════
+   WEIGHT WARNING
+════════════════════════════════════════════════════════ */
+function checkLiftingWarning() {
+  const kg=parseFloat(document.getElementById('activity-lifting-weight').value);
+  const bw=currentUser?.bodyWeight||0;
+  const el=document.getElementById('weight-warning');
+  el.className='weight-warning';
+  if(!kg||kg<=0)return;
+  if(!bw){if(kg>300){el.classList.add('visible','warn-red');document.getElementById('weight-warning-title').textContent='🚨 Extreme Load';document.getElementById('weight-warning-text').textContent='Exceptionally high weight. Ensure you have expert spotters.';}return;}
+  const r=kg/bw;
+  if(r>2.5){el.classList.add('visible','warn-red');document.getElementById('weight-warning-title').textContent='🚨 Danger — Extreme Overload';document.getElementById('weight-warning-text').textContent=`${kg} kg is ${r.toFixed(1)}× your body weight. Serious injury risk. Elite athletes only. Professional spotter mandatory.`;}
+  else if(r>1.5){el.classList.add('visible','warn-yellow');document.getElementById('weight-warning-title').textContent='⚠️ Heavy Load';document.getElementById('weight-warning-text').textContent=`${kg} kg is ${r.toFixed(1)}× your body weight. Use a spotter and prioritise form.`;}
+  else if(r>1.0){el.classList.add('visible','warn-yellow');document.getElementById('weight-warning-title').textContent='⚡ Moderate-Heavy Load';document.getElementById('weight-warning-text').textContent=`${kg} kg exceeds your body weight. Strict form required.`;}
+}
+function onActivityTypeChange() {
+  const t=document.getElementById('activity-type').value;
+  document.getElementById('lifting-weight-group').style.display=t==='weightlifting'?'block':'none';
+  if(t!=='weightlifting') document.getElementById('weight-warning').className='weight-warning';
+}
+
+/* ════════════════════════════════════════════════════════
+   LOG ACTIVITY → FIRESTORE
+════════════════════════════════════════════════════════ */
+function toggleActivityForm() {
+  const f=document.getElementById('activity-form');
+  if(f.classList.contains('visible')){cancelActivityForm();}
+  else{f.classList.add('visible');resetRecorder();document.getElementById('activity-lifting-weight').value='';document.getElementById('weight-warning').className='weight-warning';onActivityTypeChange();}
+}
+function cancelActivityForm(){stopRecording();resetRecorder();document.getElementById('activity-form').classList.remove('visible');}
+
+async function logActivity() {
+  const type=document.getElementById('activity-type').value;
+  const elapsed=isRec?Math.floor((Date.now()-recStart)/1000):recSecs;
+  if(elapsed<10){showToast('Record at least 10 seconds first!',true);return;}
+  const duration=Math.max(1,Math.round(elapsed/60));
+  const liftingWeight=type==='weightlifting'?(parseFloat(document.getElementById('activity-lifting-weight').value)||null):null;
+  const calories=calcCal(type,duration);
+  const act={type,duration,liftingWeight,bodyWeight:currentUser?.bodyWeight||70,calories,timestamp:new Date().toISOString()};
+  if(isRec)stopRecording();
+  const id=await addActivity(currentUser.uid,act);
+  activities.unshift({id,...act});
+  cancelActivityForm();
+  renderDashboard();renderTracks();renderRecovery();
+  const ls=liftingWeight?` • ${liftingWeight} kg lifted`:'';
+  showToast(`${duration} min ${type} logged • ${calories} cal${ls}`);
+}
+
+/* ════════════════════════════════════════════════════════
+   GOALS → FIRESTORE
+════════════════════════════════════════════════════════ */
+function toggleGoalForm(){document.getElementById('goal-form').classList.toggle('visible');}
+async function createGoal(){
+  const title=document.getElementById('goal-title').value.trim();
+  const desc =document.getElementById('goal-desc').value.trim();
+  const target=parseInt(document.getElementById('goal-target').value);
+  const current=parseInt(document.getElementById('goal-current').value)||0;
+  if(!title||!desc||!target){showToast('Please fill all fields',true);return;}
+  const goal={title,desc,target,current};
+  const id=await addGoalDB(currentUser.uid,goal);
+  customGoals.push({id,...goal});
+  document.getElementById('goal-form').classList.remove('visible');
+  ['goal-title','goal-desc','goal-target','goal-current'].forEach(i=>document.getElementById(i).value='');
+  renderGoals();showToast('Goal created');
+}
+async function deleteGoal(id){
+  if(!confirm('Delete this goal?'))return;
+  await deleteGoalDB(currentUser.uid,id);
+  customGoals=customGoals.filter(g=>g.id!==id);
+  renderGoals();showToast('Goal deleted');
+}
+
+/* ════════════════════════════════════════════════════════
+   UTILITY
+════════════════════════════════════════════════════════ */
+function toDateStr(d){return d.toISOString().slice(0,10)}
+function today(){return toDateStr(new Date())}
+function formatDate(iso){return new Date(iso).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}
+function showToast(msg,isError=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='show'+(isError?' error':'');
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.className=''},2800);
+}
+function friendlyError(code){
+  const m={'auth/user-not-found':'No account found with that email.','auth/wrong-password':'Incorrect password.','auth/invalid-credential':'Incorrect email or password.','auth/email-already-in-use':'An account with this email already exists. Sign in instead.','auth/weak-password':'Password must be at least 6 characters.','auth/invalid-email':'Please enter a valid email address.','auth/popup-blocked':'Popup was blocked. Please allow popups for this page.'};
+  return m[code]||'Something went wrong. Please try again.';
+}
+function calcStreak(){
+  if(!activities.length)return 0;
+  const days=[...new Set(activities.map(a=>toDateStr(new Date(a.timestamp))))].sort().reverse();
+  const todayStr=today(), yest=toDateStr(new Date(Date.now()-86400000));
+  if(days[0]!==todayStr&&days[0]!==yest)return 0;
+  let streak=0,expected=new Date(days[0]);
+  for(const d of days){if(toDateStr(expected)===d){streak++;expected=new Date(+expected-86400000);}else break;}
+  return streak;
+}
+
+/* ════════════════════════════════════════════════════════
+   RENDER FUNCTIONS
+════════════════════════════════════════════════════════ */
+function renderDashboard(){
+  const todayStr=today(),weekAgo=Date.now()-7*86400000;
+  const todayActs=activities.filter(a=>toDateStr(new Date(a.timestamp))===todayStr);
+  const weekActs =activities.filter(a=>new Date(a.timestamp)>=weekAgo);
+  document.getElementById('stat-weight').textContent  =todayActs.filter(a=>a.type==='weightlifting').reduce((s,a)=>s+a.duration,0);
+  document.getElementById('stat-cardio').textContent  =todayActs.filter(a=>['running','walking','cycling','swimming'].includes(a.type)).reduce((s,a)=>s+a.duration,0);
+  document.getElementById('stat-calories').textContent=todayActs.reduce((s,a)=>s+a.calories,0);
+  document.getElementById('stat-week').textContent    =weekActs.length;
+  document.getElementById('streak-display').textContent=calcStreak();
+  const el=document.getElementById('archive-list');
+  if(!activities.length){el.innerHTML='<div class="empty-state">No activities logged yet</div>';return;}
+  el.innerHTML=activities.slice(0,10).map(a=>{
+    const d=new Date(a.timestamp);
+    const ls=a.liftingWeight?`<span>•</span><span>${a.liftingWeight} kg lifted</span>`:'';
+    return`<div class="archive-item"><div class="archive-header"><div><div class="archive-date">${formatDate(a.timestamp)}</div><div class="archive-time">${d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</div></div><div class="archive-type">${a.type.toUpperCase()}</div></div><div class="archive-details"><span>${a.duration} min</span><span>•</span><span>${a.calories} cal</span>${ls}</div></div>`;
+  }).join('');
+}
+function renderTracks(){
+  const monthAgo=Date.now()-30*86400000;
+  const monthActs=activities.filter(a=>new Date(a.timestamp)>=monthAgo);
+  const totalCal=activities.reduce((s,a)=>s+a.calories,0);
+  const weeks=Math.max(1,activities.length>0?Math.floor((Date.now()-new Date(activities[activities.length-1].timestamp))/(7*86400000)):1);
+  document.getElementById('track-total').textContent   =activities.length;
+  document.getElementById('track-month').textContent   =monthActs.length;
+  document.getElementById('track-calories').textContent=totalCal;
+  document.getElementById('track-avg').textContent     =Math.round(activities.length/weeks);
+  const el=document.getElementById('tracks-list');
+  if(!activities.length){el.innerHTML='<div class="empty-state">No sessions recorded yet</div>';return;}
+  el.innerHTML=[...activities].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).map(a=>{
+    const ls=a.liftingWeight?` • ${a.liftingWeight} kg lifted`:'';
+    return`<div class="track-item"><div class="track-date">${formatDate(a.timestamp)}</div><div class="track-day">${a.type} • ${a.duration} min • ${a.calories} cal${ls}</div></div>`;
+  }).join('');
+}
+function renderRecovery(){
+  const last7=Date.now()-7*86400000;
+  const recent=activities.filter(a=>new Date(a.timestamp)>=last7);
+  const warnings=[];
+  if(recent.length>=7)warnings.push({title:'⚠️ Overtraining Risk',text:'You have trained 7+ days in a row. Take a rest day to prevent injury and allow muscle recovery.'});
+  const last3=recent.slice(0,3);
+  if(last3.length===3&&last3.every(a=>a.type==='weightlifting'))warnings.push({title:'⚠️ Muscle Group Fatigue',text:'3 days of weightlifting in a row. Same muscle groups need 48-72 hours recovery.'});
+  const weekMins=recent.reduce((s,a)=>s+a.duration,0);
+  if(weekMins>600)warnings.push({title:'⚠️ High Training Volume',text:`You've logged ${weekMins} minutes this week (10+ hours). Monitor fatigue closely.`});
+  const we=document.getElementById('warnings-section');
+  we.innerHTML=warnings.length?warnings.map(w=>`<div class="warning-card"><div class="warning-title">${w.title}</div><div class="warning-text">${w.text}</div></div>`).join('')
+    :'<div class="recovery-card"><div class="goal-title">✓ No Injury Risks Detected</div><div class="goal-desc">Your training volume and frequency are within safe limits. Keep it up!</div></div>';
+  const dsr=calcDaysSinceRest();
+  let rs='';
+  if(dsr>=7)rs=`🛑 URGENT: ${dsr} days without rest. Take a complete rest day immediately.`;
+  else if(dsr>=5)rs=`⚠️ Consider a rest day soon. You've trained ${dsr} consecutive days.`;
+  else if(dsr>=3)rs=`You've trained ${dsr} days in a row. Monitor fatigue and soreness.`;
+  else rs='Your rest pattern looks good! Keep balancing training with recovery.';
+  document.getElementById('rest-suggestion').textContent=rs;
+  const pct=Math.max(0,Math.min(100,100-dsr*15));
+  document.getElementById('recovery-percent').textContent=pct+'%';
+  document.getElementById('recovery-bar').style.width=pct+'%';
+  document.getElementById('recovery-status').textContent=pct>=80?'Well rested! Ready for intense training.':pct>=50?'Moderately recovered. Monitor fatigue levels.':'Low recovery. Take 1-2 rest days.';
+}
+function calcDaysSinceRest(){
+  if(!activities.length)return 0;
+  const days=[...new Set(activities.map(a=>toDateStr(new Date(a.timestamp))))].sort().reverse();
+  if(days[0]!==today())return 0;
+  let count=0,expected=new Date(today());
+  for(const d of days){if(toDateStr(expected)===d){count++;expected=new Date(+expected-86400000);}else break;}
+  return count;
+}
+function renderGoals(){
+  const total=activities.length,weekAgo=Date.now()-7*86400000;
+  const thisWeek=activities.filter(a=>new Date(a.timestamp)>=weekAgo).length;
+  const streak=calcStreak();
+  const defaults=[
+    {title:'Weekly Consistency',desc:'Log at least 5 workouts per week',pct:Math.min(100,Math.round((thisWeek/5)*100))},
+    {title:'30-Day Streak',desc:'Maintain a 30-day consecutive streak',pct:Math.min(100,Math.round((streak/30)*100))},
+    {title:'100 Total Sessions',desc:'Reach 100 total workout sessions',pct:Math.min(100,Math.round((total/100)*100))},
+  ];
+  const cc=customGoals.map(g=>{const p=Math.min(100,Math.round((g.current/g.target)*100));return`<div class="goal-card"><button class="btn-delete-goal" onclick="deleteGoal('${g.id}')">Delete</button><div class="goal-title">${g.title}</div><div class="goal-desc">${g.desc}</div><div class="progress-row"><span class="label">Progress: ${g.current} / ${g.target}</span><span style="font-family:'Cormorant Garamond',serif;font-size:14px;">${p}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${p}%"></div></div></div>`;}).join('');
+  const dc=defaults.map(g=>`<div class="goal-card"><div class="goal-title">${g.title}</div><div class="goal-desc">${g.desc}</div><div class="progress-row"><span class="label">Progress</span><span style="font-family:'Cormorant Garamond',serif;font-size:14px;">${g.pct}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${g.pct}%"></div></div></div>`).join('');
+  document.getElementById('goals-list').innerHTML=cc+dc;
+}
+
+/* ════════════════════════════════════════════════════════
+   INJURY OVERLAY
+════════════════════════════════════════════════════════ */
+const injuryData={
+  shoulder:{title:"Rotator Cuff Injury",symptoms:"Pain when lifting arm overhead, weakness in shoulder, difficulty sleeping on affected side, clicking or popping sounds, limited range of motion.",risks:"Increases risk of frozen shoulder, arthritis, chronic pain, permanent weakness. Common in athletes, swimmers, weightlifters.",protocol:["Rest and avoid overhead activities for 2-3 weeks. Apply ice for 15-20 minutes every 2-3 hours.","Gentle pendulum exercises and wall walks to maintain mobility. 2-3 sets of 10 reps daily.","Strengthen with resistance bands once pain subsides. Consult physical therapist if pain persists beyond 2 weeks."]},
+  elbow:{title:"Tennis/Golfer's Elbow",symptoms:"Pain on outer or inner elbow, weakness in grip, pain when lifting or shaking hands, stiffness in the morning, burning sensation along forearm.",risks:"Risk of chronic tendon degeneration, permanent grip weakness. Common in racket sports, golf, weightlifting.",protocol:["Rest from aggravating activities. Ice 3-4 times daily for 15 minutes. Use compression sleeve.","Wrist flexor and extensor stretches 30 seconds, 3 times daily. Eccentric strengthening with light weights.","Gradually return to activities with modified technique. Consult doctor if no improvement after 6 weeks."]},
+  wrist:{title:"Wrist Strain / Carpal Tunnel",symptoms:"Numbness or tingling in thumb and fingers, pain radiating to forearm, weakness in grip, worse at night or after repetitive use.",risks:"May lead to permanent nerve damage, chronic pain, loss of hand function.",protocol:["Wear wrist splint at night. Take frequent breaks from repetitive activities every 30 minutes.","Nerve gliding exercises 3 times daily. Ice wrist after activities if inflamed.","Adjust workstation ergonomics. Consult doctor if symptoms persist after 2 weeks."]},
+  back:{title:"Lower Back (Lumbar) Strain",symptoms:"Dull ache or sharp pain in lower back, muscle spasms, stiffness especially in morning, pain worsens with bending or twisting.",risks:"Can lead to chronic back pain, disc herniation, sciatica. Poor lifting technique and weak core are major risk factors.",protocol:["Avoid bed rest beyond 1-2 days. Ice first 48 hours then heat. Walk 10-15 minutes every few hours.","Pelvic tilts, knee-to-chest stretches, cat-cow stretches 2-3 times daily.","Proper lifting: bend knees, keep back straight. See doctor if pain persists beyond 2 weeks."]},
+  knee:{title:"Patellar Tendonitis / Runner's Knee",symptoms:"Pain below or around kneecap when jumping, running, or climbing stairs. Swelling, stiffness, tenderness, clicking sensation.",risks:"Can progress to chronic tendinopathy, arthritis. Common in runners, jumpers, cyclists.",protocol:["Rest from high-impact activities for 1-2 weeks. Ice knee 15-20 minutes after activity.","Strengthen quadriceps and hamstrings. Hip flexor, quad, and IT band stretches 30 seconds, 3 times daily.","Return to activity gradually with low-impact exercises. Consult specialist if knee gives out."]}
+};
+function showInjuryDetail(type){
+  const d=injuryData[type]; if(!d)return;
+  document.getElementById('overlay-title').textContent=d.title;
+  document.getElementById('overlay-symptoms').textContent=d.symptoms;
+  document.getElementById('overlay-risks').textContent=d.risks;
+  document.getElementById('overlay-protocol').innerHTML=d.protocol.map(p=>`<li>${p}</li>`).join('');
+  document.getElementById('injury-overlay').classList.add('visible');
+  document.querySelectorAll('.hit-zone').forEach(z=>z.classList.remove('active'));
+  event.target.classList.add('active');
+}
+function closeOverlay(e){
+  if(!e||e.target.id==='injury-overlay'||e.target.classList.contains('overlay-close')){
+    document.getElementById('injury-overlay').classList.remove('visible');
+    document.querySelectorAll('.hit-zone').forEach(z=>z.classList.remove('active'));
+  }
+}
+function toggleCategory(cat){
+  const l=document.getElementById('list-'+cat),c=document.getElementById('chevron-'+cat);
+  l.classList.toggle('open',!l.classList.contains('open'));
+  c.classList.toggle('open',!c.classList.contains('open'));
+}
+
+const SECTIONS=['dashboard','tracks','recovery','goals','injuries'];
+function showSection(id){
+  SECTIONS.forEach(s=>{
+    document.getElementById('section-'+s).classList.toggle('visible',s===id);
+    document.getElementById('nav-'+s).classList.toggle('active',s===id);
+  });
+  if(id==='goals')renderGoals();
+  if(id==='tracks')renderTracks();
+  if(id==='recovery')renderRecovery();
+}
 </script>
 </body>
 </html>
