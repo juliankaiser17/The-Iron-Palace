@@ -14,15 +14,27 @@
            signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged }
                                                         from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc, updateDoc,
-           collection, addDoc, getDocs, deleteDoc, query, orderBy }
-                                                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";  
+           collection, addDoc, getDocs, deleteDoc, query, orderBy,
+           enableIndexedDbPersistence }
+                                                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  /* ════════════════════════════════════════════════════════
+     🔥 FIREBASE SETUP — REPLACE WITH YOUR CONFIG
+     ──────────────────────────────────────────────────────
+     1. Go to https://console.firebase.google.com
+     2. Create a project → Add a web app → copy config below
+     3. In Firebase Console:
+        • Firestore Database → Create database (start in test mode)
+        • Authentication → Sign-in method → Enable Email/Password & Google
+        • Authentication → Settings → Authorized domains → add "localhost"
+     ════════════════════════════════════════════════════════ */
   const firebaseConfig = {
     apiKey: "AIzaSyDGdecWngN_zZFlJyq_L0_BLD8KEMcBpgI",
-  authDomain: "theironpalace-ffb85.firebaseapp.com",
-  projectId: "theironpalace-ffb85",
-  storageBucket: "theironpalace-ffb85.firebasestorage.app",
-  messagingSenderId: "708398928493",
-  appId: "1:708398928493:web:79ac3030178c938af9a564"
+    authDomain: "theironpalace-ffb85.firebaseapp.com",
+    projectId: "theironpalace-ffb85",
+    storageBucket: "theironpalace-ffb85.firebasestorage.app",
+    messagingSenderId: "708398928493",
+    appId: "1:708398928493:web:79ac3030178c938af9a564"
 
   };
 
@@ -30,6 +42,9 @@
   const auth     = getAuth(app);
   const db       = getFirestore(app);
   const gProvider = new GoogleAuthProvider();
+
+  /* ── Enable offline cache — after first login, loads instantly from IndexedDB ── */
+  enableIndexedDbPersistence(db).catch(() => {/* multi-tab or private mode — silent fail */});
 
   /* ── expose to global scope so non-module code can call ── */
   window._FB = { auth, db, gProvider,
@@ -766,30 +781,64 @@ function hideLoading() {
 ════════════════════════════════════════════════════════ */
 async function saveUserProfile(uid, data) {
   await FB.setDoc(FB.doc(FB.db, 'users', uid), data, { merge: true });
+  // Cache profile locally too
+  try { localStorage.setItem('ip_profile_' + uid, JSON.stringify(data)); } catch(e) {}
 }
 async function getUserProfile(uid) {
   const snap = await FB.getDoc(FB.doc(FB.db, 'users', uid));
-  return snap.exists() ? snap.data() : null;
+  const data = snap.exists() ? snap.data() : null;
+  if (data) {
+    try { localStorage.setItem('ip_profile_' + uid, JSON.stringify(data)); } catch(e) {}
+  }
+  return data;
+}
+function getCachedProfile(uid) {
+  try { const v = localStorage.getItem('ip_profile_' + uid); return v ? JSON.parse(v) : null; } catch(e) { return null; }
 }
 async function loadActivities(uid) {
-  const q   = FB.query(FB.collection(FB.db, 'users', uid, 'activities'), FB.orderBy('timestamp', 'desc'));
+  const q    = FB.query(FB.collection(FB.db, 'users', uid, 'activities'), FB.orderBy('timestamp', 'desc'));
   const snap = await FB.getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  try { localStorage.setItem('ip_acts_' + uid, JSON.stringify(data)); } catch(e) {}
+  return data;
+}
+function getCachedActivities(uid) {
+  try { const v = localStorage.getItem('ip_acts_' + uid); return v ? JSON.parse(v) : null; } catch(e) { return null; }
 }
 async function addActivity(uid, act) {
   const ref = await FB.addDoc(FB.collection(FB.db, 'users', uid, 'activities'), act);
+  // Update cache immediately
+  try {
+    const cached = getCachedActivities(uid) || [];
+    cached.unshift({ id: ref.id, ...act });
+    localStorage.setItem('ip_acts_' + uid, JSON.stringify(cached));
+  } catch(e) {}
   return ref.id;
 }
 async function loadGoals(uid) {
   const snap = await FB.getDocs(FB.collection(FB.db, 'users', uid, 'goals'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  try { localStorage.setItem('ip_goals_' + uid, JSON.stringify(data)); } catch(e) {}
+  return data;
+}
+function getCachedGoals(uid) {
+  try { const v = localStorage.getItem('ip_goals_' + uid); return v ? JSON.parse(v) : null; } catch(e) { return null; }
 }
 async function addGoalDB(uid, goal) {
   const ref = await FB.addDoc(FB.collection(FB.db, 'users', uid, 'goals'), goal);
+  try {
+    const cached = getCachedGoals(uid) || [];
+    cached.push({ id: ref.id, ...goal });
+    localStorage.setItem('ip_goals_' + uid, JSON.stringify(cached));
+  } catch(e) {}
   return ref.id;
 }
 async function deleteGoalDB(uid, goalId) {
   await FB.deleteDoc(FB.doc(FB.db, 'users', uid, 'goals', goalId));
+  try {
+    const cached = (getCachedGoals(uid) || []).filter(g => g.id !== goalId);
+    localStorage.setItem('ip_goals_' + uid, JSON.stringify(cached));
+  } catch(e) {}
 }
 
 /* ════════════════════════════════════════════════════════
@@ -885,29 +934,62 @@ async function completeProfile(skip = false) {
 }
 
 /* ════════════════════════════════════════════════════════
-   AUTH STATE LISTENER — THE HEART
+   AUTH STATE LISTENER — FAST CACHE-FIRST BOOT
 ════════════════════════════════════════════════════════ */
 function bootAuth() {
   FB.onAuthStateChanged(FB.auth, async user => {
     if (user) {
-      // Signed in
-      showLoading('Loading your data...');
-      try {
-        const profile = await getUserProfile(user.uid);
-        if (!profile) {
-          // Google user who hasn't completed profile yet — wait
-          hideLoading(); return;
-        }
-        currentUser = { uid: user.uid, ...profile };
-        activities  = await loadActivities(user.uid);
-        customGoals = await loadGoals(user.uid);
+      const uid = user.uid;
+
+      // ── STEP 1: Load from cache instantly (0ms) ──
+      const cachedProfile = getCachedProfile(uid);
+      const cachedActs    = getCachedActivities(uid);
+      const cachedGoals   = getCachedGoals(uid);
+
+      if (cachedProfile && cachedActs && cachedGoals) {
+        // Show app immediately from cache — feels instant
+        currentUser = { uid, ...cachedProfile };
+        activities  = cachedActs;
+        customGoals = cachedGoals;
         document.getElementById('login-overlay').classList.add('hidden');
         hideLoading();
         initApp();
-      } catch(e) {
-        hideLoading();
-        showToast('Error loading data. Check your Firebase setup.', true);
-        console.error(e);
+
+        // ── STEP 2: Sync from Firestore in background (silent) ──
+        Promise.all([
+          getUserProfile(uid),
+          loadActivities(uid),
+          loadGoals(uid)
+        ]).then(([profile, acts, goals]) => {
+          if (!profile) return;
+          currentUser = { uid, ...profile };
+          activities  = acts;
+          customGoals = goals;
+          // Silently refresh UI with latest data
+          renderDashboard(); renderTracks(); renderRecovery(); renderGoals();
+        }).catch(e => console.warn('[BG sync]', e));
+
+      } else {
+        // ── First time login — fetch all three in parallel ──
+        showLoading('Loading your palace...');
+        try {
+          const [profile, acts, goals] = await Promise.all([
+            getUserProfile(uid),
+            loadActivities(uid),
+            loadGoals(uid)
+          ]);
+          if (!profile) { hideLoading(); return; } // Google user pending profile
+          currentUser = { uid, ...profile };
+          activities  = acts;
+          customGoals = goals;
+          document.getElementById('login-overlay').classList.add('hidden');
+          hideLoading();
+          initApp();
+        } catch(e) {
+          hideLoading();
+          showToast('Error loading data. Check your Firebase setup.', true);
+          console.error(e);
+        }
       }
     } else {
       // Signed out
@@ -924,6 +1006,12 @@ function bootAuth() {
 async function logout() {
   if (!confirm('Are you sure you want to logout?')) return;
   stopRecording();
+  // Clear local cache for this user
+  if (currentUser?.uid) {
+    ['ip_profile_', 'ip_acts_', 'ip_goals_'].forEach(k => {
+      try { localStorage.removeItem(k + currentUser.uid); } catch(e) {}
+    });
+  }
   await FB.signOut(FB.auth);
   location.reload();
 }
