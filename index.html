@@ -8,10 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
 
-<!-- ═══════════════════════════════════════════════════════
-  🔥 PASTE YOUR FIREBASE CONFIG BELOW
-  Get it from: Firebase Console → Project Settings → Your Apps
-══════════════════════════════════════════════════════════ -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -19,11 +15,11 @@
   // ↓↓↓ PASTE YOUR CONFIG HERE ↓↓↓
   const firebaseConfig = {
     apiKey: "AIzaSyDGdecWngN_zZFlJyq_L0_BLD8KEMcBpgI",
-  authDomain: "theironpalace-ffb85.firebaseapp.com",
-  projectId: "theironpalace-ffb85",
-  storageBucket: "theironpalace-ffb85.firebasestorage.app",
-  messagingSenderId: "708398928493",
-  appId: "1:708398928493:web:79ac3030178c938af9a564"
+    authDomain: "theironpalace-ffb85.firebaseapp.com",
+    projectId: "theironpalace-ffb85",
+    storageBucket: "theironpalace-ffb85.firebasestorage.app",
+    messagingSenderId: "708398928493",
+    appId: "1:708398928493:web:79ac3030178c938af9a564"
 
   };
   firebase.initializeApp(firebaseConfig);
@@ -72,8 +68,9 @@ body::after{content:'';position:fixed;inset:0;opacity:0.04;pointer-events:none;z
 #login-overlay{
   position:fixed;inset:0;z-index:9999;
   display:flex;align-items:center;justify-content:center;padding:20px;
+  background:var(--bg);
 }
-#login-overlay.hidden{display:none}
+#login-overlay.hidden{display:none !important}
 
 .auth-card-wrap{position:relative;z-index:2;width:100%;max-width:460px;perspective:1200px}
 .login-box{
@@ -372,7 +369,7 @@ h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,8vw,3.5rem);font-
 </div>
 
 <!-- ── MAIN APP ── -->
-<div class="app" style="position:relative;z-index:2">
+<div class="app" id="main-app" style="display:none;position:relative;z-index:2">
   <nav>
     <button class="nav-btn active" onclick="showSection('dashboard')" id="nav-dashboard">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -793,52 +790,73 @@ async function completeProfile(skip=false){
 }
 
 /* ══════════════════════════════════════════════════════
-   AUTH STATE — CACHE FIRST, THEN SYNC
+   AUTH STATE — localStorage FIRST, Firestore BACKGROUND ONLY
+   ─────────────────────────────────────────────────────
+   Rule: NEVER wait for Firestore to show the app.
+   1. Firebase Auth tells us WHO the user is (fast, cached by Firebase)
+   2. We load data from localStorage INSTANTLY
+   3. App appears in <50ms
+   4. Firestore syncs silently in background
 ══════════════════════════════════════════════════════ */
 auth.onAuthStateChanged(async user=>{
   if(user){
     const uid=user.uid;
     const keys=ck(uid);
-    const cachedProf=LC.get(keys.prof,null);
-    const cachedActs=LC.get(keys.acts,null);
-    const cachedGoals=LC.get(keys.goals,null);
 
-    if(cachedProf&&cachedActs&&cachedGoals){
-      // Instant load from cache
-      currentUser={uid,...cachedProf};
-      activities=cachedActs;
-      customGoals=cachedGoals;
-      document.getElementById('login-overlay').classList.add('hidden');
-      hideSpin();
-      initApp();
-      // Background sync
-      Promise.all([fetchProfile(uid),fetchActs(uid),fetchGoals(uid)]).then(([p,a,g])=>{
-        if(!p) return;
-        currentUser={uid,...p}; activities=a; customGoals=g;
-        renderDash();renderTracks();renderRecovery();renderGoals();
-      }).catch(()=>{});
+    // Load from localStorage immediately (0ms)
+    const cachedProf  = LC.get(keys.prof, null);
+    const cachedActs  = LC.get(keys.acts, []);
+    const cachedGoals = LC.get(keys.goals, []);
+
+    if(cachedProf){
+      // ── INSTANT PATH: show app right now from cache ──
+      currentUser  = {uid, ...cachedProf};
+      activities   = cachedActs;
+      customGoals  = cachedGoals;
+      showApp();
+
+      // ── BACKGROUND: silently sync with Firestore (non-blocking) ──
+      setTimeout(()=>{
+        Promise.all([fetchProfile(uid), fetchActs(uid), fetchGoals(uid)])
+          .then(([p,a,g])=>{
+            if(!p) return;
+            currentUser={uid,...p}; activities=a; customGoals=g;
+            renderDash(); renderTracks(); renderRecovery(); renderGoals();
+          })
+          .catch(e=>console.warn('Background sync failed:',e));
+      }, 100);
+
     } else {
-      // First time — fetch all in parallel
-      showSpin('Loading your palace...');
+      // ── FIRST LOGIN: fetch from Firestore (only happens once ever) ──
+      showSpin('Setting up your palace...');
       try{
-        const [prof,acts,goals]=await Promise.all([fetchProfile(uid),fetchActs(uid),fetchGoals(uid)]);
-        if(!prof){hideSpin();return;} // Google user pending profile
+        const [prof,acts,goals] = await Promise.all([
+          fetchProfile(uid), fetchActs(uid), fetchGoals(uid)
+        ]);
+        if(!prof){ hideSpin(); return; } // Google new user — awaiting profile
         currentUser={uid,...prof}; activities=acts; customGoals=goals;
-        document.getElementById('login-overlay').classList.add('hidden');
-        hideSpin();
-        initApp();
+        showApp();
       }catch(e){
         hideSpin();
-        showToast('Error loading data — check Firebase config',true);
         console.error(e);
+        showToast('Connection error — check Firebase config',true);
       }
     }
   } else {
+    // Signed out
     currentUser=null; activities=[]; customGoals=[];
+    document.getElementById('main-app').style.display='none';
     document.getElementById('login-overlay').classList.remove('hidden');
     hideSpin();
   }
 });
+
+function showApp(){
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('main-app').style.display='block';
+  hideSpin();
+  initApp();
+}
 
 /* ══════════════════════════════════════════════════════
    LOGOUT
