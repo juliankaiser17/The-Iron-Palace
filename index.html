@@ -755,6 +755,18 @@ function doGoogle() {
       }
     });
 }
+function doGoogle() {
+  console.log("Google button clicked");
+
+  const provider = new firebase.auth.GoogleAuthProvider();
+  AUTH.signInWithPopup(provider)
+    .then(result => {
+      console.log("Success:", result.user);
+    })
+    .catch(error => {
+      console.error("Error:", error);
+    });
+}
 
 async function completeProfile(skip) {
   if (!pendingG) return;
