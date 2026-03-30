@@ -1589,9 +1589,9 @@ function eText(){const n=getEmgNumber();window.location.href='sms:'+n+'?body=EME
     return{x:W/2+rx*s,y:H/2+ry*s,z:rz2,s};
   }
 
-  // Body segments: [name, part, cx,cy,cz, rx,ry,rz, type, color_type]
+  // Body segments exposed globally so Palace State canvas can reuse them
   // type: 'ellipsoid' or 'box'
-  const SEGS=[
+  const SEGS=window.SEGS=[
     // HEAD
     {id:'head',part:'head',cx:0,cy:-120,cz:0,w:22,h:26,d:20,type:'e',ct:'s'},
     // NECK
@@ -2304,7 +2304,8 @@ function dismissKineticAlert(id){
 (function(){
   function tryInitPS(){
     var C=document.getElementById('body3d-ps');
-    if(!C||typeof SEGS==='undefined'){setTimeout(tryInitPS,300);return;}
+    if(!C||!window.SEGS){setTimeout(tryInitPS,300);return;}
+    var SEGS=window.SEGS; // reuse shared segment data
     var ctx=C.getContext('2d');
     var W=C.width,H=C.height;
     var rotY=0.3,rotX=-0.06,isDrag=false,lastX=0,lastY=0,autoRot=true,selPart=null,hoverPart=null;
