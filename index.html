@@ -1224,6 +1224,7 @@ function initApp(){
   renderDash(); renderTracksHistory(); renderRecovery(); buildInjGrids(); updCalHint();
   renderPalaceHub(); renderPalaceState(); renderKineticAlerts();
   if(db.role==='coach') renderLegion();
+  initDeviceSync();
 }
 
 // ═══════════════════════ DASHBOARD ═══════════════════════════════════
@@ -2117,47 +2118,371 @@ function buildAthleteDetail(mdb,m,kFlag){
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// ████  FEATURE 3 — DEVICE SYNC (Silent Tracker)  ████
+// ████  FEATURE 3 — DEVICE SYNC (Real OAuth / API)  ████
 // ══════════════════════════════════════════════════════════════════════
 const DEVICE_NAMES={healthkit:'Apple HealthKit',googlefit:'Google Fit',whoop:'Whoop 4.0'};
+
+// ── Config — fill in your OAuth credentials (see backend notes) ──
+const OAUTH_CFG={
+  googlefit:{
+    clientId:'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com', // replace in Firebase
+    scopes:'https://www.googleapis.com/auth/fitness.heart_rate.read https://www.googleapis.com/auth/fitness.sleep.read https://www.googleapis.com/auth/fitness.activity.read',
+    authUrl:'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenUrl:'https://oauth2.googleapis.com/token',
+    apiBase:'https://www.googleapis.com/fitness/v1/users/me'
+  },
+  whoop:{
+    clientId:'YOUR_WHOOP_CLIENT_ID',           // replace after creating Whoop app
+    scopes:'read:recovery read:sleep read:workout read:body_measurement',
+    authUrl:'https://api.prod.whoop.com/oauth/oauth2/auth',
+    tokenUrl:'https://api.prod.whoop.com/oauth/oauth2/token',
+    apiBase:'https://api.prod.whoop.com/developer/v1'
+  }
+};
+
 function syncDevice(id){
   const card=document.getElementById('sd-'+id);
   const status=document.getElementById('ss-'+id);
   if(!card||!status)return;
-  if(card.classList.contains('connected')){showToast(DEVICE_NAMES[id]+' already synced.','s');return;}
-  card.classList.add('syncing');
-  status.textContent='Syncing…';
-  showToast('📡 Fetching from '+DEVICE_NAMES[id]+'…');
-  setTimeout(function(){
-    card.classList.remove('syncing');
-    card.classList.add('connected');
-    const hrv=Math.round(38+Math.random()*55);
-    const rhr=Math.round(48+Math.random()*32);
-    const sleepCycles=Math.round(3+Math.random()*3);
-    const bio={source:id,hrv:hrv,rhr:rhr,sleepCycles:sleepCycles,fetchedAt:Date.now()};
+  if(card.classList.contains('connected')){
+    showSyncModal(id,'already');return;
+  }
+  showSyncModal(id,'connect');
+}
+
+function showSyncModal(id, state){
+  const name=DEVICE_NAMES[id];
+  let body='';
+  if(id==='healthkit'){
+    body=`
+      <div style="text-align:center;padding:8px 0 20px">
+        <div style="font-size:48px;margin-bottom:12px">🍎</div>
+        <div style="font-family:'Syncopate',sans-serif;font-size:16px;letter-spacing:3px;color:var(--accent);margin-bottom:8px">APPLE HEALTHKIT</div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--danger);background:rgba(255,34,68,.08);border:1px solid rgba(255,34,68,.2);padding:10px 14px;margin-bottom:16px">⚠️ BROWSER RESTRICTION</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8;text-align:left;margin-bottom:20px">
+          Apple HealthKit is only accessible from native iOS/macOS apps — Apple intentionally blocks browser access for privacy reasons. There is no workaround via a web page.<br><br>
+          <strong style="color:var(--text)">Your options:</strong>
+          <ul style="margin-top:8px;padding-left:18px;display:flex;flex-direction:column;gap:6px">
+            <li>Use the <strong style="color:var(--accent)">Health Export</strong> app on iOS to export your data as CSV/JSON</li>
+            <li>Then import it below manually</li>
+          </ul>
+        </div>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Manual Entry — Today's Metrics</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+          <div class="form-group"><div class="form-label">HRV (ms)</div><input class="form-input" type="number" id="hk-hrv" placeholder="65" style="padding:10px"></div>
+          <div class="form-group"><div class="form-label">Resting HR</div><input class="form-input" type="number" id="hk-rhr" placeholder="58" style="padding:10px"></div>
+          <div class="form-group"><div class="form-label">Sleep (hrs)</div><input class="form-input" type="number" id="hk-sleep" placeholder="7.5" step="0.5" style="padding:10px"></div>
+        </div>
+        <button class="btn-accent" style="width:100%;font-size:12px;letter-spacing:3px" onclick="saveManualBio('healthkit')">SAVE HEALTH DATA</button>
+      </div>`;
+  } else if(state==='already'){
+    const bio=(db.biometrics||[]).find(b=>b.source===id)||{};
+    const ago=bio.fetchedAt?Math.round((Date.now()-bio.fetchedAt)/60000):null;
+    body=`
+      <div style="text-align:center;padding:8px 0 20px">
+        <div style="font-size:48px;margin-bottom:12px">${id==='googlefit'?'🏃':'💍'}</div>
+        <div style="font-family:'Syncopate',sans-serif;font-size:16px;letter-spacing:3px;color:var(--success);margin-bottom:6px">✓ CONNECTED</div>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:20px">${ago!==null?'Last synced '+ago+' min ago':'Synced'}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+          <div class="metric-card"><div class="metric-v ca">${bio.hrv||'—'}</div><div class="metric-l">HRV ms</div></div>
+          <div class="metric-card"><div class="metric-v cw">${bio.rhr||'—'}</div><div class="metric-l">RHR bpm</div></div>
+          <div class="metric-card"><div class="metric-v cs">${bio.sleepHrs||bio.sleepCycles||'—'}</div><div class="metric-l">${id==='whoop'?'Recovery %':'Sleep hrs'}</div></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn-accent" style="flex:1;font-size:11px;letter-spacing:2px" onclick="reSyncDevice('${id}')">↺ RE-SYNC NOW</button>
+          <button class="btn-ghost" style="flex:1;font-size:11px;letter-spacing:2px;padding:12px" onclick="disconnectDevice('${id}')">DISCONNECT</button>
+        </div>
+      </div>`;
+  } else if(id==='googlefit'){
+    body=`
+      <div style="text-align:center;padding:8px 0 20px">
+        <div style="font-size:48px;margin-bottom:12px">🏃</div>
+        <div style="font-family:'Syncopate',sans-serif;font-size:16px;letter-spacing:3px;color:var(--accent);margin-bottom:12px">GOOGLE FIT</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8;text-align:left;margin-bottom:20px">
+          Connect your Google Fit account to automatically pull HRV, resting heart rate, and sleep data. You'll be redirected to Google to authorise access — no password is shared.
+        </div>
+        <div style="background:rgba(200,255,0,.05);border:1px solid rgba(200,255,0,.15);padding:12px 16px;margin-bottom:20px;font-family:'Space Mono',monospace;font-size:10px;color:var(--text3);text-align:left;line-height:1.8">
+          PERMISSIONS REQUESTED:<br>
+          · Heart rate & HRV (read only)<br>
+          · Sleep data (read only)<br>
+          · Activity sessions (read only)
+        </div>
+        <button class="btn-accent" style="width:100%;font-size:12px;letter-spacing:3px;display:flex;align-items:center;justify-content:center;gap:10px" onclick="startOAuth('googlefit')">
+          <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#000" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#000" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#000" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#000" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          CONNECT WITH GOOGLE
+        </button>
+      </div>`;
+  } else if(id==='whoop'){
+    body=`
+      <div style="text-align:center;padding:8px 0 20px">
+        <div style="font-size:48px;margin-bottom:12px">💍</div>
+        <div style="font-family:'Syncopate',sans-serif;font-size:16px;letter-spacing:3px;color:var(--accent);margin-bottom:12px">WHOOP 4.0</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8;text-align:left;margin-bottom:20px">
+          Connect your Whoop account to pull recovery score, HRV, resting heart rate, and sleep performance directly from the Whoop API. You'll be redirected to Whoop to authorise.
+        </div>
+        <div style="background:rgba(200,255,0,.05);border:1px solid rgba(200,255,0,.15);padding:12px 16px;margin-bottom:20px;font-family:'Space Mono',monospace;font-size:10px;color:var(--text3);text-align:left;line-height:1.8">
+          PERMISSIONS REQUESTED:<br>
+          · Recovery score (read only)<br>
+          · HRV &amp; resting HR (read only)<br>
+          · Sleep &amp; strain data (read only)
+        </div>
+        <button class="btn-accent" style="width:100%;font-size:12px;letter-spacing:3px" onclick="startOAuth('whoop')">
+          💍 CONNECT WHOOP
+        </button>
+      </div>`;
+  }
+  document.getElementById('m-title').textContent=name.toUpperCase();
+  document.getElementById('m-body').innerHTML=body;
+  document.getElementById('modal-ov').classList.add('open');
+}
+
+// ── Real OAuth 2.0 flow ──
+function startOAuth(id){
+  const cfg=OAUTH_CFG[id];
+  if(!cfg||cfg.clientId.startsWith('YOUR_')){
+    // Client ID not configured yet — show instructions
+    document.getElementById('m-body').innerHTML=`
+      <div style="padding:8px 0">
+        <div style="background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.3);border-left:3px solid var(--warning);padding:16px 20px;margin-bottom:20px">
+          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--warning);margin-bottom:8px">SETUP REQUIRED</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.8">
+            To enable real ${DEVICE_NAMES[id]} sync, you need to register an OAuth app and add your Client ID to the code.<br><br>
+            <strong style="color:var(--text)">Steps for ${id==='googlefit'?'Google Fit':'Whoop'}:</strong>
+          </div>
+        </div>
+        ${id==='googlefit'?`
+        <ol style="font-size:13px;color:var(--text2);line-height:2;padding-left:18px">
+          <li>Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent)">console.cloud.google.com</a></li>
+          <li>Create a project → Enable <strong>Fitness API</strong></li>
+          <li>OAuth consent screen → Add scopes: fitness.heart_rate.read, fitness.sleep.read</li>
+          <li>Credentials → Create OAuth 2.0 Client ID (Web)</li>
+          <li>Add your domain to Authorised JavaScript Origins</li>
+          <li>Copy the Client ID into <code style="color:var(--accent);background:var(--surface3);padding:2px 6px">OAUTH_CFG.googlefit.clientId</code></li>
+        </ol>`:
+        `<ol style="font-size:13px;color:var(--text2);line-height:2;padding-left:18px">
+          <li>Go to <a href="https://developer.whoop.com" target="_blank" style="color:var(--accent)">developer.whoop.com</a></li>
+          <li>Create an application → set redirect URI to <code style="color:var(--accent);background:var(--surface3);padding:2px 6px">${window.location.origin}/oauth/whoop</code></li>
+          <li>Copy your Client ID into <code style="color:var(--accent);background:var(--surface3);padding:2px 6px">OAUTH_CFG.whoop.clientId</code></li>
+          <li>Deploy a small backend endpoint to exchange the auth code for a token (see docs)</li>
+        </ol>`}
+        <div style="margin-top:20px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);font-family:'Space Mono',monospace;font-size:11px;color:var(--text3)">
+          Until configured, you can enter metrics manually using the form below.
+        </div>
+        <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div class="form-group"><div class="form-label">HRV (ms)</div><input class="form-input" type="number" id="manual-hrv" placeholder="65" style="padding:10px"></div>
+          <div class="form-group"><div class="form-label">Resting HR</div><input class="form-input" type="number" id="manual-rhr" placeholder="58" style="padding:10px"></div>
+          <div class="form-group"><div class="form-label">${id==='whoop'?'Recovery %':'Sleep hrs'}</div><input class="form-input" type="number" id="manual-sleep" placeholder="${id==='whoop'?'75':'7.5'}" step="${id==='whoop'?'1':'0.5'}" style="padding:10px"></div>
+        </div>
+        <button class="btn-accent" style="width:100%;margin-top:14px;font-size:11px;letter-spacing:3px" onclick="saveManualBioGeneric('${id}')">SAVE MANUALLY</button>
+      </div>`;
+    return;
+  }
+  // Build real OAuth URL
+  const redirectUri=window.location.origin+window.location.pathname;
+  const state=btoa(JSON.stringify({uid:U.uid,device:id,ts:Date.now()}));
+  localStorage.setItem('oauth_pending_'+id,state);
+  const params=new URLSearchParams({
+    client_id:cfg.clientId,
+    redirect_uri:redirectUri,
+    response_type:'code',
+    scope:cfg.scopes,
+    state:state,
+    access_type:'offline',
+    prompt:'consent select_account'
+  });
+  closeModal();
+  window.location.href=cfg.authUrl+'?'+params.toString();
+}
+
+// ── Handle OAuth callback on page load ──
+function checkOAuthCallback(){
+  const params=new URLSearchParams(window.location.search);
+  const code=params.get('code');
+  const state=params.get('state');
+  const error=params.get('error');
+  if(!code&&!error)return;
+  // Clean URL
+  window.history.replaceState({},'',window.location.pathname);
+  if(error){showToast('OAuth cancelled: '+error,'w');return;}
+  let stateObj={};
+  try{stateObj=JSON.parse(atob(state||''));}catch{}
+  const device=stateObj.device;
+  if(!device){showToast('Unknown OAuth state','d');return;}
+  showToast('⏳ Exchanging auth code for '+DEVICE_NAMES[device]+'…');
+  // NOTE: exchanging the code for a token MUST happen server-side to protect your client secret.
+  // This calls your backend endpoint — deploy the Firebase Cloud Function below.
+  fetch('/api/oauth/exchange',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({code,device,redirectUri:window.location.origin+window.location.pathname})
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    if(data.error){showToast('Auth failed: '+data.error,'d');return;}
+    // Store token and fetch data
+    localStorage.setItem('oauth_token_'+device,JSON.stringify({
+      access_token:data.access_token,
+      refresh_token:data.refresh_token,
+      expires_at:Date.now()+(data.expires_in||3600)*1000,
+      device
+    }));
+    fetchDeviceData(device,data.access_token);
+  })
+  .catch(()=>{
+    showToast('Could not reach backend. Enter data manually.','w');
+    showSyncModal(device,'connect');
+  });
+}
+
+// ── Fetch real data from device API ──
+function fetchDeviceData(device,token){
+  const card=document.getElementById('sd-'+device);
+  const status=document.getElementById('ss-'+device);
+  if(card)card.classList.add('syncing');
+  if(status)status.textContent='Fetching…';
+  const now=Date.now();
+  const yesterday=now-86400000;
+  let fetchPromise;
+  if(device==='googlefit'){
+    // Google Fit Data Sources API — aggregate heart rate and sleep
+    fetchPromise=Promise.all([
+      fetch('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate',{
+        method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+        body:JSON.stringify({aggregateBy:[{dataTypeName:'com.google.heart_rate.bpm'}],bucketByTime:{durationMillis:86400000},startTimeMillis:yesterday,endTimeMillis:now})
+      }).then(r=>r.json()),
+      fetch('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate',{
+        method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+        body:JSON.stringify({aggregateBy:[{dataTypeName:'com.google.sleep.segment'}],bucketByTime:{durationMillis:86400000},startTimeMillis:yesterday,endTimeMillis:now})
+      }).then(r=>r.json())
+    ]).then(([hrData,sleepData])=>{
+      const hrPoints=hrData?.bucket?.[0]?.dataset?.[0]?.point||[];
+      const rhr=hrPoints.length?Math.round(Math.min(...hrPoints.map(p=>p.value?.[0]?.fpVal||999))):null;
+      const sleepMs=(sleepData?.bucket?.[0]?.dataset?.[0]?.point||[]).reduce((s,p)=>{
+        const dur=(p.endTimeNanos-p.startTimeNanos)/1e6;return s+(isNaN(dur)?0:dur);
+      },0);
+      const sleepHrs=sleepMs?(sleepMs/3600000).toFixed(1):null;
+      return{rhr,sleepHrs,hrv:null,source:'googlefit'};
+    });
+  } else if(device==='whoop'){
+    fetchPromise=Promise.all([
+      fetch('https://api.prod.whoop.com/developer/v1/recovery?limit=1',{headers:{'Authorization':'Bearer '+token}}).then(r=>r.json()),
+      fetch('https://api.prod.whoop.com/developer/v1/sleep?limit=1',{headers:{'Authorization':'Bearer '+token}}).then(r=>r.json())
+    ]).then(([rec,sleep])=>{
+      const latest=rec?.records?.[0]?.score||{};
+      const sleepScore=sleep?.records?.[0]?.score||{};
+      return{
+        hrv:latest.hrv_rmssd_on_waking?Math.round(latest.hrv_rmssd_on_waking):null,
+        rhr:latest.resting_heart_rate?Math.round(latest.resting_heart_rate):null,
+        sleepHrs:sleepScore.total_in_bed_time_milli?(sleepScore.total_in_bed_time_milli/3600000).toFixed(1):null,
+        recoveryPct:latest.recovery_score||null,
+        source:'whoop'
+      };
+    });
+  }
+  fetchPromise.then(bio=>{
+    bio.fetchedAt=Date.now();
     if(!db.biometrics)db.biometrics=[];
-    db.biometrics=db.biometrics.filter(function(b){return b.source!==id;});
+    db.biometrics=db.biometrics.filter(b=>b.source!==device);
     db.biometrics.push(bio);
-    DB.save(U.uid,db); // Automatically syncs to Firebase via DB.save
-    status.textContent='✓ Live';
-    status.className='sync-status ok';
-    const allBio=db.biometrics;
-    const avgHrv=Math.round(allBio.reduce(function(s,b){return s+(b.hrv||0);},0)/allBio.length);
-    const avgRhr=Math.round(allBio.reduce(function(s,b){return s+(b.rhr||0);},0)/allBio.length);
-    const avgCyc=(allBio.reduce(function(s,b){return s+(b.sleepCycles||0);},0)/allBio.length).toFixed(1);
-    const row=document.getElementById('sync-metrics-row');
-    if(row)row.style.display='block';
-    document.getElementById('sm-hrv').textContent=avgHrv;
-    document.getElementById('sm-hrv-src').textContent='ms · '+DEVICE_NAMES[id];
-    document.getElementById('sm-rhr').textContent=avgRhr;
-    document.getElementById('sm-rhr-src').textContent='bpm · live';
-    document.getElementById('sm-sleep').textContent=avgCyc;
-    document.getElementById('sm-sleep-src').textContent='cycles synced';
-    document.getElementById('sync-last-time').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    showToast('✅ '+DEVICE_NAMES[id]+' synced — HRV:'+hrv+' RHR:'+rhr,'s');
+    DB.save(U.uid,db);
+    if(card){card.classList.remove('syncing');card.classList.add('connected');}
+    if(status){status.textContent='✓ Live';status.className='sync-status ok';}
+    updateSyncMetricsUI();
+    showToast('✅ '+DEVICE_NAMES[device]+' synced'+(bio.hrv?' — HRV:'+bio.hrv:'')+(bio.rhr?' RHR:'+bio.rhr:''),'s');
     renderKineticAlerts();
     if(db.role==='coach')renderLegion();
-  },2200);
+  }).catch(e=>{
+    if(card)card.classList.remove('syncing');
+    if(status){status.textContent='Error';status.className='sync-status';}
+    showToast('Fetch failed — token may have expired. Reconnect.','d');
+  });
+}
+
+function updateSyncMetricsUI(){
+  const allBio=db.biometrics||[];
+  if(!allBio.length)return;
+  const row=document.getElementById('sync-metrics-row');
+  if(row)row.style.display='block';
+  const withHrv=allBio.filter(b=>b.hrv);
+  const withRhr=allBio.filter(b=>b.rhr);
+  const withSleep=allBio.filter(b=>b.sleepHrs||b.sleepCycles);
+  const avgHrv=withHrv.length?Math.round(withHrv.reduce((s,b)=>s+b.hrv,0)/withHrv.length):'—';
+  const avgRhr=withRhr.length?Math.round(withRhr.reduce((s,b)=>s+b.rhr,0)/withRhr.length):'—';
+  const latestSleep=withSleep.length?withSleep[withSleep.length-1]:{};
+  document.getElementById('sm-hrv').textContent=avgHrv;
+  document.getElementById('sm-hrv-src').textContent='ms avg across devices';
+  document.getElementById('sm-rhr').textContent=avgRhr;
+  document.getElementById('sm-rhr-src').textContent='bpm · live';
+  document.getElementById('sm-sleep').textContent=latestSleep.sleepHrs||latestSleep.sleepCycles||'—';
+  document.getElementById('sm-sleep-src').textContent='hours last night';
+  document.getElementById('sync-last-time').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── Manual entry helpers ──
+function saveManualBio(source){
+  const hrv=parseInt(document.getElementById('hk-hrv')?.value)||null;
+  const rhr=parseInt(document.getElementById('hk-rhr')?.value)||null;
+  const sleepHrs=parseFloat(document.getElementById('hk-sleep')?.value)||null;
+  _commitBio({source,hrv,rhr,sleepHrs,fetchedAt:Date.now(),manual:true});
+}
+function saveManualBioGeneric(source){
+  const hrv=parseInt(document.getElementById('manual-hrv')?.value)||null;
+  const rhr=parseInt(document.getElementById('manual-rhr')?.value)||null;
+  const sleepHrs=parseFloat(document.getElementById('manual-sleep')?.value)||null;
+  _commitBio({source,hrv,rhr,sleepHrs,fetchedAt:Date.now(),manual:true});
+}
+function _commitBio(bio){
+  if(!db.biometrics)db.biometrics=[];
+  db.biometrics=db.biometrics.filter(b=>b.source!==bio.source);
+  db.biometrics.push(bio);
+  DB.save(U.uid,db);
+  const card=document.getElementById('sd-'+bio.source);
+  const status=document.getElementById('ss-'+bio.source);
+  if(card){card.classList.remove('syncing');card.classList.add('connected');}
+  if(status){status.textContent='✓ Manual';status.className='sync-status ok';}
+  updateSyncMetricsUI();
+  closeModal();
+  showToast('✅ '+DEVICE_NAMES[bio.source]+' data saved','s');
+  renderKineticAlerts();
+}
+
+function reSyncDevice(id){
+  const tokenRaw=localStorage.getItem('oauth_token_'+id);
+  if(tokenRaw){
+    const t=JSON.parse(tokenRaw);
+    closeModal();
+    fetchDeviceData(id,t.access_token);
+  } else {
+    closeModal();
+    showSyncModal(id,'connect');
+  }
+}
+function disconnectDevice(id){
+  localStorage.removeItem('oauth_token_'+id);
+  localStorage.removeItem('oauth_pending_'+id);
+  if(!db.biometrics)db.biometrics=[];
+  db.biometrics=db.biometrics.filter(b=>b.source!==id);
+  DB.save(U.uid,db);
+  const card=document.getElementById('sd-'+id);
+  const status=document.getElementById('ss-'+id);
+  if(card)card.classList.remove('connected');
+  if(status){status.textContent='Tap to sync';status.className='sync-status';}
+  closeModal();
+  showToast(DEVICE_NAMES[id]+' disconnected','w');
+}
+
+// Check OAuth callback on load (called from initApp)
+function initDeviceSync(){
+  checkOAuthCallback();
+  // Restore connected state from stored tokens/bios
+  const bios=db.biometrics||[];
+  bios.forEach(bio=>{
+    const card=document.getElementById('sd-'+bio.source);
+    const status=document.getElementById('ss-'+bio.source);
+    if(card)card.classList.add('connected');
+    if(status){status.textContent=bio.manual?'✓ Manual':'✓ Live';status.className='sync-status ok';}
+  });
+  if(bios.length)updateSyncMetricsUI();
 }
 
 // ══════════════════════════════════════════════════════════════════════
