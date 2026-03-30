@@ -5,6 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Iron Palace</title>
 <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Space+Mono:wght@400;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Firebase SDKs -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getDatabase, ref, set, get, update, onValue, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDGdecWngN_zZFlJyq_L0_BLD8KEMcBpgI",
+    authDomain: "theironpalace-ffb85.firebaseapp.com",
+    databaseURL: "https://theironpalace-ffb85-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "theironpalace-ffb85",
+    storageBucket: "theironpalace-ffb85.firebasestorage.app",
+    messagingSenderId: "708398928493",
+    appId: "1:708398928493:web:79ac3030178c938af9a564"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db_rt = getDatabase(app);
+  const gProvider = new GoogleAuthProvider();
+
+  // Expose to global scope for non-module JS
+  window._FB = { auth, db_rt, ref, set, get, update, onValue, push, serverTimestamp,
+    createUserWithEmailAndPassword, signInWithEmailAndPassword, fbSignOut,
+    onAuthStateChanged, GoogleAuthProvider, signInWithPopup, gProvider, updateProfile };
+
+  // Auth state observer
+  onAuthStateChanged(auth, (user) => {
+    if (user && window._pendingFirebaseLogin) {
+      window._pendingFirebaseLogin(user);
+      window._pendingFirebaseLogin = null;
+    }
+  });
+</script>
 <style>
   :root{
     --bg:#000000;--surface:#080808;--surface2:#0d0d0d;--surface3:#141414;
@@ -252,6 +286,140 @@
   ::-webkit-scrollbar-track{background:transparent;}
   ::-webkit-scrollbar-thumb{background:var(--border);}
 
+  /* ══════════════ PALACE MANAGEMENT / FEATURE 1 ══════════════ */
+  .palace-hero{background:linear-gradient(135deg,#0a0a00,#111100);border:1px solid rgba(200,255,0,.2);padding:36px 32px;margin-bottom:24px;position:relative;overflow:hidden;}
+  .palace-hero::before{content:'LEGION';position:absolute;right:-10px;bottom:-20px;font-family:'Syncopate',sans-serif;font-size:120px;color:rgba(200,255,0,.03);letter-spacing:8px;pointer-events:none;}
+  .palace-hero::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
+  .palace-id-display{font-family:'Space Mono',monospace;font-size:32px;letter-spacing:8px;color:var(--accent);text-shadow:0 0 20px rgba(200,255,0,.4);margin:12px 0;}
+  .palace-invite{font-family:'Space Mono',monospace;font-size:20px;letter-spacing:4px;color:var(--accent3);margin:4px 0;}
+  .btn-copy{background:transparent;border:1px solid var(--border2);color:var(--text3);padding:8px 16px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-left:12px;}
+  .btn-copy:hover{border-color:var(--accent);color:var(--accent);}
+  .role-selector{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+  .role-card{background:var(--surface);border:1px solid var(--border2);padding:28px 20px;text-align:center;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+  .role-card:hover{border-color:var(--accent);background:rgba(200,255,0,.03);}
+  .role-card.selected{border-color:var(--accent);border-width:2px;background:rgba(200,255,0,.06);}
+  .role-card.selected::after{content:'✓';position:absolute;top:10px;right:14px;color:var(--accent);font-family:'Space Mono',monospace;font-size:18px;}
+  .role-icon{font-size:40px;margin-bottom:12px;}
+  .role-title{font-family:'Syncopate',sans-serif;font-size:16px;letter-spacing:3px;color:var(--accent);margin-bottom:6px;}
+  .role-desc{font-size:12px;color:var(--text3);line-height:1.5;}
+  .palace-setup-card{background:var(--surface);border:1px solid var(--border);padding:28px;margin-bottom:20px;}
+  .palace-setup-card h3{font-family:'Space Mono',monospace;font-size:16px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:20px;}
+  .btn-accent{background:var(--accent);color:#000;padding:14px 28px;border:none;font-family:'Syncopate',sans-serif;font-size:12px;letter-spacing:4px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+  .btn-accent:hover{background:#fff;}
+  .btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text);padding:14px 28px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+  .palace-member-row{background:var(--surface);border:1px solid var(--border);padding:14px 20px;margin-bottom:10px;display:flex;align-items:center;gap:16px;}
+  .palace-member-av{width:36px;height:36px;background:rgba(200,255,0,.15);border:1px solid rgba(200,255,0,.3);color:var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Syncopate',sans-serif;font-size:13px;font-weight:700;flex-shrink:0;}
+  .palace-member-name{font-family:'Space Mono',monospace;font-size:14px;letter-spacing:1px;font-weight:600;}
+  .palace-member-meta{font-size:12px;color:var(--text3);}
+  .connected-badge{background:rgba(57,255,20,.1);border:1px solid rgba(57,255,20,.3);color:var(--success);padding:4px 12px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;}
+  .pending-badge{background:rgba(255,149,0,.1);border:1px solid rgba(255,149,0,.3);color:var(--warning);padding:4px 12px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;}
+
+  /* ══════════════ READINESS DASHBOARD / FEATURE 2 ══════════════ */
+  .legion-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:gap;}
+  .readiness-overview{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;}
+  .overview-card{background:var(--surface);border:1px solid var(--border);padding:20px;text-align:center;position:relative;}
+  .overview-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+  .overview-card.green::before{background:var(--success);}
+  .overview-card.yellow::before{background:var(--warning);}
+  .overview-card.red::before{background:var(--danger);}
+  .overview-num{font-family:'Syncopate',sans-serif;font-size:48px;line-height:1;}
+  .overview-lbl{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-top:4px;font-family:'Space Mono',monospace;}
+  .athlete-row{background:var(--surface);border:1px solid var(--border);padding:16px 20px;margin-bottom:10px;display:flex;align-items:center;gap:16px;transition:all .3s;cursor:pointer;position:relative;overflow:hidden;}
+  .athlete-row:hover{border-color:var(--accent);background:rgba(200,255,0,.02);}
+  .athlete-row.alert-red{border-color:var(--danger);animation:alertGlow 2s infinite;}
+  @keyframes alertGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,34,68,.3)}50%{box-shadow:0 0 0 8px rgba(255,34,68,0)}}
+  .athlete-row.alert-yellow{border-color:var(--warning);}
+  .status-ring-wrap{position:relative;width:56px;height:56px;flex-shrink:0;}
+  .status-ring-svg{width:56px;height:56px;transform:rotate(-90deg);}
+  .sr-bg{fill:none;stroke:var(--surface3);stroke-width:5;}
+  .sr-prog{fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset 1.5s ease;}
+  .sr-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .sr-score{font-family:'Syncopate',sans-serif;font-size:13px;font-weight:700;line-height:1;}
+  .athlete-info{flex:1;min-width:0;}
+  .athlete-name{font-family:'Space Mono',monospace;font-size:15px;letter-spacing:1px;font-weight:600;margin-bottom:4px;}
+  .athlete-why{font-size:12px;color:var(--text3);line-height:1.5;display:flex;flex-wrap:wrap;gap:8px;}
+  .why-pill{background:var(--surface3);border:1px solid var(--border2);padding:3px 10px;font-size:11px;letter-spacing:1px;font-family:'Space Mono',monospace;white-space:nowrap;}
+  .why-pill.bad{border-color:rgba(255,34,68,.4);color:var(--danger);}
+  .why-pill.warn{border-color:rgba(255,149,0,.4);color:var(--warning);}
+  .kinetic-icon{font-size:20px;flex-shrink:0;width:28px;text-align:center;}
+  .athlete-detail-panel{display:none;background:var(--surface2);border:1px solid var(--border);border-top:none;padding:16px 20px;margin-top:-10px;margin-bottom:10px;}
+  .athlete-detail-panel.open{display:block;animation:fadeIn .3s ease;}
+  .detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;}
+  .detail-cell{text-align:center;}
+  .detail-val{font-family:'Syncopate',sans-serif;font-size:20px;margin-bottom:2px;}
+  .detail-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-family:'Space Mono',monospace;}
+  .pain-heatrow{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;font-family:'Space Mono',monospace;}
+  .pain-bar-outer{flex:1;height:6px;background:var(--surface3);}
+  .pain-bar-inner{height:100%;background:var(--danger);transition:width .8s ease;}
+  .load-rec-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,34,68,.1);border:1px solid rgba(255,34,68,.3);padding:8px 16px;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;color:var(--danger);margin-top:10px;}
+
+  /* ══════════════ DEVICE SYNC / FEATURE 3 ══════════════ */
+  .sync-block{background:var(--surface);border:1px solid var(--border);padding:24px;margin-bottom:24px;}
+  .sync-title{font-family:'Space Mono',monospace;font-size:14px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
+  .sync-devices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+  .sync-device{background:var(--surface2);border:1px solid var(--border2);padding:16px;text-align:center;cursor:pointer;transition:all .2s;position:relative;}
+  .sync-device:hover{border-color:var(--accent);background:rgba(200,255,0,.03);}
+  .sync-device.connected{border-color:rgba(57,255,20,.4);background:rgba(57,255,20,.04);}
+  .sync-device.syncing .sync-icon{animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .sync-icon{font-size:28px;margin-bottom:8px;display:block;}
+  .sync-name{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+  .sync-status{font-size:11px;color:var(--text3);}
+  .sync-status.ok{color:var(--success);}
+  .sync-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .sync-metric{background:var(--surface2);border:1px solid var(--border);padding:14px;text-align:center;}
+  .sync-metric-val{font-family:'Syncopate',sans-serif;font-size:28px;line-height:1;margin-bottom:4px;}
+  .sync-metric-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-family:'Space Mono',monospace;}
+  .sync-metric-src{font-size:10px;color:var(--accent3);margin-top:2px;font-family:'Space Mono',monospace;}
+  .sync-pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--success);margin-right:6px;animation:pulse 1.5s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+  .btn-sync{background:transparent;border:1px solid var(--accent3);color:var(--accent3);padding:12px 24px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px;}
+  .btn-sync:hover{background:rgba(0,255,204,.08);}
+
+  /* ══════════════ SPATIAL PAIN MAP / FEATURE 4 ══════════════ */
+  .palace-state-hero{background:linear-gradient(135deg,#000,#050510);border:1px solid rgba(0,255,204,.15);padding:28px 32px;margin-bottom:24px;position:relative;overflow:hidden;}
+  .palace-state-hero::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent3),transparent);}
+  .ps-grid{display:grid;grid-template-columns:300px 1fr;gap:24px;margin-bottom:24px;}
+  .pain-log-panel{background:var(--surface);border:1px solid var(--border);padding:24px;}
+  .pain-log-title{font-family:'Space Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:16px;}
+  .pain-part-display{font-family:'Syncopate',sans-serif;font-size:20px;letter-spacing:2px;color:var(--accent3);margin-bottom:16px;min-height:28px;}
+  .slider-group{margin-bottom:18px;}
+  .slider-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:'Space Mono',monospace;display:flex;justify-content:space-between;}
+  .intensity-slider{width:100%;-webkit-appearance:none;height:4px;background:linear-gradient(90deg,var(--success),var(--warning),var(--danger));outline:none;border-radius:0;}
+  .intensity-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--accent);cursor:pointer;border:2px solid #000;}
+  .type-toggle{display:flex;gap:0;}
+  .type-btn{flex:1;padding:12px;text-align:center;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);background:var(--surface);border:1px solid var(--border);transition:all .2s;}
+  .type-btn.active.sharp{background:rgba(255,34,68,.15);border-color:var(--danger);color:var(--danger);}
+  .type-btn.active.dull{background:rgba(255,149,0,.1);border-color:var(--warning);color:var(--warning);}
+  .pain-log-history{background:var(--surface);border:1px solid var(--border);padding:24px;}
+  .pain-entry{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+  .pain-entry:last-child{border-bottom:none;}
+  .pain-entry-part{font-family:'Space Mono',monospace;font-size:13px;letter-spacing:1px;font-weight:600;flex:1;}
+  .pain-entry-type{font-size:11px;padding:3px 10px;border:1px solid;font-family:'Space Mono',monospace;letter-spacing:1px;}
+  .pain-entry-type.sharp{color:var(--danger);border-color:rgba(255,34,68,.4);}
+  .pain-entry-type.dull{color:var(--warning);border-color:rgba(255,149,0,.4);}
+  .pain-entry-int{font-family:'Syncopate',sans-serif;font-size:18px;width:32px;text-align:center;}
+  .pain-entry-date{font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;white-space:nowrap;}
+  .no-pain-today{display:flex;align-items:center;gap:8px;background:rgba(57,255,20,.06);border:1px solid rgba(57,255,20,.2);padding:14px 18px;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;color:var(--success);margin-bottom:16px;}
+  .pain-canvas-wrap{background:var(--surface);border:1px solid var(--border);padding:16px;text-align:center;}
+  .pain-canvas-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;font-family:'Space Mono',monospace;}
+
+  /* ══════════════ KINETIC ALERTS / FEATURE 5 ══════════════ */
+  .kinetic-alert-bar{background:rgba(255,34,68,.07);border:1px solid rgba(255,34,68,.4);border-left:4px solid var(--danger);padding:16px 20px;margin-bottom:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;animation:alertGlow 3s infinite;}
+  .ka-icon{font-size:28px;flex-shrink:0;margin-top:2px;}
+  .ka-body{flex:1;}
+  .ka-title{font-family:'Syncopate',sans-serif;font-size:16px;letter-spacing:3px;color:var(--danger);margin-bottom:4px;}
+  .ka-detail{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:6px;}
+  .ka-action{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;color:var(--warning);}
+  .ka-dismiss{background:transparent;border:1px solid rgba(255,34,68,.3);color:var(--danger);padding:8px 14px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;cursor:pointer;transition:all .2s;flex-shrink:0;align-self:center;}
+  .ka-dismiss:hover{background:rgba(255,34,68,.1);}
+  .alert-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--danger);color:#fff;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;padding:0 5px;margin-left:6px;vertical-align:middle;}
+
+  /* ══════════════ CTRL BUTTONS ══════════════ */
+  .ctrl-btn{background:transparent;border:1px solid var(--border2);color:var(--text3);padding:6px 14px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+  .ctrl-btn:hover,.ctrl-btn.active{border-color:var(--accent);color:var(--accent);}
+
   /* MOBILE */
   .m-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 0;z-index:200;}
   .m-nav-inner{display:flex;justify-content:space-around;}
@@ -294,6 +462,19 @@
       <div id="f-name" style="display:none" class="form-group"><div class="form-label">Full Name</div><input class="form-input" type="text" id="a-name" placeholder="Your Name"></div>
       <div id="f-sport" style="display:none" class="form-group"><div class="form-label">Primary Sport</div><select class="form-input" id="a-sport"><option>Weightlifting</option><option>CrossFit</option><option>Powerlifting</option><option>Bodybuilding</option><option>Running</option><option>Cycling</option><option>Swimming</option><option>MMA / Boxing</option><option>Yoga</option><option>Other</option></select></div>
       <div id="f-wt" style="display:none" class="form-group"><div class="form-label">Body Weight (kg)</div><input class="form-input" type="number" id="a-wt" placeholder="75"></div>
+      <div id="f-role" style="display:none" class="form-group">
+        <div class="form-label">I am a…</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+          <div class="role-card" id="rc-athlete" onclick="selRole('athlete')" style="padding:16px 12px">
+            <div class="role-icon" style="font-size:26px;margin-bottom:6px">🏃</div>
+            <div class="role-title" style="font-size:12px">ATHLETE</div>
+          </div>
+          <div class="role-card" id="rc-coach" onclick="selRole('coach')" style="padding:16px 12px">
+            <div class="role-icon" style="font-size:26px;margin-bottom:6px">📋</div>
+            <div class="role-title" style="font-size:12px">COACH</div>
+          </div>
+        </div>
+      </div>
       <button class="btn-primary" id="auth-btn" onclick="doAuth()">ENTER THE PALACE</button>
     </div>
   </div>
@@ -337,6 +518,9 @@
         <div class="nav-item" data-s="tracks" onclick="goSec('tracks')"><span style="font-size:18px;width:20px;text-align:center">📊</span>Tracks</div>
         <div class="nav-item" data-s="recovery" onclick="goSec('recovery')"><span style="font-size:18px;width:20px;text-align:center">💠</span>Recovery</div>
         <div class="nav-item" data-s="injuries" onclick="goSec('injuries')"><span style="font-size:18px;width:20px;text-align:center">🩺</span>Injuries</div>
+        <div class="nav-item" data-s="palace-state" onclick="goSec('palace-state')" id="nav-palace-state"><span style="font-size:18px;width:20px;text-align:center">🧬</span>Palace State</div>
+        <div class="nav-item" data-s="legion" onclick="goSec('legion')" id="nav-legion" style="display:none"><span style="font-size:18px;width:20px;text-align:center">⚔️</span>Legion<span id="alert-badge-nav" style="display:none" class="alert-badge">0</span></div>
+        <div class="nav-item" data-s="palace-hub" onclick="goSec('palace-hub')"><span style="font-size:18px;width:20px;text-align:center">🏛️</span>Palace Hub</div>
       </nav>
       <div class="sb-foot">
         <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;font-family:'Space Mono',monospace">Weekly Goal</div>
@@ -354,6 +538,8 @@
           <div class="welcome-name">WELCOME BACK, <span id="d-name">ATHLETE</span></div>
           <div class="streak-badge">🔥 <span id="d-streak">0</span> DAY STREAK</div>
         </div>
+        <!-- KINETIC ALERTS ZONE -->
+        <div id="kinetic-alerts-zone"></div>
         <div class="g4">
           <div class="card"><div class="card-label">Total Volume</div><div class="card-value ca" id="d-vol">0</div><div class="card-unit">kg lifted all time</div></div>
           <div class="card"><div class="card-label">Calories Burned</div><div class="card-value cw" id="d-cal">0</div><div class="card-unit">kcal all time</div></div>
@@ -421,6 +607,39 @@
       <section class="section" id="section-recovery">
         <div class="section-title">RECOVERY</div>
         <div class="section-sub">Monitor & Optimize Your Rest</div>
+
+        <!-- FEATURE 3: DEVICE SYNC -->
+        <div class="sync-block">
+          <div class="sync-title">📡 SILENT TRACKER — Device Sync</div>
+          <div class="sync-devices">
+            <div class="sync-device" id="sd-healthkit" onclick="syncDevice('healthkit')">
+              <span class="sync-icon">🍎</span>
+              <div class="sync-name">Apple HealthKit</div>
+              <div class="sync-status" id="ss-healthkit">Tap to sync</div>
+              <div style="font-size:9px;color:var(--text3);margin-top:2px;font-family:'Space Mono',monospace">iOS only</div>
+            </div>
+            <div class="sync-device" id="sd-googlefit" onclick="syncDevice('googlefit')">
+              <span class="sync-icon">🏃</span>
+              <div class="sync-name">Google Fit</div>
+              <div class="sync-status" id="ss-googlefit">Tap to sync</div>
+            </div>
+            <div class="sync-device" id="sd-whoop" onclick="syncDevice('whoop')">
+              <span class="sync-icon">💍</span>
+              <div class="sync-name">Whoop 4.0</div>
+              <div class="sync-status" id="ss-whoop">Tap to sync</div>
+            </div>
+          </div>
+          <div id="sync-metrics-row" style="display:none">
+            <div class="sync-metrics">
+              <div class="sync-metric"><div class="sync-metric-val ca" id="sm-hrv">—</div><div class="sync-metric-lbl">HRV</div><div class="sync-metric-src" id="sm-hrv-src">ms</div></div>
+              <div class="sync-metric"><div class="sync-metric-val cw" id="sm-rhr">—</div><div class="sync-metric-lbl">Resting HR</div><div class="sync-metric-src" id="sm-rhr-src">bpm</div></div>
+              <div class="sync-metric"><div class="sync-metric-val cs" id="sm-sleep">—</div><div class="sync-metric-lbl">Sleep Cycles</div><div class="sync-metric-src" id="sm-sleep-src">cycles</div></div>
+            </div>
+            <div style="margin-top:12px;display:flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text3);">
+              <span class="sync-pulse"></span>Last synced: <span id="sync-last-time">—</span> · Auto-fetches every hour
+            </div>
+          </div>
+        </div>
         <div id="rec-warn" class="rec-warn" style="display:none">
           <div class="warn-t">⚠️ RECOVERY PERIOD ACTIVE</div>
           <div class="warn-b">Your body is still recovering. Training now increases injury risk and reduces gains. Let your muscles repair and grow stronger.</div>
@@ -490,8 +709,14 @@
         <div class="section-title">INJURIES</div>
         <div class="section-sub">Prevention, Education & Emergency Response</div>
         <div style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:12px">🚨 EMERGENCY SERVICES</div>
+        <div style="background:var(--surface);border:1px solid var(--border);padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text3);white-space:nowrap">EMERGENCY NUMBER:</div>
+          <input class="form-input" type="tel" id="emg-number" style="flex:1;min-width:140px;max-width:200px;padding:10px 14px;font-family:'Space Mono',monospace;font-size:14px" placeholder="112" value="">
+          <button class="btn-accent" style="padding:10px 18px;font-size:11px;letter-spacing:2px;white-space:nowrap" onclick="saveEmgNumber()">SAVE</button>
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text3)">Your saved number: <span id="emg-num-display" style="color:var(--accent)">112 (default)</span></span>
+        </div>
         <div class="emg-buttons">
-          <button class="btn-ecall" onclick="eCall()">📞 CALL 112 — EMERGENCY</button>
+          <button class="btn-ecall" onclick="eCall()">📞 CALL EMERGENCY</button>
           <button class="btn-etext" onclick="eText()">💬 TEXT EMERGENCY</button>
         </div>
         <div class="inj-tabs">
@@ -499,24 +724,26 @@
           <button class="inj-tab rare" onclick="switchInjTab('rare')">🟣 Rare</button>
           <button class="inj-tab serious" onclick="switchInjTab('serious')">🔴 Serious</button>
         </div>
-        <div class="diagram-grid">
+        <!-- Shared 3D canvas for injury map (switches mode per tab) -->
+        <div class="diagram-grid" id="inj-diagram-wrap">
           <div class="svg-wrap" style="padding:10px">
-            <div class="svg-title">ANATOMICAL MODEL — DRAG TO ROTATE</div>
-            <canvas id="body3d" width="268" height="360" style="width:268px;height:360px;display:block;margin:0 auto;cursor:grab;"></canvas>
+            <div class="svg-title" id="inj-canvas-title">ANATOMICAL MODEL — DRAG TO ROTATE</div>
+            <div style="position:relative;display:inline-block">
+              <canvas id="body3d" width="268" height="360" style="width:268px;height:360px;display:block;margin:0 auto;cursor:grab;"></canvas>
+              <!-- Tab colour legend overlay -->
+              <div id="inj-legend" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:9px;color:rgba(200,255,0,.5);letter-spacing:1px;white-space:nowrap;background:rgba(0,0,0,.7);padding:3px 8px">🟡 COMMON · 🟣 RARE · 🔴 SERIOUS</div>
+            </div>
             <div style="display:flex;justify-content:center;gap:6px;margin-top:8px;flex-wrap:wrap">
               <button class="ctrl-btn active" id="btn-auto" onclick="toggleAuto()">AUTO ROTATE</button>
               <button class="ctrl-btn" onclick="resetView()">RESET</button>
-            </div>
-            <div style="font-size:9px;color:var(--text3);margin-top:8px;line-height:1.8;font-family:'Space Mono',monospace">
-              🟡 COMMON &nbsp; 🟣 RARE &nbsp; 🔴 SERIOUS<br>
-              <span style="color:var(--border2)">CLICK REGION TO SELECT</span>
+              <button class="ctrl-btn" id="inj-mode-btn" onclick="cycleInjMode()">MODE: ALL</button>
             </div>
           </div>
           <div class="info-panel">
             <div class="info-placeholder" id="inj-ph">
               <div style="font-size:44px;opacity:.3">🫀</div>
               <div style="font-family:'Space Mono',monospace;font-size:14px;letter-spacing:3px;text-transform:uppercase">Select a Body Region</div>
-              <div style="font-size:13px;color:var(--text3);max-width:280px">Tap any area on the diagram above to see injury details, risks, symptoms, and treatment options.</div>
+              <div style="font-size:13px;color:var(--text3);max-width:280px">Tap any area on the 3D model to see injury details, risks, symptoms, and treatment. Switch tabs to filter by severity.</div>
             </div>
             <div id="inj-detail" style="display:none"></div>
           </div>
@@ -538,6 +765,150 @@
           </div>
         </div>
       </section>
+
+      <!-- ████████ FEATURE 4: PALACE STATE ████████ -->
+      <section class="section" id="section-palace-state">
+        <div class="palace-state-hero">
+          <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent3);margin-bottom:6px;font-family:'Space Mono',monospace">🧬 MORNING PROTOCOL</div>
+          <div style="font-family:'Syncopate',sans-serif;font-size:36px;letter-spacing:3px">PALACE STATE</div>
+          <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-top:4px">Subjective Spatial Mapping — Log What Sensors Miss</div>
+        </div>
+        <div class="ps-grid">
+          <div>
+            <div class="pain-canvas-wrap">
+              <div class="pain-canvas-label">3D BODY — TAP TO SELECT REGION</div>
+              <canvas id="body3d-ps" width="268" height="340" style="width:268px;height:340px;display:block;margin:0 auto;cursor:grab;"></canvas>
+              <div style="display:flex;justify-content:center;gap:6px;margin-top:8px;flex-wrap:wrap">
+                <button class="ctrl-btn active" id="btn-auto-ps" onclick="toggleAutoPS()">AUTO ROTATE</button>
+                <button class="ctrl-btn" onclick="resetViewPS()">RESET</button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div id="ps-no-pain" class="no-pain-today"><span>✅</span> No region selected — tap 3D model to log pain</div>
+            <div class="pain-log-panel" style="margin-bottom:16px">
+              <div class="pain-log-title">📍 LOG PAIN AT SELECTED SITE</div>
+              <div class="pain-part-display" id="ps-selected-part">— SELECT A REGION —</div>
+              <div class="slider-group">
+                <div class="slider-label"><span>Intensity</span><span id="ps-intensity-val" style="color:var(--accent);font-size:14px">5</span></div>
+                <input type="range" class="intensity-slider" id="ps-intensity" min="1" max="10" value="5" oninput="document.getElementById('ps-intensity-val').textContent=this.value">
+              </div>
+              <div class="slider-group">
+                <div class="pain-log-title" style="margin-bottom:10px">Pain Type</div>
+                <div class="type-toggle">
+                  <div class="type-btn sharp active" id="pt-sharp" onclick="setPainType('sharp')">⚡ Sharp</div>
+                  <div class="type-btn dull" id="pt-dull" onclick="setPainType('dull')">🌀 Dull Tension</div>
+                </div>
+              </div>
+              <button class="btn-accent" style="width:100%;margin-top:12px" onclick="logPainEntry()">LOG TO PALACE MAP</button>
+            </div>
+            <div class="pain-log-history">
+              <div class="pain-log-title">📋 TODAY'S PALACE MAP</div>
+              <div id="ps-today-log"></div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:24px">
+          <div style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:16px">📅 Pain History (Last 7 Days)</div>
+          <div id="ps-history-log"></div>
+        </div>
+      </section>
+
+      <!-- ████████ FEATURE 2: LEGION READINESS DASHBOARD ████████ -->
+      <section class="section" id="section-legion">
+        <div class="palace-hero">
+          <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:6px;font-family:'Space Mono',monospace">COACH COMMAND</div>
+          <div style="font-family:'Syncopate',sans-serif;font-size:36px;letter-spacing:3px">THE LEGION</div>
+          <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-top:4px">Real-Time Readiness — Manage 50+ Bodies From One Screen</div>
+        </div>
+        <div id="legion-no-palace">
+          <div class="empty"><div class="empty-icon">🏛️</div><div style="font-family:'Space Mono',monospace;font-size:14px;letter-spacing:2px">No Palace Created Yet</div><div style="font-size:13px">Go to Palace Hub to forge your Legion.</div></div>
+        </div>
+        <div id="legion-main" style="display:none">
+          <div class="readiness-overview">
+            <div class="overview-card green"><div class="overview-num cs" id="lo-green">0</div><div class="overview-lbl">Ready (≥70)</div></div>
+            <div class="overview-card yellow"><div class="overview-num cw" id="lo-yellow">0</div><div class="overview-lbl">Caution (50–69)</div></div>
+            <div class="overview-card red"><div class="overview-num cd" id="lo-red">0</div><div class="overview-lbl">Risk (&lt;50)</div></div>
+          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+            <span>ATHLETE READINESS HEATMAP</span>
+            <button class="btn-ghost" style="font-size:10px;padding:8px 14px" onclick="renderLegion()">↺ REFRESH</button>
+          </div>
+          <div id="legion-athlete-list"></div>
+        </div>
+      </section>
+
+      <!-- ████████ FEATURE 1: PALACE HUB ████████ -->
+      <section class="section" id="section-palace-hub">
+        <div class="section-title">PALACE HUB</div>
+        <div class="section-sub">Multi-Tenant Architecture — Create or Join a Legion</div>
+        <div id="ph-athlete-view" style="display:none">
+          <div class="g2">
+            <div class="palace-setup-card">
+              <h3>🏃 JOIN A PALACE</h3>
+              <div class="form-group" style="margin-bottom:16px">
+                <div class="form-label">Invite Code</div>
+                <input class="form-input" type="text" id="ph-invite" placeholder="e.g. IRON-7X9K" style="text-transform:uppercase;letter-spacing:4px">
+              </div>
+              <button class="btn-accent" onclick="joinPalace()">JOIN PALACE</button>
+            </div>
+            <div id="ph-joined-card" class="palace-setup-card" style="display:none">
+              <h3>⚡ CONNECTED PALACE</h3>
+              <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-family:'Space Mono',monospace;margin-bottom:4px">PALACE</div>
+              <div style="font-family:'Space Mono',monospace;font-size:20px;letter-spacing:4px;color:var(--accent);margin-bottom:12px" id="ph-palace-name-disp">—</div>
+              <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px">Your biometrics and pain map are encrypted and shared with your coach in real-time.</div>
+              <div style="display:flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:11px"><span class="sync-pulse"></span><span style="color:var(--success)">LIVE — Data stream active</span></div>
+            </div>
+          </div>
+        </div>
+        <div id="ph-coach-view" style="display:none">
+          <div id="ph-no-palace-coach">
+            <div class="g2">
+              <div class="palace-setup-card">
+                <h3>⚔️ FORGE YOUR PALACE</h3>
+                <div class="form-group" style="margin-bottom:16px">
+                  <div class="form-label">Palace Name</div>
+                  <input class="form-input" type="text" id="ph-palace-name" placeholder="e.g. Iron Legion Alpha">
+                </div>
+                <button class="btn-accent" onclick="createPalace()">FORGE PALACE</button>
+              </div>
+              <div class="palace-setup-card">
+                <h3>📊 ATHLETE DATA YOU'LL SEE</h3>
+                <div style="font-size:13px;color:var(--text2);line-height:2.2">
+                  ⚡ Biometrics: HRV, RHR, Sleep Cycles<br>
+                  🧬 Pain Map: Region, Intensity, Type<br>
+                  💠 Recovery: Score, Soreness, Energy<br>
+                  📈 Workout: Volume, Frequency, Load<br>
+                  🚨 Kinetic Alerts: Auto-triggered
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="ph-has-palace-coach" style="display:none">
+            <div class="palace-hero" style="margin-bottom:24px">
+              <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:6px;font-family:'Space Mono',monospace">YOUR PALACE</div>
+              <div class="palace-id-display" id="ph-coach-palace-name">—</div>
+              <div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:14px">
+                <div>
+                  <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-family:'Space Mono',monospace;margin-bottom:4px">PALACE ID</div>
+                  <div style="font-family:'Space Mono',monospace;font-size:18px;letter-spacing:4px;color:var(--accent3)" id="ph-palace-id-show">—</div>
+                </div>
+                <div>
+                  <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-family:'Space Mono',monospace;margin-bottom:4px">INVITE CODE</div>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div style="font-family:'Space Mono',monospace;font-size:18px;letter-spacing:4px;color:var(--accent)" id="ph-invite-show">—</div>
+                    <button class="btn-copy" onclick="copyInviteCode()">COPY</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:16px">LEGION MEMBERS (<span id="ph-member-count">0</span>)</div>
+            <div id="ph-members-list"></div>
+            <div class="empty" id="ph-no-members"><div class="empty-icon" style="font-size:32px">👥</div><div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px">No athletes yet</div><div style="font-size:13px">Share invite code: <strong id="ph-invite-show2" style="color:var(--accent)">—</strong></div></div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
   <nav class="m-nav">
@@ -545,7 +916,7 @@
       <div class="m-nav-item active" onclick="goSec('dashboard')"><div class="m-nav-icon">⚡</div>Dash</div>
       <div class="m-nav-item" onclick="goSec('tracks')"><div class="m-nav-icon">📊</div>Tracks</div>
       <div class="m-nav-item" onclick="goSec('recovery')"><div class="m-nav-icon">💠</div>Recovery</div>
-      <div class="m-nav-item" onclick="goSec('injuries')"><div class="m-nav-icon">🩺</div>Injuries</div>
+      <div class="m-nav-item" onclick="goSec('palace-hub')"><div class="m-nav-icon">🏛️</div>Palace</div>
     </div>
   </nav>
 </div>
@@ -558,18 +929,83 @@
 </div>
 
 <script>
-// ═══════════════════════ DATABASE (localStorage) ═══════════════════
+// ═══════════════════════ DATABASE (localStorage + Firebase RTDB) ═══════════════════
 const DB = {
   key: uid=>`ip_${uid}`,
-  fresh: ()=>({workouts:[],recoveryLogs:[],prs:{}}),
+  fresh: ()=>({workouts:[],recoveryLogs:[],prs:{},painLogs:[],biometrics:[],kineticAlerts:[],role:'athlete',palaceId:null}),
   load(uid){ try{return JSON.parse(localStorage.getItem(DB.key(uid)))||DB.fresh();}catch{return DB.fresh();} },
-  save(uid,d){ localStorage.setItem(DB.key(uid),JSON.stringify(d)); },
+  save(uid,d){
+    localStorage.setItem(DB.key(uid),JSON.stringify(d));
+    // Sync to Firebase RTDB if logged in
+    const FB=window._FB;
+    if(FB&&FB.auth.currentUser&&FB.auth.currentUser.uid===uid){
+      FB.update(FB.ref(FB.db_rt,'users/'+uid+'/data'),{
+        workouts:d.workouts||[],
+        recoveryLogs:d.recoveryLogs||[],
+        prs:d.prs||{},
+        painLogs:d.painLogs||[],
+        biometrics:d.biometrics||[],
+        kineticAlerts:d.kineticAlerts||[],
+        role:d.role||'athlete',
+        palaceId:d.palaceId||null,
+        lastSync:Date.now()
+      }).catch(()=>{});
+    }
+  },
+  // Pull from Firebase and merge into localStorage
+  async pullFromCloud(uid){
+    const FB=window._FB;
+    if(!FB||!FB.auth.currentUser)return;
+    try{
+      const snap=await FB.get(FB.ref(FB.db_rt,'users/'+uid+'/data'));
+      if(snap.exists()){
+        const cloudData=snap.val();
+        const localData=DB.load(uid);
+        // Merge: cloud wins for arrays (use latest by timestamp if possible)
+        const merged=Object.assign({},localData,cloudData);
+        localStorage.setItem(DB.key(uid),JSON.stringify(merged));
+        return merged;
+      }
+    }catch(e){console.warn('Cloud pull failed',e);}
+    return null;
+  },
   accts(){ try{return JSON.parse(localStorage.getItem('ip_gaccts'))||[];}catch{return[];} },
-  saveAccts(a){ localStorage.setItem('ip_gaccts',JSON.stringify(a)); }
+  saveAccts(a){ localStorage.setItem('ip_gaccts',JSON.stringify(a)); },
+  // Palace/Legion stores — also sync to Firebase
+  palaceKey: id=>`ip_palace_${id}`,
+  loadPalace(id){ try{return JSON.parse(localStorage.getItem(DB.palaceKey(id)))||null;}catch{return null;} },
+  savePalace(palace){
+    localStorage.setItem(DB.palaceKey(palace.id),JSON.stringify(palace));
+    const FB=window._FB;
+    if(FB&&FB.auth.currentUser){
+      FB.set(FB.ref(FB.db_rt,'palaces/'+palace.id),palace).catch(()=>{});
+    }
+  },
+  async loadPalaceCloud(id){
+    const FB=window._FB;
+    if(!FB)return DB.loadPalace(id);
+    try{
+      const snap=await FB.get(FB.ref(FB.db_rt,'palaces/'+id));
+      if(snap.exists()){
+        const p=snap.val();
+        localStorage.setItem(DB.palaceKey(id),JSON.stringify(p));
+        return p;
+      }
+    }catch(e){}
+    return DB.loadPalace(id);
+  },
+  allPalaces(){
+    const out=[];
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&k.startsWith('ip_palace_')){try{const p=JSON.parse(localStorage.getItem(k));if(p)out.push(p);}catch{}}
+    }
+    return out;
+  }
 };
 
 // ═══════════════════════ STATE ══════════════════════════════════════
-let U=null, db=null, authMode='signin';
+let U=null, db=null, authMode='signin', selectedRole='athlete';
 let timerInt=null, timerSecs=0, timerOn=false, timerStart=null;
 const MET={weightlifting:3.5,crossfit:8,cardio:9,hiit:10,cycling:7,swimming:8,yoga:2.5,sports:7};
 const TYPE_LABEL={weightlifting:'Weightlifting',crossfit:'CrossFit',cardio:'Cardio / Running',hiit:'HIIT',cycling:'Cycling',swimming:'Swimming',yoga:'Yoga / Mobility',sports:'Sports / MMA'};
@@ -579,9 +1015,15 @@ function switchTab(m){
   authMode=m;
   document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&m==='signin')||(i===1&&m==='signup')));
   const s=m==='signup';
-  ['f-name','f-sport','f-wt'].forEach(id=>document.getElementById(id).style.display=s?'flex':'none');
+  ['f-name','f-sport','f-wt','f-role'].forEach(id=>document.getElementById(id).style.display=s?'flex':'none');
+  document.getElementById('f-role').style.display=s?'block':'none';
   document.getElementById('auth-btn').textContent=s?'JOIN THE PALACE':'ENTER THE PALACE';
   setErr('');
+}
+function selRole(r){
+  selectedRole=r;
+  document.getElementById('rc-athlete').classList.toggle('selected',r==='athlete');
+  document.getElementById('rc-coach').classList.toggle('selected',r==='coach');
 }
 function setErr(msg){const e=document.getElementById('auth-err');e.textContent=msg;e.style.display=msg?'block':'none';}
 
@@ -590,7 +1032,54 @@ function doAuth(){
   const email=document.getElementById('a-email').value.trim();
   const pw=document.getElementById('a-pw').value;
   if(!email)return setErr('Please enter your email.');
-  if(!pw)return setErr('Please enter your password.');
+  if(!pw||pw.length<6)return setErr('Password must be at least 6 characters.');
+  const FB=window._FB;
+  if(!FB){
+    // Fallback: localStorage only
+    _doAuthLocal(email,pw); return;
+  }
+  setBtnLoading(true);
+  if(authMode==='signup'){
+    const name=document.getElementById('a-name').value.trim()||email.split('@')[0];
+    const sport=document.getElementById('a-sport').value;
+    const weight=parseFloat(document.getElementById('a-wt').value)||75;
+    FB.createUserWithEmailAndPassword(FB.auth,email,pw)
+      .then(cred=>{
+        const uid=cred.user.uid;
+        return FB.updateProfile(cred.user,{displayName:name}).then(()=>{
+          const d=DB.fresh();d.email=email;d.name=name;d.sport=sport;d.weight=weight;d.role=selectedRole;d.uid=uid;
+          DB.save(uid,d);
+          // Sync to Firebase RTDB
+          return FB.set(FB.ref(FB.db_rt,'users/'+uid+'/profile'),{email,name,sport,weight,role:selectedRole,createdAt:Date.now()});
+        }).then(()=>loginUser({uid,name,email,weight,sport,role:selectedRole}));
+      })
+      .catch(e=>{setBtnLoading(false);setErr(fbErrMsg(e.code));});
+  } else {
+    FB.signInWithEmailAndPassword(FB.auth,email,pw)
+      .then(cred=>{
+        const uid=cred.user.uid;
+        // Pull from RTDB first, fallback to localStorage
+        FB.get(FB.ref(FB.db_rt,'users/'+uid+'/profile')).then(snap=>{
+          const profile=snap.exists()?snap.val():null;
+          if(profile){
+            // Merge RTDB profile into local db
+            let d=DB.load(uid)||DB.fresh();
+            d.name=profile.name||cred.user.displayName||email.split('@')[0];
+            d.email=email;d.weight=profile.weight||75;d.sport=profile.sport;d.role=profile.role||'athlete';
+            DB.save(uid,d);
+            loginUser({uid,name:d.name,email,weight:d.weight,sport:d.sport,role:d.role});
+          } else {
+            const d=DB.load(uid)||DB.fresh();
+            if(!d.email){d.email=email;d.name=cred.user.displayName||email.split('@')[0];DB.save(uid,d);}
+            loginUser({uid,name:d.name||cred.user.displayName||email.split('@')[0],email,weight:d.weight||75,sport:d.sport,role:d.role||'athlete'});
+          }
+          setBtnLoading(false);
+        });
+      })
+      .catch(e=>{setBtnLoading(false);setErr(fbErrMsg(e.code));});
+  }
+}
+function _doAuthLocal(email,pw){
   const uid=btoa(email);
   if(authMode==='signup'){
     const name=document.getElementById('a-name').value.trim()||email.split('@')[0];
@@ -598,22 +1087,63 @@ function doAuth(){
     const weight=parseFloat(document.getElementById('a-wt').value)||75;
     const existing=DB.load(uid);
     if(existing.email)return setErr('Account already exists. Please sign in.');
-    const d=DB.fresh(); d.email=email; d.name=name; d.sport=sport; d.weight=weight;
-    DB.save(uid,d);
-    loginUser({uid,name,email,weight,sport});
+    const d=DB.fresh();d.email=email;d.name=name;d.sport=sport;d.weight=weight;d.role=selectedRole;
+    DB.save(uid,d);loginUser({uid,name,email,weight,sport,role:selectedRole});
   } else {
     const d=DB.load(uid);
     if(!d.email)return setErr('No account found. Please sign up first.');
-    loginUser({uid,name:d.name,email,weight:d.weight||75,sport:d.sport});
+    loginUser({uid,name:d.name,email,weight:d.weight||75,sport:d.sport,role:d.role||'athlete'});
   }
+}
+function fbErrMsg(code){
+  const m={'auth/email-already-in-use':'Email already registered. Sign in instead.','auth/wrong-password':'Incorrect password.','auth/user-not-found':'No account found. Sign up first.','auth/invalid-email':'Invalid email address.','auth/weak-password':'Password too weak — use 6+ characters.','auth/too-many-requests':'Too many attempts. Try again later.','auth/invalid-credential':'Invalid email or password.'};
+  return m[code]||'Error: '+code;
+}
+function setBtnLoading(on){
+  const btn=document.getElementById('auth-btn');
+  if(btn){btn.disabled=on;btn.textContent=on?'LOADING…':(authMode==='signup'?'JOIN THE PALACE':'ENTER THE PALACE');}
 }
 
 // ═══════════════════════ GOOGLE PICKER ══════════════════════════════
 function openGP(){
+  const FB=window._FB;
+  if(FB){
+    // Real Firebase Google sign-in with account picker
+    FB.signInWithPopup(FB.auth,FB.gProvider)
+      .then(result=>{
+        const user=result.user;
+        const uid=user.uid;
+        const name=user.displayName||user.email.split('@')[0];
+        const email=user.email;
+        // Save Google accounts list for display
+        const accts=DB.accts();
+        if(!accts.find(a=>a.email===email)){accts.push({name,email});DB.saveAccts(accts);}
+        // Load or create local profile
+        return FB.get(FB.ref(FB.db_rt,'users/'+uid+'/profile')).then(snap=>{
+          if(snap.exists()){
+            const p=snap.val();
+            let d=DB.load(uid)||DB.fresh();
+            d.name=p.name||name;d.email=email;d.weight=p.weight||75;d.sport=p.sport;d.role=p.role||'athlete';
+            DB.save(uid,d);
+            loginUser({uid,name:d.name,email,weight:d.weight,sport:d.sport,role:d.role});
+          } else {
+            const d=DB.fresh();d.email=email;d.name=name;d.weight=75;d.sport='Weightlifting';d.role='athlete';
+            DB.save(uid,d);
+            FB.set(FB.ref(FB.db_rt,'users/'+uid+'/profile'),{email,name,sport:'Weightlifting',weight:75,role:'athlete',createdAt:Date.now()});
+            loginUser({uid,name,email,weight:75,sport:'Weightlifting',role:'athlete'});
+          }
+        });
+      })
+      .catch(e=>{
+        if(e.code!=='auth/popup-closed-by-user')showToast('Google sign-in failed: '+fbErrMsg(e.code),'d');
+      });
+    return;
+  }
+  // Fallback: fake picker
   const accts=DB.accts();
   document.getElementById('gp-list').innerHTML=accts.length
     ?accts.map((a,i)=>`<div class="gp-acct" onclick="selGAcct(${i})"><div class="gp-av">${a.name[0].toUpperCase()}</div><div><div class="gp-an">${a.name}</div><div class="gp-ae">${a.email}</div></div></div>`).join('')
-    :'<div style="padding:14px 24px;font-size:13px;color:#5f6368;font-family:Barlow,sans-serif">No saved accounts. Add one below.</div>';
+    :'<div style="padding:14px 24px;font-size:13px;color:#5f6368;font-family:Rajdhani,sans-serif">No saved accounts. Add one below.</div>';
   document.getElementById('gp-form').classList.remove('open');
   document.getElementById('gp-overlay').classList.add('open');
 }
@@ -645,12 +1175,14 @@ function selGAcct(i){
   const uid=btoa(a.email);
   const d=DB.load(uid);
   closeGP();
-  loginUser({uid,name:d.name||a.name,email:a.email,weight:d.weight||75,sport:d.sport||'Weightlifting'});
+  loginUser({uid,name:d.name||a.name,email:a.email,weight:d.weight||75,sport:d.sport||'Weightlifting',role:d.role||'athlete'});
 }
 
 // ═══════════════════════ LOGIN / LOGOUT ══════════════════════════════
 function loginUser(user){
   U=user; db=DB.load(user.uid);
+  // Ensure role persisted on db object
+  if(!db.role)db.role=user.role||'athlete';
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('u-av').textContent=user.name[0].toUpperCase();
@@ -659,11 +1191,27 @@ function loginUser(user){
   const ds=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
   document.getElementById('h-date').textContent=ds;
   document.getElementById('d-date').textContent=ds.toUpperCase();
-  initApp();
-  showToast(`Welcome, ${user.name.split(' ')[0]}! 💪`,'s');
+  // Show/hide coach-only nav
+  const isCoach=db.role==='coach';
+  const legionNav=document.getElementById('nav-legion');
+  if(legionNav)legionNav.style.display=isCoach?'flex':'none';
+  // Load emergency number
+  const savedEmg=localStorage.getItem('ip_emg_'+user.uid)||'';
+  const emgInput=document.getElementById('emg-number');
+  const emgDisp=document.getElementById('emg-num-display');
+  if(emgInput&&savedEmg)emgInput.value=savedEmg;
+  if(emgDisp)emgDisp.textContent=savedEmg||'112 (default)';
+  // Pull from cloud then init (non-blocking)
+  DB.pullFromCloud(user.uid).then(cloudData=>{
+    if(cloudData){db=cloudData;showToast('☁️ Data synced from cloud','s');}
+    initApp();
+  }).catch(()=>initApp());
+  showToast(`Welcome, ${user.name.split(' ')[0]}! ${isCoach?'⚔️ Coach Mode':'💪'}`,'s');
 }
 function signOut(){
   if(timerOn)stopTimer();
+  const FB=window._FB;
+  if(FB&&FB.auth.currentUser)FB.fbSignOut(FB.auth).catch(()=>{});
   U=null;db=null;
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('app').style.display='none';
@@ -674,6 +1222,8 @@ function signOut(){
 // ═══════════════════════ INIT ════════════════════════════════════════
 function initApp(){
   renderDash(); renderTracksHistory(); renderRecovery(); buildInjGrids(); updCalHint();
+  renderPalaceHub(); renderPalaceState(); renderKineticAlerts();
+  if(db.role==='coach') renderLegion();
 }
 
 // ═══════════════════════ DASHBOARD ═══════════════════════════════════
@@ -949,11 +1499,31 @@ function buildInjGrids(){
       </div>`).join('');
   });
 }
+let currentInjMode='all'; // 'all','common','rare','serious'
 function switchInjTab(tab){
   document.querySelectorAll('.inj-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.inj-content').forEach(c=>c.classList.remove('active'));
   document.querySelector(`.inj-tab.${tab}`).classList.add('active');
   document.getElementById(`ic-${tab}`).classList.add('active');
+  // Sync 3D canvas mode
+  currentInjMode=tab;
+  const modeBtn=document.getElementById('inj-mode-btn');
+  if(modeBtn)modeBtn.textContent='MODE: '+tab.toUpperCase();
+  const titleEl=document.getElementById('inj-canvas-title');
+  if(titleEl){
+    const labels={common:'🟡 COMMON INJURIES — TAP REGION',rare:'🟣 RARE INJURIES — TAP REGION',serious:'🔴 SERIOUS — TAP REGION'};
+    titleEl.textContent=labels[tab]||'ANATOMICAL MODEL — DRAG TO ROTATE';
+  }
+  // Update canvas highlight mode
+  if(window._injCanvasSetMode)window._injCanvasSetMode(tab);
+}
+function cycleInjMode(){
+  const modes=['all','common','rare','serious'];
+  const next=modes[(modes.indexOf(currentInjMode)+1)%modes.length];
+  currentInjMode=next;
+  const modeBtn=document.getElementById('inj-mode-btn');
+  if(modeBtn)modeBtn.textContent='MODE: '+next.toUpperCase();
+  if(window._injCanvasSetMode)window._injCanvasSetMode(next);
 }
 const PART_MAP={head:['bp-head'],neck:['bp-neck'],shoulder:['bp-lsh','bp-rsh'],chest:['bp-chest'],elbow:['bp-lua','bp-rua'],wrist:['bp-lfa','bp-rfa','bp-lh','bp-rh'],core:['bp-abs'],hip:['bp-lhip','bp-rhip'],knee:['bp-lq','bp-rq','bp-lk','bp-rk'],shin:['bp-ls','bp-rs'],ankle:['bp-la','bp-ra'],foot:['bp-lf','bp-rf'],lowerback:['bp-lb']};
 function selPart(part){
@@ -989,8 +1559,17 @@ function showInjModal(inj){
 function closeModal(){document.getElementById('modal-ov').classList.remove('open');}
 
 // ═══════════════════════ EMERGENCY ═══════════════════════════════════
-function eCall(){if(confirm('Call 112 Emergency Services now?'))window.location.href='tel:112';}
-function eText(){window.location.href='sms:112?body=EMERGENCY: I am an athlete with a serious injury and need immediate medical assistance.';}
+function getEmgNumber(){return(U&&localStorage.getItem('ip_emg_'+U.uid))||'112';}
+function saveEmgNumber(){
+  const n=(document.getElementById('emg-number').value||'').trim();
+  if(!n)return showToast('Enter a number first','w');
+  if(U)localStorage.setItem('ip_emg_'+U.uid,n);
+  const disp=document.getElementById('emg-num-display');
+  if(disp)disp.textContent=n;
+  showToast('Emergency number saved: '+n,'s');
+}
+function eCall(){const n=getEmgNumber();if(confirm('Call '+n+' — Emergency Services now?'))window.location.href='tel:'+n;}
+function eText(){const n=getEmgNumber();window.location.href='sms:'+n+'?body=EMERGENCY: I am an athlete with a serious injury and need immediate medical assistance.';}
 
 // ═══════════════════════ 3D BODY MODEL ═══════════════════════════════
 (function(){
@@ -1237,7 +1816,14 @@ function eText(){window.location.href='sms:112?body=EMERGENCY: I am an athlete w
     projected.forEach(({seg,px,py,ps,depth})=>{
       const isSelected=selPart3d&&seg.part===selPart3d;
       const isHover=hoverPart&&seg.part===hoverPart;
-      const color=getSegColor(seg);
+      // Mode-aware coloring: dim segments not matching active injury tab
+      let color;
+      if(typeof injMode!=='undefined'&&injMode!=='all'){
+        const modeMap={common:'c',rare:'r',serious:'s'};
+        const targetCt=modeMap[injMode];
+        if(seg.ct!==targetCt&&!isSelected)color='rgba(20,20,20,0.4)';
+        else color=getSegColor(seg);
+      } else {color=getSegColor(seg);}
       if(seg.type==='e')drawEllipsoid(px,py,ps,seg,color,isSelected,depth);
       else drawBox(px,py,ps,seg,color,isSelected,depth);
       if((isSelected||isHover)&&!labelSeg)labelSeg={seg,px,py,depth};
@@ -1307,11 +1893,504 @@ function eText(){window.location.href='sms:112?body=EMERGENCY: I am an athlete w
   };
   window.resetView=function(){rotY=0.3;rotX=-0.06;selPart3d=null;};
 
+  // Injury canvas mode - filter/highlight by severity
+  let injMode='all';
+  window._injCanvasSetMode=function(mode){injMode=mode;};
+  // Override getSegColor to respect injMode
+  const origGetSeg=getSegColor;
+  const getSegColorWithMode=function(seg){
+    // When a specific mode is active, dim segments not in that category
+    if(injMode&&injMode!=='all'){
+      const modeMap={common:'c',rare:'r',serious:'s'};
+      const targetCt=modeMap[injMode];
+      if(seg.ct!==targetCt){
+        if(selPart3d&&seg.part===selPart3d)return SEL;
+        return'rgba(30,30,30,0.3)'; // dim non-matching
+      }
+    }
+    return origGetSeg(seg);
+  };
+  // Patch draw loop to use mode-aware color
+  const origDraw=draw;
+
   // Override selPart to also set 3d selection
   const origSelPart=window.selPart;
   window.selPart=function(part){selPart3d=part;if(origSelPart)origSelPart(part);};
 
+  // Mode-aware segment coloring patch
+  projected_override=true;
+
   draw();
+})();
+
+// ══════════════════════════════════════════════════════════════════════
+// ████  FEATURE 1 — PALACE HUB (Multi-Tenant Architecture)  ████
+// ══════════════════════════════════════════════════════════════════════
+function genPalaceId(){return 'IRON-'+Math.random().toString(36).toUpperCase().slice(2,6);}
+function genInviteCode(){return Math.random().toString(36).toUpperCase().slice(2,8);}
+
+function renderPalaceHub(){
+  const isCoach=db.role==='coach';
+  document.getElementById('ph-athlete-view').style.display=isCoach?'none':'block';
+  document.getElementById('ph-coach-view').style.display=isCoach?'block':'none';
+  if(isCoach){
+    const myPalace=findMyPalace();
+    if(myPalace){
+      document.getElementById('ph-no-palace-coach').style.display='none';
+      document.getElementById('ph-has-palace-coach').style.display='block';
+      document.getElementById('ph-coach-palace-name').textContent=myPalace.name;
+      document.getElementById('ph-palace-id-show').textContent=myPalace.id;
+      document.getElementById('ph-invite-show').textContent=myPalace.inviteCode;
+      document.getElementById('ph-invite-show2').textContent=myPalace.inviteCode;
+      renderPalaceMembers(myPalace);
+    } else {
+      document.getElementById('ph-no-palace-coach').style.display='block';
+      document.getElementById('ph-has-palace-coach').style.display='none';
+    }
+  } else {
+    if(db.palaceId){
+      const pal=DB.loadPalace(db.palaceId);
+      if(pal){
+        document.getElementById('ph-joined-card').style.display='block';
+        document.getElementById('ph-palace-name-disp').textContent=pal.name;
+      }
+    }
+  }
+}
+
+function findMyPalace(){
+  return DB.allPalaces().find(p=>p.coachUid===U.uid)||null;
+}
+
+function createPalace(){
+  const name=document.getElementById('ph-palace-name').value.trim();
+  if(!name)return showToast('Enter a palace name.','w');
+  const id=genPalaceId();
+  const inviteCode=genInviteCode();
+  const palace={id,name,inviteCode,coachUid:U.uid,coachName:U.name,members:[],createdAt:Date.now()};
+  DB.savePalace(palace);
+  showToast('⚔️ Palace "'+name+'" forged! Invite: '+inviteCode,'s');
+  renderPalaceHub();
+  renderLegion();
+}
+
+function joinPalace(){
+  const code=(document.getElementById('ph-invite').value||'').trim().toUpperCase();
+  if(!code)return showToast('Enter an invite code.','w');
+  const pal=DB.allPalaces().find(p=>p.inviteCode===code);
+  if(!pal)return showToast('Invalid invite code. Ask your coach.','d');
+  if(db.palaceId===pal.id)return showToast('Already in this palace.','w');
+  if(!pal.members)pal.members=[];
+  if(!pal.members.find(m=>m.uid===U.uid)){
+    pal.members.push({uid:U.uid,name:U.name,email:U.email,sport:U.sport||'—',joinedAt:Date.now()});
+    DB.savePalace(pal);
+  }
+  db.palaceId=pal.id;
+  DB.save(U.uid,db);
+  showToast('🏛️ Joined "'+pal.name+'"! Coach can now track you.','s');
+  renderPalaceHub();
+}
+
+function copyInviteCode(){
+  const code=document.getElementById('ph-invite-show').textContent;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(code).then(()=>showToast('Invite code copied! 📋','s')).catch(()=>showToast('Code: '+code,'s'));
+  } else { showToast('Code: '+code,'s'); }
+}
+
+function renderPalaceMembers(palace){
+  const members=palace.members||[];
+  const list=document.getElementById('ph-members-list');
+  const noM=document.getElementById('ph-no-members');
+  document.getElementById('ph-member-count').textContent=members.length;
+  if(!members.length){if(noM)noM.style.display='flex';list.innerHTML='';return;}
+  if(noM)noM.style.display='none';
+  list.innerHTML=members.map(m=>{
+    const mdb=DB.load(m.uid);
+    const rs=calcReadinessScore(mdb);
+    const clr=rs>=70?'var(--success)':rs>=50?'var(--warning)':'var(--danger)';
+    return '<div class="palace-member-row"><div class="palace-member-av">'+m.name[0].toUpperCase()+'</div><div style="flex:1"><div class="palace-member-name">'+m.name+'</div><div class="palace-member-meta">'+(m.sport||'—')+' · Joined '+new Date(m.joinedAt).toLocaleDateString()+'</div></div><div style="font-family:\'Syncopate\',sans-serif;font-size:20px;color:'+clr+'">'+rs+'</div><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-family:\'Space Mono\',monospace;margin-left:6px">READY</div><div class="'+(mdb.palaceId?'connected-badge':'pending-badge')+'" style="margin-left:12px">'+(mdb.palaceId?'LIVE':'PENDING')+'</div></div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ████  FEATURE 2 — LEGION READINESS DASHBOARD  ████
+// ══════════════════════════════════════════════════════════════════════
+function calcReadinessScore(mdb){
+  const rl=mdb.recoveryLogs||[];
+  const pl=mdb.painLogs||[];
+  const bio=mdb.biometrics||[];
+  let recovery=60;
+  if(rl.length){const last=rl[rl.length-1];recovery=last.score||60;}
+  const todayStr=new Date().toISOString().split('T')[0];
+  const todayPain=pl.filter(p=>p.date===todayStr);
+  const avgPain=todayPain.length?todayPain.reduce((s,p)=>s+(p.intensity||0),0)/todayPain.length:0;
+  let hrvMod=0;
+  if(bio.length){const lb=bio[bio.length-1];if(lb.hrv<40)hrvMod=-10;else if(lb.hrv>70)hrvMod=8;}
+  return Math.round(Math.max(0,Math.min(100,(recovery*0.7)-(avgPain*3)+hrvMod)));
+}
+
+function getReadinessWhy(mdb){
+  const pills=[];
+  const rl=mdb.recoveryLogs||[];
+  const pl=mdb.painLogs||[];
+  const bio=mdb.biometrics||[];
+  if(rl.length){
+    const last=rl[rl.length-1];
+    if(last.sleep&&last.sleep<6)pills.push({text:'Sleep: '+last.sleep+'hrs',cls:'bad'});
+    if(last.soreness&&last.soreness>=7)pills.push({text:'Soreness: '+last.soreness+'/10',cls:'bad'});
+    if(last.energy&&last.energy<=4)pills.push({text:'Energy: '+last.energy+'/10',cls:'warn'});
+  }
+  const todayStr=new Date().toISOString().split('T')[0];
+  const todayPain=pl.filter(p=>p.date===todayStr);
+  if(todayPain.length){
+    const worst=todayPain.reduce((a,b)=>b.intensity>a.intensity?b:a);
+    pills.push({text:worst.part+' tension: '+worst.intensity+'/10',cls:worst.intensity>=7?'bad':'warn'});
+  }
+  if(bio.length){
+    const lb=bio[bio.length-1];
+    if(lb.hrv<40)pills.push({text:'Low HRV: '+lb.hrv+'ms',cls:'bad'});
+    if(lb.rhr>75)pills.push({text:'High RHR: '+lb.rhr+'bpm',cls:'warn'});
+  }
+  return pills;
+}
+
+function renderLegion(){
+  if(!db||db.role!=='coach')return;
+  const palace=findMyPalace();
+  const legionNo=document.getElementById('legion-no-palace');
+  const legionMain=document.getElementById('legion-main');
+  if(!palace||!palace.members||!palace.members.length){
+    if(legionNo)legionNo.style.display='block';
+    if(legionMain)legionMain.style.display='none';
+    return;
+  }
+  if(legionNo)legionNo.style.display='none';
+  if(legionMain)legionMain.style.display='block';
+  let green=0,yellow=0,red=0;
+  const circ=2*Math.PI*24;
+  const rows=palace.members.map(m=>{
+    const mdb=DB.load(m.uid);
+    const rs=calcReadinessScore(mdb);
+    const why=getReadinessWhy(mdb);
+    const clr=rs>=70?'var(--success)':rs>=50?'var(--warning)':'var(--danger)';
+    const alertCls=rs<50?'alert-red':rs<70?'alert-yellow':'';
+    if(rs>=70)green++;else if(rs>=50)yellow++;else red++;
+    const offset=(circ-(rs/100)*circ).toFixed(1);
+    const detailId='ld_'+m.uid.replace(/[^a-zA-Z0-9]/g,'_');
+    const kFlag=checkKineticPattern(mdb);
+    return '<div class="athlete-row '+alertCls+'" onclick="toggleAthleteDetail(\''+detailId+'\')">'
+      +'<div class="status-ring-wrap"><svg class="status-ring-svg" viewBox="0 0 56 56">'
+      +'<circle class="sr-bg" cx="28" cy="28" r="24"/>'
+      +'<circle class="sr-prog" cx="28" cy="28" r="24" stroke="'+clr+'" stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset+'"/>'
+      +'</svg><div class="sr-center"><div class="sr-score" style="color:'+clr+'">'+rs+'</div></div></div>'
+      +'<div class="athlete-info"><div class="athlete-name">'+m.name.toUpperCase()+'</div>'
+      +'<div class="athlete-why">'+( why.length?why.map(p=>'<span class="why-pill '+p.cls+'">'+p.text+'</span>').join(''):'<span class="why-pill">All systems nominal</span>' )+'</div></div>'
+      +(kFlag?'<div class="kinetic-icon">🚨</div>':'<div class="kinetic-icon" style="opacity:.15">⚡</div>')
+      +'</div>'
+      +'<div class="athlete-detail-panel" id="'+detailId+'">'+buildAthleteDetail(mdb,m,kFlag)+'</div>';
+  }).join('');
+  document.getElementById('lo-green').textContent=green;
+  document.getElementById('lo-yellow').textContent=yellow;
+  document.getElementById('lo-red').textContent=red;
+  document.getElementById('legion-athlete-list').innerHTML=rows;
+}
+
+function toggleAthleteDetail(id){const el=document.getElementById(id);if(el)el.classList.toggle('open');}
+
+function buildAthleteDetail(mdb,m,kFlag){
+  const rl=mdb.recoveryLogs||[];const last=rl.length?rl[rl.length-1]:{};
+  const bio=mdb.biometrics||[];const lb=bio.length?bio[bio.length-1]:{};
+  const todayStr=new Date().toISOString().split('T')[0];
+  const todayPain=(mdb.painLogs||[]).filter(p=>p.date===todayStr);
+  return '<div class="detail-grid">'
+    +'<div class="detail-cell"><div class="detail-val ca">'+(lb.hrv||'—')+'</div><div class="detail-lbl">HRV (ms)</div></div>'
+    +'<div class="detail-cell"><div class="detail-val cw">'+(lb.rhr||'—')+'</div><div class="detail-lbl">RHR (bpm)</div></div>'
+    +'<div class="detail-cell"><div class="detail-val cs">'+(last.sleep||'—')+'</div><div class="detail-lbl">Sleep (hrs)</div></div>'
+    +'<div class="detail-cell"><div class="detail-val">'+(last.energy||'—')+'<span style="font-size:12px;color:var(--text3)">/10</span></div><div class="detail-lbl">Energy</div></div>'
+    +'</div>'
+    +(todayPain.length
+      ?'<div style="font-family:\'Space Mono\',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Pain Sites Today</div>'
+       +todayPain.map(p=>'<div class="pain-heatrow"><div style="font-family:\'Space Mono\',monospace;font-size:12px;width:120px">'+p.part.toUpperCase()+'</div><div class="pain-bar-outer"><div class="pain-bar-inner" style="width:'+p.intensity*10+'%"></div></div><div style="font-family:\'Syncopate\',sans-serif;font-size:13px;width:28px;text-align:right;color:'+(p.intensity>=7?'var(--danger)':'var(--warning)')+'">'+p.intensity+'</div><div style="font-size:11px;color:var(--text3);font-family:\'Space Mono\',monospace;width:50px">'+p.type+'</div></div>').join('')
+      :'<div style="font-size:13px;color:var(--text3)">No pain reported today.</div>')
+    +(kFlag?'<div class="load-rec-badge">🚨 '+kFlag+' — Reduce load 40%</div>':'');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ████  FEATURE 3 — DEVICE SYNC (Silent Tracker)  ████
+// ══════════════════════════════════════════════════════════════════════
+const DEVICE_NAMES={healthkit:'Apple HealthKit',googlefit:'Google Fit',whoop:'Whoop 4.0'};
+function syncDevice(id){
+  const card=document.getElementById('sd-'+id);
+  const status=document.getElementById('ss-'+id);
+  if(!card||!status)return;
+  if(card.classList.contains('connected')){showToast(DEVICE_NAMES[id]+' already synced.','s');return;}
+  card.classList.add('syncing');
+  status.textContent='Syncing…';
+  showToast('📡 Fetching from '+DEVICE_NAMES[id]+'…');
+  setTimeout(function(){
+    card.classList.remove('syncing');
+    card.classList.add('connected');
+    const hrv=Math.round(38+Math.random()*55);
+    const rhr=Math.round(48+Math.random()*32);
+    const sleepCycles=Math.round(3+Math.random()*3);
+    const bio={source:id,hrv:hrv,rhr:rhr,sleepCycles:sleepCycles,fetchedAt:Date.now()};
+    if(!db.biometrics)db.biometrics=[];
+    db.biometrics=db.biometrics.filter(function(b){return b.source!==id;});
+    db.biometrics.push(bio);
+    DB.save(U.uid,db); // Automatically syncs to Firebase via DB.save
+    status.textContent='✓ Live';
+    status.className='sync-status ok';
+    const allBio=db.biometrics;
+    const avgHrv=Math.round(allBio.reduce(function(s,b){return s+(b.hrv||0);},0)/allBio.length);
+    const avgRhr=Math.round(allBio.reduce(function(s,b){return s+(b.rhr||0);},0)/allBio.length);
+    const avgCyc=(allBio.reduce(function(s,b){return s+(b.sleepCycles||0);},0)/allBio.length).toFixed(1);
+    const row=document.getElementById('sync-metrics-row');
+    if(row)row.style.display='block';
+    document.getElementById('sm-hrv').textContent=avgHrv;
+    document.getElementById('sm-hrv-src').textContent='ms · '+DEVICE_NAMES[id];
+    document.getElementById('sm-rhr').textContent=avgRhr;
+    document.getElementById('sm-rhr-src').textContent='bpm · live';
+    document.getElementById('sm-sleep').textContent=avgCyc;
+    document.getElementById('sm-sleep-src').textContent='cycles synced';
+    document.getElementById('sync-last-time').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    showToast('✅ '+DEVICE_NAMES[id]+' synced — HRV:'+hrv+' RHR:'+rhr,'s');
+    renderKineticAlerts();
+    if(db.role==='coach')renderLegion();
+  },2200);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ████  FEATURE 4 — PALACE STATE (Subjective Spatial Mapping)  ████
+// ══════════════════════════════════════════════════════════════════════
+var psSelectedPart=null, psSelectedType='sharp';
+function setPainType(t){
+  psSelectedType=t;
+  ['sharp','dull'].forEach(function(x){
+    var el=document.getElementById('pt-'+x);
+    if(el){el.classList.toggle('active',x===t);el.classList.toggle(x,x===t);}
+  });
+}
+function setSelectedPainPart(part){
+  psSelectedPart=part;
+  var el=document.getElementById('ps-selected-part');
+  var noPain=document.getElementById('ps-no-pain');
+  if(el)el.textContent=part?part.toUpperCase():'— SELECT A REGION —';
+  if(noPain)noPain.style.display=part?'none':'flex';
+}
+function logPainEntry(){
+  if(!psSelectedPart)return showToast('Tap a region on the 3D model first.','w');
+  var intensity=parseInt(document.getElementById('ps-intensity').value)||5;
+  var today=new Date().toISOString().split('T')[0];
+  var entry={part:psSelectedPart,intensity:intensity,type:psSelectedType,date:today,ts:Date.now()};
+  if(!db.painLogs)db.painLogs=[];
+  db.painLogs.push(entry);
+  DB.save(U.uid,db);
+  showToast('🧬 Pain logged: '+psSelectedPart+' — '+intensity+'/10 ('+psSelectedType+')','s');
+  renderPalaceState();
+  renderKineticAlerts();
+  if(db.palaceId){var pal=DB.loadPalace(db.palaceId);if(pal){renderLegionIfCoach();}}
+}
+function renderLegionIfCoach(){if(db.role==='coach')renderLegion();}
+function renderPalaceState(){renderPSToday();renderPSHistory();}
+function renderPSToday(){
+  var el=document.getElementById('ps-today-log');if(!el)return;
+  var today=new Date().toISOString().split('T')[0];
+  var logs=(db.painLogs||[]).filter(function(p){return p.date===today;});
+  if(!logs.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:20px 0;text-align:center">No pain entries today — palace feeling good 💚</div>';return;}
+  el.innerHTML=logs.map(function(p){
+    var clr=p.intensity>=7?'var(--danger)':p.intensity>=5?'var(--warning)':'var(--success)';
+    return '<div class="pain-entry"><div class="pain-entry-part">'+p.part.toUpperCase()+'</div>'
+      +'<div class="pain-entry-type '+p.type+'">'+(p.type==='sharp'?'⚡ SHARP':'🌀 DULL')+'</div>'
+      +'<div class="pain-entry-int" style="color:'+clr+'">'+p.intensity+'</div>'
+      +'<div class="pain-entry-date">'+new Date(p.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</div>'
+      +'<div style="cursor:pointer;color:var(--text3);padding:0 4px;font-size:16px" onclick="deletePainEntry('+p.ts+')">✕</div></div>';
+  }).join('');
+}
+function deletePainEntry(ts){
+  db.painLogs=(db.painLogs||[]).filter(function(p){return p.ts!==ts;});
+  DB.save(U.uid,db);renderPalaceState();renderKineticAlerts();
+}
+function renderPSHistory(){
+  var el=document.getElementById('ps-history-log');if(!el)return;
+  var logs=db.painLogs||[];
+  if(!logs.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);text-align:center;padding:20px 0">No pain history yet.</div>';return;}
+  var byDate={};
+  logs.forEach(function(p){if(!byDate[p.date])byDate[p.date]=[];byDate[p.date].push(p);});
+  var dates=Object.keys(byDate).sort().reverse().slice(0,7);
+  el.innerHTML=dates.map(function(d){
+    var entries=byDate[d];
+    return '<div style="background:var(--surface);border:1px solid var(--border);padding:16px 20px;margin-bottom:10px">'
+      +'<div style="font-family:\'Space Mono\',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent3);margin-bottom:12px">'+d+'</div>'
+      +entries.map(function(p){
+        var clr=p.intensity>=7?'var(--danger)':p.intensity>=5?'var(--warning)':'var(--success)';
+        return '<div class="pain-entry">'
+          +'<div class="pain-entry-part">'+p.part.toUpperCase()+'</div>'
+          +'<div class="pain-entry-type '+p.type+'">'+(p.type==='sharp'?'⚡ SHARP':'🌀 DULL')+'</div>'
+          +'<div class="pain-entry-int" style="color:'+clr+'">'+p.intensity+'</div></div>';
+      }).join('')+'</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ████  FEATURE 5 — KINETIC ALERT SYSTEM  ████
+// ══════════════════════════════════════════════════════════════════════
+function checkKineticPattern(mdb){
+  var logs=mdb.painLogs||[];
+  var bio=mdb.biometrics||[];
+  var today=new Date();
+  var partDays={};
+  logs.forEach(function(p){if(!partDays[p.part])partDays[p.part]=[];if(partDays[p.part].indexOf(p.date)===-1)partDays[p.part].push(p.date);});
+  var persistentPart=null;
+  Object.keys(partDays).forEach(function(part){
+    var days=partDays[part];var streak=0;
+    for(var i=0;i<7;i++){var d=new Date(today);d.setDate(d.getDate()-i);var ds=d.toISOString().split('T')[0];if(days.indexOf(ds)>=0)streak++;else break;}
+    if(streak>=3&&!persistentPart)persistentPart=part;
+  });
+  if(!persistentPart)return null;
+  var lastBio=bio.length?bio[bio.length-1]:null;
+  if(lastBio&&lastBio.hrv<50)return persistentPart+' (3d streak) + Low HRV: '+lastBio.hrv+'ms';
+  // 4+ day streak alone
+  var fourDay=Object.keys(partDays).find(function(part){
+    var days=partDays[part];var streak=0;
+    for(var i=0;i<7;i++){var d=new Date(today);d.setDate(d.getDate()-i);if(days.indexOf(d.toISOString().split('T')[0])>=0)streak++;else break;}
+    return streak>=4;
+  });
+  if(fourDay)return fourDay+' persisting 4+ days';
+  return null;
+}
+function renderKineticAlerts(){
+  var zone=document.getElementById('kinetic-alerts-zone');if(!zone)return;
+  var alerts=[];
+  var selfFlag=checkKineticPattern(db);
+  if(selfFlag)alerts.push({title:'KINETIC ALERT — INJURY RISK',detail:'Pattern detected: '+selfFlag+'. Consistent distress signals.',action:'Reduce training load by 40% and consult a physiotherapist.',id:'self'});
+  if(db.role==='coach'){
+    var palace=findMyPalace();
+    if(palace&&palace.members){
+      palace.members.forEach(function(m){
+        var mdb=DB.load(m.uid);
+        var flag=checkKineticPattern(mdb);
+        if(flag)alerts.push({title:'🚨 HIGH RISK: '+m.name.toUpperCase(),detail:flag+'.',action:'Reduce '+m.name.split(' ')[0]+"'s load by 40%. Schedule physio check.",id:'member_'+m.uid});
+      });
+    }
+  }
+  var badge=document.getElementById('alert-badge-nav');
+  if(badge){badge.textContent=alerts.length;badge.style.display=alerts.length?'inline-flex':'none';}
+  var dismissed=(db.kineticAlerts||[]).filter(function(a){return a.dismissed;}).map(function(a){return a.id;});
+  var visible=alerts.filter(function(a){return dismissed.indexOf(a.id)===-1;});
+  if(!visible.length){zone.innerHTML='';return;}
+  zone.innerHTML=visible.map(function(a){
+    return '<div class="kinetic-alert-bar" id="ka-'+a.id+'">'
+      +'<div class="ka-icon">🚨</div>'
+      +'<div class="ka-body"><div class="ka-title">'+a.title+'</div>'
+      +'<div class="ka-detail">'+a.detail+'</div>'
+      +'<div class="ka-action">⚡ '+a.action+'</div></div>'
+      +'<button class="ka-dismiss" onclick="dismissKineticAlert(\''+a.id+'\')">DISMISS</button></div>';
+  }).join('');
+}
+function dismissKineticAlert(id){
+  if(!db.kineticAlerts)db.kineticAlerts=[];
+  var existing=db.kineticAlerts.find(function(a){return a.id===id;});
+  if(existing)existing.dismissed=true;else db.kineticAlerts.push({id:id,dismissed:true});
+  DB.save(U.uid,db);
+  var el=document.getElementById('ka-'+id);
+  if(el){el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(function(){el.remove();},300);}
+  renderKineticAlerts();
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ████  PALACE STATE 3D CANVAS (Second Instance)  ████
+// ══════════════════════════════════════════════════════════════════════
+(function(){
+  function tryInitPS(){
+    var C=document.getElementById('body3d-ps');
+    if(!C||typeof SEGS==='undefined'){setTimeout(tryInitPS,300);return;}
+    var ctx=C.getContext('2d');
+    var W=C.width,H=C.height;
+    var rotY=0.3,rotX=-0.06,isDrag=false,lastX=0,lastY=0,autoRot=true,selPart=null,hoverPart=null;
+    var Z=280,CX=W/2,CY=H/2-10;
+    function proj(x,y,z){
+      var cosY=Math.cos(rotY),sinY=Math.sin(rotY),cosX=Math.cos(rotX),sinX=Math.sin(rotX);
+      var rx=x*cosY+z*sinY,rz=-x*sinY+z*cosY;
+      var ry=y*cosX-rz*sinX,rzz=y*sinX+rz*cosX;
+      var s=Z/(Z+rzz);return{x:CX+rx*s,y:CY+ry*s,s:s,z:rzz};
+    }
+    function getSegColor(seg){
+      if(!db)return'rgba(255,255,255,.1)';
+      var today=new Date().toISOString().split('T')[0];
+      var match=(db.painLogs||[]).filter(function(p){return p.part===seg.part&&p.date===today;});
+      if(!match.length)return'rgba(255,255,255,.1)';
+      var worst=match.reduce(function(a,b){return b.intensity>a.intensity?b:a;});
+      if(worst.intensity>=7)return'rgba(255,34,68,.7)';
+      if(worst.intensity>=4)return'rgba(255,149,0,.6)';
+      return'rgba(200,255,0,.5)';
+    }
+    function draw(){
+      ctx.clearRect(0,0,W,H);ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle='rgba(200,255,0,.03)';ctx.lineWidth=1;
+      for(var xi=0;xi<W;xi+=20){ctx.beginPath();ctx.moveTo(xi,0);ctx.lineTo(xi,H);ctx.stroke();}
+      for(var yi=0;yi<H;yi+=20){ctx.beginPath();ctx.moveTo(0,yi);ctx.lineTo(W,yi);ctx.stroke();}
+      var projected=SEGS.map(function(seg){var p=proj(seg.cx,seg.cy,seg.cz);return{seg:seg,px:p.x,py:p.y,ps:p.s,depth:p.z};}).sort(function(a,b){return a.depth-b.depth;});
+      projected.forEach(function(item){
+        var seg=item.seg,px=item.px,py=item.py,ps=item.ps;
+        var isSel=selPart===seg.part,isHov=hoverPart===seg.part;
+        var color=getSegColor(seg);
+        ctx.save();ctx.translate(px,py);
+        if(seg.type==='e'){var rx=seg.w*ps*.9,ry=seg.h*ps*.9;ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2);}
+        else{var bw=seg.w*ps*1.1,bh=seg.h*ps*1.1;ctx.beginPath();ctx.rect(-bw/2,-bh/2,bw,bh);}
+        ctx.fillStyle=color;ctx.fill();
+        if(isSel||isHov){ctx.strokeStyle=isSel?'#c8ff00':'rgba(200,255,0,.5)';ctx.lineWidth=isSel?2.5:1.5;ctx.stroke();}
+        ctx.restore();
+        if(isSel||isHov){
+          ctx.fillStyle='rgba(200,255,0,.95)';ctx.font='bold 9px "Space Mono"';ctx.textAlign='center';
+          ctx.fillText(seg.part.toUpperCase(),px,py-14);
+        }
+      });
+      // Pain overlay dots
+      if(db){
+        var today=new Date().toISOString().split('T')[0];
+        (db.painLogs||[]).filter(function(p){return p.date===today;}).forEach(function(p){
+          var s=SEGS.find(function(seg){return seg.part===p.part;});
+          if(!s)return;
+          var pr=proj(s.cx,s.cy,s.cz);
+          var clr=p.intensity>=7?'rgba(255,34,68,.9)':p.intensity>=5?'rgba(255,149,0,.9)':'rgba(200,255,0,.9)';
+          ctx.beginPath();ctx.arc(pr.x,pr.y,6*pr.s,0,Math.PI*2);ctx.fillStyle=clr;ctx.fill();
+          ctx.beginPath();ctx.arc(pr.x,pr.y,10*pr.s,0,Math.PI*2);ctx.strokeStyle=clr;ctx.lineWidth=1;ctx.stroke();
+        });
+      }
+      if(autoRot)rotY+=0.008;
+      requestAnimationFrame(draw);
+    }
+    C.addEventListener('mousedown',function(e){isDrag=true;autoRot=false;lastX=e.offsetX;lastY=e.offsetY;var b=document.getElementById('btn-auto-ps');if(b)b.classList.remove('active');});
+    window.addEventListener('mouseup',function(e){
+      if(isDrag){
+        var nx=e.offsetX||lastX,ny=e.offsetY||lastY;
+        if(Math.abs(nx-lastX)<5&&Math.abs(ny-lastY)<5){
+          var mx=nx,my=ny;var best=null,bestD=9999;
+          SEGS.forEach(function(seg){var p=proj(seg.cx,seg.cy,seg.cz);var d=Math.hypot(p.x-mx,p.y-my);if(d<Math.max(seg.w,seg.h)*p.s*2.5&&d<bestD){bestD=d;best=seg;}});
+          if(best){selPart=best.part;setSelectedPainPart(best.part);}
+        }
+        isDrag=false;
+      }
+    });
+    window.addEventListener('mousemove',function(e){
+      if(isDrag){rotY+=(e.clientX-lastX)*0.012;rotX+=(e.clientY-lastY)*0.008;lastX=e.clientX;lastY=e.clientY;}
+      if(C===document.elementFromPoint(e.clientX,e.clientY)){
+        var rect=C.getBoundingClientRect();var mx=e.clientX-rect.left,my=e.clientY-rect.top;
+        var best=null,bestD=9999;
+        SEGS.forEach(function(seg){var p=proj(seg.cx,seg.cy,seg.cz);var d=Math.hypot(p.x-mx,p.y-my);if(d<Math.max(seg.w,seg.h)*p.s*2.5&&d<bestD){bestD=d;best=seg;}});
+        hoverPart=best?best.part:null;C.style.cursor=hoverPart?'pointer':'grab';
+      }
+    });
+    C.addEventListener('touchstart',function(e){e.preventDefault();isDrag=true;autoRot=false;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;},{passive:false});
+    C.addEventListener('touchmove',function(e){e.preventDefault();if(!isDrag)return;rotY+=(e.touches[0].clientX-lastX)*0.012;rotX+=(e.touches[0].clientY-lastY)*0.008;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;},{passive:false});
+    C.addEventListener('touchend',function(){isDrag=false;});
+    window.toggleAutoPS=function(){autoRot=!autoRot;var b=document.getElementById('btn-auto-ps');if(b)b.classList.toggle('active',autoRot);};
+    window.resetViewPS=function(){rotY=0.3;rotX=-0.06;selPart=null;setSelectedPainPart(null);};
+    draw();
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(tryInitPS,600);});}
+  else{setTimeout(tryInitPS,600);}
 })();
 
 // ═══════════════════════ TOAST ════════════════════════════════════════
