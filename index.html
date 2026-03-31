@@ -695,6 +695,14 @@
         <div style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:16px">💚 Recommended Recovery Activities</div>
         <div class="sug-item"><div><div class="sug-name">Foam Rolling</div><div class="sug-time">Target sore muscle groups</div></div><div class="sug-dur">15–20 min</div></div>
         <div class="sug-item"><div><div class="sug-name">Light Stretching</div><div class="sug-time">Full body mobility work</div></div><div class="sug-dur">20–30 min</div></div>
+        <!-- ── SMART SUGGESTIONS (dynamic, AI-driven from condition engine) ── -->
+        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:12px">🧠 PERSONALISED RECOVERY PLAN</div>
+        <div id="smart-suggestions" style="margin-bottom:24px">
+          <div style="font-size:13px;color:var(--text3);text-align:center;padding:20px 0">Log your recovery data above to generate your personalised plan.</div>
+        </div>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:12px">📋 GENERAL RECOVERY PROTOCOLS</div>
+        <div class="sug-item"><div><div class="sug-name">Foam Rolling</div><div class="sug-time">Target sore muscle groups</div></div><div class="sug-dur">15–20 min</div></div>
+        <div class="sug-item"><div><div class="sug-name">Light Stretching</div><div class="sug-time">Full body mobility work</div></div><div class="sug-dur">20–30 min</div></div>
         <div class="sug-item"><div><div class="sug-name">Cold Water Therapy</div><div class="sug-time">Reduce inflammation</div></div><div class="sug-dur">10–15 min</div></div>
         <div class="sug-item"><div><div class="sug-name">Zone 2 Cardio</div><div class="sug-time">Below 70% max heart rate</div></div><div class="sug-dur">30–45 min</div></div>
         <div class="sug-item"><div><div class="sug-name">Sleep Optimization</div><div class="sug-time">Aim for 8–9 hours tonight</div></div><div class="sug-dur">Priority</div></div>
@@ -1222,7 +1230,7 @@ function signOut(){
 // ═══════════════════════ INIT ════════════════════════════════════════
 function initApp(){
   renderDash(); renderTracksHistory(); renderRecovery(); buildInjGrids(); updCalHint();
-  renderPalaceHub(); renderPalaceState(); renderKineticAlerts();
+  renderPalaceHub(); renderPalaceState(); renderKineticAlerts(); renderRecoverySuggestions();
   if(db.role==='coach') renderLegion();
   initDeviceSync();
 }
@@ -1395,6 +1403,7 @@ function logRecovery(){
   DB.save(U.uid,db);
   checkRecWarn(); renderRecovery(); renderDash();
   showToast(`Recovery: ${score}% — ${score>=70?'Ready to train!':score>=50?'Take it easy':'Rest up!'}`,'s');
+  renderRecoverySuggestions();
 }
 function checkRecWarn(){
   if(!db.recoveryLogs||!db.recoveryLogs.length)return;
@@ -2558,68 +2567,317 @@ function renderPSHistory(){
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// ████  FEATURE 5 — KINETIC ALERT SYSTEM  ████
+// ████  FEATURE 5 — INTELLIGENT CONDITION ENGINE  ████
 // ══════════════════════════════════════════════════════════════════════
-function checkKineticPattern(mdb){
-  var logs=mdb.painLogs||[];
-  var bio=mdb.biometrics||[];
-  var today=new Date();
-  var partDays={};
-  logs.forEach(function(p){if(!partDays[p.part])partDays[p.part]=[];if(partDays[p.part].indexOf(p.date)===-1)partDays[p.part].push(p.date);});
-  var persistentPart=null;
-  Object.keys(partDays).forEach(function(part){
-    var days=partDays[part];var streak=0;
-    for(var i=0;i<7;i++){var d=new Date(today);d.setDate(d.getDate()-i);var ds=d.toISOString().split('T')[0];if(days.indexOf(ds)>=0)streak++;else break;}
-    if(streak>=3&&!persistentPart)persistentPart=part;
-  });
-  if(!persistentPart)return null;
-  var lastBio=bio.length?bio[bio.length-1]:null;
-  if(lastBio&&lastBio.hrv<50)return persistentPart+' (3d streak) + Low HRV: '+lastBio.hrv+'ms';
-  // 4+ day streak alone
-  var fourDay=Object.keys(partDays).find(function(part){
-    var days=partDays[part];var streak=0;
-    for(var i=0;i<7;i++){var d=new Date(today);d.setDate(d.getDate()-i);if(days.indexOf(d.toISOString().split('T')[0])>=0)streak++;else break;}
-    return streak>=4;
-  });
-  if(fourDay)return fourDay+' persisting 4+ days';
-  return null;
-}
-function renderKineticAlerts(){
-  var zone=document.getElementById('kinetic-alerts-zone');if(!zone)return;
-  var alerts=[];
-  var selfFlag=checkKineticPattern(db);
-  if(selfFlag)alerts.push({title:'KINETIC ALERT — INJURY RISK',detail:'Pattern detected: '+selfFlag+'. Consistent distress signals.',action:'Reduce training load by 40% and consult a physiotherapist.',id:'self'});
-  if(db.role==='coach'){
-    var palace=findMyPalace();
-    if(palace&&palace.members){
-      palace.members.forEach(function(m){
-        var mdb=DB.load(m.uid);
-        var flag=checkKineticPattern(mdb);
-        if(flag)alerts.push({title:'🚨 HIGH RISK: '+m.name.toUpperCase(),detail:flag+'.',action:'Reduce '+m.name.split(' ')[0]+"'s load by 40%. Schedule physio check.",id:'member_'+m.uid});
+
+// ─── Core analyser — returns structured array of condition flags ───
+function analyzeCondition(mdb) {
+  const alerts = [];
+  const today = new Date().toISOString().split('T')[0];
+  const rl = mdb.recoveryLogs || [];
+  const wl = mdb.workouts || [];
+  const pl = mdb.painLogs || [];
+  const bio = mdb.biometrics || [];
+  const last = rl.length ? rl[rl.length - 1] : null;
+  const lastBio = bio.length ? bio[bio.length - 1] : null;
+
+  // ── 1. Recovery score ──
+  if (last) {
+    if (last.score < 40) {
+      alerts.push({
+        id: 'rec_critical', sev: 'critical', icon: '🔴',
+        title: 'CRITICAL RECOVERY — DO NOT TRAIN',
+        detail: `Recovery score is ${last.score}%. Your body is severely under-recovered. Training now risks acute injury and hormonal suppression.`,
+        suggestions: [
+          { icon: '😴', text: 'Sleep 9–10 hours tonight — non-negotiable', tag: 'Sleep' },
+          { icon: '🥤', text: 'Drink 3–4 litres of water with electrolytes', tag: 'Hydration' },
+          { icon: '🧘', text: 'Light 15 min walk only — no lifting, no HIIT', tag: 'Active Rest' },
+          { icon: '🍗', text: 'Eat 1.8g protein per kg bodyweight today', tag: 'Nutrition' },
+          { icon: '🧊', text: 'Cold shower or ice bath 10 min to reduce inflammation', tag: 'Recovery' },
+        ]
+      });
+    } else if (last.score < 55) {
+      alerts.push({
+        id: 'rec_low', sev: 'warning', icon: '🟡',
+        title: 'LOW RECOVERY — TRAIN LIGHT OR REST',
+        detail: `Recovery at ${last.score}%. Pushing hard today will slow your overall progress. Consider a deload or active recovery session.`,
+        suggestions: [
+          { icon: '🚶', text: 'Zone 2 cardio only — keep HR under 140 bpm', tag: 'Training' },
+          { icon: '🧴', text: 'Foam roll major muscle groups for 20 min', tag: 'Mobility' },
+          { icon: '😴', text: 'Aim for 8 hours of sleep tonight', tag: 'Sleep' },
+          { icon: '🌡️', text: 'Contrast shower (hot 2 min → cold 30 sec × 4)', tag: 'Recovery' },
+        ]
       });
     }
   }
-  var badge=document.getElementById('alert-badge-nav');
-  if(badge){badge.textContent=alerts.length;badge.style.display=alerts.length?'inline-flex':'none';}
-  var dismissed=(db.kineticAlerts||[]).filter(function(a){return a.dismissed;}).map(function(a){return a.id;});
-  var visible=alerts.filter(function(a){return dismissed.indexOf(a.id)===-1;});
-  if(!visible.length){zone.innerHTML='';return;}
-  zone.innerHTML=visible.map(function(a){
-    return '<div class="kinetic-alert-bar" id="ka-'+a.id+'">'
-      +'<div class="ka-icon">🚨</div>'
-      +'<div class="ka-body"><div class="ka-title">'+a.title+'</div>'
-      +'<div class="ka-detail">'+a.detail+'</div>'
-      +'<div class="ka-action">⚡ '+a.action+'</div></div>'
-      +'<button class="ka-dismiss" onclick="dismissKineticAlert(\''+a.id+'\')">DISMISS</button></div>';
+
+  // ── 2. Sleep deprivation ──
+  if (last && last.sleep < 6) {
+    alerts.push({
+      id: 'sleep_low', sev: 'warning', icon: '💤',
+      title: 'SLEEP DEPRIVATION DETECTED',
+      detail: `Only ${last.sleep} hours logged last night. Below 6 hours, cortisol spikes, muscle protein synthesis drops 18%, and reaction time degrades.`,
+      suggestions: [
+        { icon: '📵', text: 'No screens 1 hour before bed', tag: 'Sleep Hygiene' },
+        { icon: '🌡️', text: 'Cool bedroom to 18–20°C for deeper sleep', tag: 'Environment' },
+        { icon: '🍌', text: 'Eat magnesium-rich foods at dinner (banana, spinach, nuts)', tag: 'Nutrition' },
+        { icon: '☕', text: 'No caffeine after 2 PM', tag: 'Habits' },
+        { icon: '⏰', text: 'Set a consistent wake-up time even on rest days', tag: 'Routine' },
+      ]
+    });
+  }
+
+  // ── 3. High soreness ──
+  if (last && last.soreness >= 7) {
+    alerts.push({
+      id: 'soreness_high', sev: 'warning', icon: '💢',
+      title: 'HIGH MUSCLE SORENESS',
+      detail: `Soreness at ${last.soreness}/10. Severe DOMS indicates muscle damage that hasn't fully repaired. Training the same groups today will hinder growth.`,
+      suggestions: [
+        { icon: '🧴', text: 'Foam roll sore areas — slow passes, 60 sec per spot', tag: 'Mobility' },
+        { icon: '🏊', text: 'Swimming or cycling — low impact, promotes blood flow', tag: 'Active Recovery' },
+        { icon: '🧊', text: 'Ice the most sore areas for 15 min (avoid if no swelling)', tag: 'Treatment' },
+        { icon: '🥩', text: 'Increase protein today — muscle is still rebuilding', tag: 'Nutrition' },
+        { icon: '💊', text: 'Tart cherry juice or omega-3s reduce inflammatory markers', tag: 'Supplements' },
+      ]
+    });
+  }
+
+  // ── 4. Low energy ──
+  if (last && last.energy <= 3) {
+    alerts.push({
+      id: 'energy_crash', sev: 'info', icon: '⚡',
+      title: 'ENERGY CRASH — CHECK NUTRITION & HYDRATION',
+      detail: `Energy at ${last.energy}/10. This level typically points to glycogen depletion, dehydration, or overreaching syndrome.`,
+      suggestions: [
+        { icon: '🍚', text: 'Eat complex carbs now — rice, oats, sweet potato', tag: 'Nutrition' },
+        { icon: '💧', text: 'You may be dehydrated — drink 500ml immediately', tag: 'Hydration' },
+        { icon: '🩸', text: 'Consider iron and B12 blood test if this persists', tag: 'Health Check' },
+        { icon: '🏋️', text: 'Skip heavy compound lifts today — CNS is depleted', tag: 'Training' },
+      ]
+    });
+  }
+
+  // ── 5. Overtraining — consecutive sessions with no rest ──
+  const last7 = wl.filter(w => {
+    const d = Math.round((Date.now() - new Date(w.date).getTime()) / 86400000);
+    return d < 7;
+  });
+  const uniqueDays = [...new Set(last7.map(w => w.date))].length;
+  if (uniqueDays >= 6) {
+    alerts.push({
+      id: 'overtraining', sev: 'warning', icon: '⚠️',
+      title: 'OVERTRAINING PATTERN DETECTED',
+      detail: `${uniqueDays} training days in the last 7 with no proper rest. Overtraining syndrome reduces performance, suppresses immunity, and dramatically increases injury risk.`,
+      suggestions: [
+        { icon: '🛑', text: 'Take 2 full rest days this week — mandatory', tag: 'Recovery' },
+        { icon: '📉', text: 'Next week: deload to 60% of normal volume', tag: 'Programming' },
+        { icon: '🍗', text: 'Increase calorie intake by 200–300 kcal today and tomorrow', tag: 'Nutrition' },
+        { icon: '🧘', text: 'Yoga or light stretching only on rest days', tag: 'Active Rest' },
+      ]
+    });
+  }
+
+  // ── 6. Persistent pain in same body part ──
+  const partDays = {};
+  pl.forEach(p => {
+    if (!partDays[p.part]) partDays[p.part] = new Set();
+    partDays[p.part].add(p.date);
+  });
+  Object.keys(partDays).forEach(part => {
+    let streak = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      if (partDays[part].has(d.toISOString().split('T')[0])) streak++;
+      else break;
+    }
+    if (streak >= 3) {
+      const worst = pl.filter(p => p.part === part).reduce((a, b) => b.intensity > a.intensity ? b : a, { intensity: 0 });
+      alerts.push({
+        id: 'pain_' + part, sev: worst.intensity >= 7 ? 'critical' : 'warning', icon: worst.intensity >= 7 ? '🚨' : '🔶',
+        title: (worst.intensity >= 7 ? 'INJURY RISK: ' : 'PERSISTENT PAIN: ') + part.toUpperCase(),
+        detail: `${part} pain for ${streak} consecutive days (peak intensity: ${worst.intensity}/10). Repeated stress without recovery leads to chronic injury.`,
+        suggestions: [
+          { icon: '🛑', text: `Avoid all exercises loading the ${part} for at least 48 hours`, tag: 'Rest' },
+          { icon: '🧊', text: 'Ice 15 min on, 45 min off for the first 24 hours', tag: 'Treatment' },
+          { icon: '🩺', text: worst.intensity >= 7 ? 'See a physiotherapist or sports doctor this week' : 'Monitor closely — see physio if it reaches 3+ more days', tag: 'Medical' },
+          { icon: '🔄', text: 'Train around the injury — focus other muscle groups', tag: 'Training' },
+        ]
+      });
+    }
+  });
+
+  // ── 7. Low HRV from device ──
+  if (lastBio && lastBio.hrv && lastBio.hrv < 40) {
+    alerts.push({
+      id: 'hrv_low', sev: 'warning', icon: '💓',
+      title: 'LOW HRV — NERVOUS SYSTEM STRESSED',
+      detail: `HRV at ${lastBio.hrv}ms (${lastBio.source}). Low HRV means your autonomic nervous system hasn't recovered. High-intensity training will deepen the hole.`,
+      suggestions: [
+        { icon: '🧘', text: '5 min box breathing — inhale 4s, hold 4s, exhale 4s', tag: 'Recovery' },
+        { icon: '🚶', text: 'Light walk in nature — sunlight exposure boosts HRV', tag: 'Active Recovery' },
+        { icon: '🍷', text: 'No alcohol — it suppresses HRV for 48+ hours', tag: 'Lifestyle' },
+        { icon: '😴', text: 'Nap 20 min in the afternoon if possible', tag: 'Sleep' },
+      ]
+    });
+  }
+
+  // ── 8. High resting HR ──
+  if (lastBio && lastBio.rhr && lastBio.rhr > 75) {
+    alerts.push({
+      id: 'rhr_high', sev: 'info', icon: '❤️',
+      title: 'ELEVATED RESTING HEART RATE',
+      detail: `Resting HR at ${lastBio.rhr} bpm. Elevated RHR signals fatigue, illness, or dehydration. Normal athletic RHR is 45–65 bpm.`,
+      suggestions: [
+        { icon: '💧', text: 'Drink 750ml of water immediately — dehydration raises RHR', tag: 'Hydration' },
+        { icon: '🌡️', text: "Check if you're coming down with something — rest preemptively", tag: 'Health' },
+        { icon: '🏋️', text: 'Skip max effort work today — moderate intensity only', tag: 'Training' },
+      ]
+    });
+  }
+
+  // ── 9. Recovery declining trend ──
+  if (rl.length >= 3) {
+    const last3 = rl.slice(-3).map(r => r.score);
+    if (last3[2] < last3[1] && last3[1] < last3[0] && last3[2] < 65) {
+      alerts.push({
+        id: 'rec_declining', sev: 'info', icon: '📉',
+        title: 'RECOVERY TREND DECLINING',
+        detail: `Scores: ${last3[0]}% → ${last3[1]}% → ${last3[2]}%. 3-day downward trend. You are accumulating fatigue faster than you're recovering.`,
+        suggestions: [
+          { icon: '📋', text: 'Reduce workout frequency to 3x this week', tag: 'Programming' },
+          { icon: '🥗', text: 'Check your calorie intake — you may be undereating', tag: 'Nutrition' },
+          { icon: '😴', text: 'Prioritise sleep above everything for the next 3 days', tag: 'Sleep' },
+          { icon: '🔄', text: 'Switch to maintenance volume — no PRs this week', tag: 'Training' },
+        ]
+      });
+    }
+  }
+
+  return alerts;
+}
+
+// ─── Simple flag for coach heatmap (backward compatible) ───
+function checkKineticPattern(mdb) {
+  const alerts = analyzeCondition(mdb);
+  const critical = alerts.filter(a => a.sev === 'critical');
+  const warnings = alerts.filter(a => a.sev === 'warning');
+  if (critical.length) return critical[0].title;
+  if (warnings.length) return warnings[0].title;
+  return null;
+}
+
+// ─── Render alerts on dashboard ───
+function renderKineticAlerts() {
+  const zone = document.getElementById('kinetic-alerts-zone');
+  if (!zone) return;
+
+  const myAlerts = analyzeCondition(db);
+  let coachAlerts = [];
+  if (db.role === 'coach') {
+    const palace = findMyPalace();
+    if (palace && palace.members) {
+      palace.members.forEach(m => {
+        const mdb = DB.load(m.uid);
+        const flags = analyzeCondition(mdb).filter(a => a.sev === 'critical' || a.sev === 'warning');
+        flags.forEach(f => coachAlerts.push({ ...f, id: 'coach_' + m.uid + '_' + f.id, title: '⚔️ ' + m.name.split(' ')[0].toUpperCase() + ': ' + f.title, memberName: m.name }));
+      });
+    }
+  }
+
+  const allAlerts = [...myAlerts, ...coachAlerts];
+  const badge = document.getElementById('alert-badge-nav');
+  if (badge) { badge.textContent = allAlerts.length; badge.style.display = allAlerts.length ? 'inline-flex' : 'none'; }
+
+  const dismissed = (db.kineticAlerts || []).filter(a => a.dismissed).map(a => a.id);
+  const visible = allAlerts.filter(a => dismissed.indexOf(a.id) === -1);
+  if (!visible.length) { zone.innerHTML = ''; return; }
+
+  const sevColor = { critical: 'var(--danger)', warning: 'var(--warning)', info: 'var(--accent3)' };
+  const sevBg = { critical: 'rgba(255,34,68,.07)', warning: 'rgba(255,149,0,.06)', info: 'rgba(0,255,204,.05)' };
+
+  zone.innerHTML = visible.map(a => {
+    const clr = sevColor[a.sev] || 'var(--accent)';
+    const bg = sevBg[a.sev] || '';
+    const suggestions = (a.suggestions || []).slice(0, 3).map(s =>
+      `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+        <span style="font-size:16px;flex-shrink:0">${s.icon}</span>
+        <div>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;color:${clr};background:${bg};padding:2px 6px;margin-bottom:3px;display:inline-block">${s.tag}</span>
+          <div style="font-size:12px;color:var(--text2);line-height:1.5;margin-top:2px">${s.text}</div>
+        </div>
+      </div>`
+    ).join('');
+    return `<div class="kinetic-alert-bar" id="ka-${a.id}" style="border-left-color:${clr};background:${bg};margin-bottom:12px;flex-direction:column;gap:0">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;width:100%;gap:12px">
+        <div style="display:flex;align-items:flex-start;gap:12px;flex:1">
+          <div class="ka-icon">${a.icon}</div>
+          <div class="ka-body">
+            <div class="ka-title" style="color:${clr}">${a.title}</div>
+            <div class="ka-detail">${a.detail}</div>
+          </div>
+        </div>
+        <button class="ka-dismiss" onclick="dismissKineticAlert('${a.id}')" style="flex-shrink:0">DISMISS</button>
+      </div>
+      ${suggestions ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);padding-left:40px">
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--text3);margin-bottom:6px">⚡ RECOVERY ACTIONS</div>
+        ${suggestions}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Also refresh recovery suggestions panel
+  renderRecoverySuggestions();
+}
+
+// ─── Personalised recovery suggestions panel (in Recovery section) ───
+function renderRecoverySuggestions() {
+  const el = document.getElementById('smart-suggestions');
+  if (!el) return;
+  const alerts = analyzeCondition(db);
+  if (!alerts.length) {
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:12px;background:rgba(57,255,20,.06);border:1px solid rgba(57,255,20,.2);padding:16px 20px;margin-bottom:16px">
+      <span style="font-size:24px">✅</span>
+      <div>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--success);margin-bottom:4px">ALL SYSTEMS NOMINAL</div>
+        <div style="font-size:13px;color:var(--text2)">No warnings detected. You are cleared to train at full intensity today. Keep monitoring daily.</div>
+      </div>
+    </div>`;
+    return;
+  }
+  // Collect all unique suggestions, prioritised by severity
+  const seen = new Set();
+  const allSugs = [];
+  ['critical', 'warning', 'info'].forEach(sev => {
+    alerts.filter(a => a.sev === sev).forEach(a => {
+      (a.suggestions || []).forEach(s => {
+        if (!seen.has(s.tag)) { seen.add(s.tag); allSugs.push({ ...s, sev, alertTitle: a.title }); }
+      });
+    });
+  });
+  const sevColor = { critical: 'var(--danger)', warning: 'var(--warning)', info: 'var(--accent3)' };
+  el.innerHTML = allSugs.slice(0, 8).map(s => {
+    const clr = sevColor[s.sev];
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-left:2px solid ${clr};padding:14px 18px;margin-bottom:8px;display:flex;align-items:flex-start;gap:14px">
+      <span style="font-size:22px;flex-shrink:0">${s.icon}</span>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;color:${clr}">${s.tag.toUpperCase()}</span>
+        </div>
+        <div style="font-size:13px;color:var(--text);line-height:1.6">${s.text}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px;font-family:'Space Mono',monospace">From: ${s.alertTitle}</div>
+      </div>
+    </div>`;
   }).join('');
 }
-function dismissKineticAlert(id){
-  if(!db.kineticAlerts)db.kineticAlerts=[];
-  var existing=db.kineticAlerts.find(function(a){return a.id===id;});
-  if(existing)existing.dismissed=true;else db.kineticAlerts.push({id:id,dismissed:true});
-  DB.save(U.uid,db);
-  var el=document.getElementById('ka-'+id);
-  if(el){el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(function(){el.remove();},300);}
+
+function dismissKineticAlert(id) {
+  if (!db.kineticAlerts) db.kineticAlerts = [];
+  const existing = db.kineticAlerts.find(a => a.id === id);
+  if (existing) existing.dismissed = true; else db.kineticAlerts.push({ id, dismissed: true });
+  DB.save(U.uid, db);
+  const el = document.getElementById('ka-' + id);
+  if (el) { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }
   renderKineticAlerts();
 }
 
