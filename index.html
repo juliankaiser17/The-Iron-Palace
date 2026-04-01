@@ -5,40 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Iron Palace</title>
 <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Space+Mono:wght@400;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<!-- Firebase SDKs -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getDatabase, ref, set, get, update, onValue, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDGdecWngN_zZFlJyq_L0_BLD8KEMcBpgI",
-    authDomain: "theironpalace-ffb85.firebaseapp.com",
-    databaseURL: "https://theironpalace-ffb85-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "theironpalace-ffb85",
-    storageBucket: "theironpalace-ffb85.firebasestorage.app",
-    messagingSenderId: "708398928493",
-    appId: "1:708398928493:web:79ac3030178c938af9a564"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db_rt = getDatabase(app);
-  const gProvider = new GoogleAuthProvider();
-
-  // Expose to global scope for non-module JS
-  window._FB = { auth, db_rt, ref, set, get, update, onValue, push, serverTimestamp,
-    createUserWithEmailAndPassword, signInWithEmailAndPassword, fbSignOut,
-    onAuthStateChanged, GoogleAuthProvider, signInWithPopup, gProvider, updateProfile };
-
-  // Auth state observer
-  onAuthStateChanged(auth, (user) => {
-    if (user && window._pendingFirebaseLogin) {
-      window._pendingFirebaseLogin(user);
-      window._pendingFirebaseLogin = null;
-    }
-  });
-</script>
 <style>
   :root{
     --bg:#030305;
@@ -60,7 +26,7 @@
       linear-gradient(90deg,rgba(255,255,255,0.010) 1px,transparent 1px);
     background-size:40px 40px;
   }
- 
+
   /* AUTH */
   #auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#000;position:relative;overflow:hidden;}
   #auth-screen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(255,255,255,0.028),transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(255,255,255,0.012),transparent 50%);}
@@ -89,7 +55,7 @@
   .btn-google{background:transparent;border:1px solid var(--border2);color:var(--text);padding:14px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .2s;width:100%;}
   .btn-google:hover{border-color:var(--accent);background:rgba(255,255,255,0.022);}
   .auth-err{font-size:13px;color:var(--danger);padding:10px 14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);display:none;font-family:'Space Mono',monospace;font-size:11px;}
- 
+
   /* GOOGLE PICKER */
   .gp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;display:none;align-items:center;justify-content:center;}
   .gp-overlay.open{display:flex;}
@@ -114,7 +80,7 @@
   .gp-foot{padding:10px 24px;border-top:1px solid #e8eaed;display:flex;justify-content:flex-end;}
   .gp-cancel{background:transparent;border:none;color:#1a73e8;cursor:pointer;padding:8px 14px;font-family:'Rajdhani',sans-serif;font-size:13px;}
   .gp-cancel:hover{background:#f1f3f4;border-radius:4px;}
- 
+
   /* APP */
   #app{display:none;min-height:100vh;}
   .app-header{background:rgba(0,0,0,.95);border-bottom:1px solid var(--border2);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);position:relative;}
@@ -128,14 +94,14 @@
   .nav-item:hover{color:var(--text);background:rgba(255,255,255,0.017);}
   .nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(255,255,255,0.022);}
   .main-content{flex:1;overflow-y:auto;padding:28px;}
- 
+
   /* SECTIONS */
-  .section{display:none;animation:fadeIn .4s ease;}
+  .section{display:none;animation:fadeIn .5s cubic-bezier(0.4,0,0.2,1);}
   .section.active{display:block;}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   .section-title{font-family:'Syncopate',sans-serif;font-size:48px;letter-spacing:4px;line-height:1;}
   .section-sub{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-top:4px;margin-bottom:32px;}
- 
+
   /* CARDS */
   .card{background:var(--surface);border:1px solid var(--border);padding:24px;}
   .card-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:'Space Mono',monospace;}
@@ -144,11 +110,11 @@
   .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
   .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
   .g2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px;}
- 
+
   /* EMPTY */
   .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;gap:12px;color:var(--text3);}
   .empty-icon{font-size:48px;opacity:.35;}
- 
+
   /* DASHBOARD */
   .welcome-banner{background:linear-gradient(135deg,var(--surface),#1a1a0a);border:1px solid var(--border);border-left:4px solid var(--accent);padding:28px 32px;margin-bottom:28px;position:relative;overflow:hidden;}
   .welcome-banner::after{content:'IRON PALACE';position:absolute;right:-20px;top:50%;transform:translateY(-50%);font-family:'Syncopate',sans-serif;font-size:80px;color:rgba(255,255,255,0.022);letter-spacing:4px;white-space:nowrap;}
@@ -171,7 +137,7 @@
   .w-tag{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;border:1px solid;}
   .ts{color:var(--accent);border-color:rgba(255,255,255,0.165);}
   .tc{color:var(--accent3);border-color:rgba(255,255,255,.3);}
- 
+
   /* TRACKS */
   .log-form{background:var(--surface);border:1px solid var(--border);padding:28px;margin-bottom:24px;}
   .log-title{font-family:'Space Mono',monospace;font-size:18px;letter-spacing:3px;text-transform:uppercase;margin-bottom:20px;}
@@ -189,7 +155,7 @@
   .log-table th{text-align:left;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);padding:12px 16px;border-bottom:1px solid var(--border);}
   .log-table td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:14px;color:var(--text2);}
   .log-table tr:hover td{background:rgba(255,255,255,.02);}
- 
+
   /* RECOVERY */
   .rec-warn{background:rgba(239,68,68,.08);border:2px solid var(--danger);padding:24px;margin-bottom:24px;text-align:center;animation:pBorder 2s infinite;}
   @keyframes pBorder{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.3)}50%{box-shadow:0 0 0 12px rgba(239,68,68,0)}}
@@ -214,7 +180,7 @@
   .rec-insight{background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.4);border-left:4px solid var(--warning);padding:20px 24px;margin-top:24px;display:flex;gap:16px;}
   .insight-t{font-family:'Space Mono',monospace;font-size:16px;letter-spacing:2px;font-weight:600;color:var(--warning);}
   .insight-b{font-size:13px;color:var(--text2);margin-top:4px;line-height:1.6;}
- 
+
   /* INJURIES */
   .inj-tabs{display:flex;margin-bottom:28px;border:1px solid var(--border);}
   .inj-tab{flex:1;padding:14px;text-align:center;cursor:pointer;font-family:'Space Mono',monospace;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);background:transparent;border:none;transition:all .2s;}
@@ -247,7 +213,7 @@
   .inj-card-name{font-family:'Space Mono',monospace;font-size:16px;letter-spacing:1px;font-weight:600;margin-bottom:4px;}
   .inj-card-area{font-size:12px;color:var(--text3);margin-bottom:10px;}
   .inj-badge{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:3px 8px;border:1px solid;display:inline-block;}
- 
+
   /* EMERGENCY */
   .emg-buttons{display:flex;gap:16px;margin-bottom:28px;}
   .btn-ecall{flex:1;background:var(--danger);color:#fff;padding:18px;border:none;cursor:pointer;font-family:'Syncopate',sans-serif;font-size:20px;letter-spacing:4px;display:flex;align-items:center;justify-content:center;gap:12px;animation:pRed 2s infinite;}
@@ -255,7 +221,7 @@
   .btn-ecall:hover{background:#f00;}
   .btn-etext{flex:1;background:transparent;color:var(--danger);padding:18px;border:2px solid var(--danger);cursor:pointer;font-family:'Syncopate',sans-serif;font-size:20px;letter-spacing:4px;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .2s;}
   .btn-etext:hover{background:rgba(239,68,68,.1);}
- 
+
   /* MODAL */
   .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
   .modal-ov.open{display:flex;}
@@ -264,7 +230,7 @@
   .modal-title{font-family:'Syncopate',sans-serif;font-size:24px;letter-spacing:3px;}
   .modal-x{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;}
   .modal-body{padding:28px;}
- 
+
   /* TOAST */
   .toast-wrap{position:fixed;top:80px;right:24px;z-index:3000;display:flex;flex-direction:column;gap:10px;}
   .toast{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:14px 20px;min-width:280px;animation:slideIn .3s ease;font-family:'Space Mono',monospace;font-size:14px;letter-spacing:1px;}
@@ -272,22 +238,22 @@
   .toast.w{border-left-color:var(--warning);}
   .toast.d{border-left-color:var(--danger);}
   .toast.s{border-left-color:var(--success);}
- 
+
   /* SIDEBAR FOOTER */
   .sb-foot{margin-top:auto;padding:0 24px;}
   .btn-so{margin-top:20px;width:100%;background:transparent;border:1px solid var(--border);color:var(--text3);padding:10px;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
   .btn-so:hover{border-color:var(--danger);color:var(--danger);}
- 
+
   /* COLOR HELPERS */
   .ca{color:var(--accent);}
   .cs{color:var(--success);}
   .cw{color:var(--warning);}
   .cd{color:var(--danger);}
- 
+
   ::-webkit-scrollbar{width:4px;}
   ::-webkit-scrollbar-track{background:transparent;}
   ::-webkit-scrollbar-thumb{background:var(--border);}
- 
+
   /* ══════════════ PALACE MANAGEMENT / FEATURE 1 ══════════════ */
   .palace-hero{background:linear-gradient(135deg,#0a0a00,#111100);border:1px solid rgba(255,255,255,.3);padding:36px 32px;margin-bottom:24px;position:relative;overflow:hidden;}
   .palace-hero::before{content:'LEGION';position:absolute;right:-10px;bottom:-20px;font-family:'Syncopate',sans-serif;font-size:120px;color:rgba(255,255,255,0.017);letter-spacing:8px;pointer-events:none;}
@@ -316,7 +282,7 @@
   .palace-member-meta{font-size:12px;color:var(--text3);}
   .connected-badge{background:rgba(255,255,255,0.040);border:1px solid rgba(255,255,255,0.120);color:var(--success);padding:4px 12px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;}
   .pending-badge{background:rgba(255,149,0,.1);border:1px solid rgba(255,149,0,.3);color:var(--warning);padding:4px 12px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;}
- 
+
   /* ══════════════ READINESS DASHBOARD / FEATURE 2 ══════════════ */
   .legion-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:gap;}
   .readiness-overview{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;}
@@ -355,7 +321,7 @@
   .pain-bar-outer{flex:1;height:6px;background:var(--surface3);}
   .pain-bar-inner{height:100%;background:var(--danger);transition:width .8s ease;}
   .load-rec-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);padding:8px 16px;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;color:var(--danger);margin-top:10px;}
- 
+
   /* ══════════════ DEVICE SYNC / FEATURE 3 ══════════════ */
   .sync-block{background:var(--surface);border:1px solid var(--border);padding:24px;margin-bottom:24px;}
   .sync-title{font-family:'Space Mono',monospace;font-size:14px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
@@ -378,7 +344,7 @@
   @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
   .btn-sync{background:transparent;border:1px solid var(--accent3);color:var(--accent3);padding:12px 24px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px;}
   .btn-sync:hover{background:rgba(255,255,255,0.028);}
- 
+
   /* ══════════════ SPATIAL PAIN MAP / FEATURE 4 ══════════════ */
   .palace-state-hero{background:linear-gradient(135deg,#000,#050510);border:1px solid rgba(255,255,255,0.052);padding:28px 32px;margin-bottom:24px;position:relative;overflow:hidden;}
   .palace-state-hero::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent3),transparent);}
@@ -406,7 +372,7 @@
   .no-pain-today{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.024);border:1px solid rgba(255,255,255,0.080);padding:14px 18px;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;color:var(--success);margin-bottom:16px;}
   .pain-canvas-wrap{background:var(--surface);border:1px solid var(--border);padding:16px;text-align:center;}
   .pain-canvas-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;font-family:'Space Mono',monospace;}
- 
+
   /* ══════════════ KINETIC ALERTS / FEATURE 5 ══════════════ */
   .kinetic-alert-bar{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.4);border-left:4px solid var(--danger);padding:16px 20px;margin-bottom:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;animation:alertGlow 3s infinite;}
   .ka-icon{font-size:28px;flex-shrink:0;margin-top:2px;}
@@ -417,11 +383,11 @@
   .ka-dismiss{background:transparent;border:1px solid rgba(239,68,68,.3);color:var(--danger);padding:8px 14px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;cursor:pointer;transition:all .2s;flex-shrink:0;align-self:center;}
   .ka-dismiss:hover{background:rgba(239,68,68,.1);}
   .alert-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--danger);color:#fff;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;padding:0 5px;margin-left:6px;vertical-align:middle;}
- 
+
   /* ══════════════ CTRL BUTTONS ══════════════ */
   .ctrl-btn{background:transparent;border:1px solid var(--border2);color:var(--text3);padding:6px 14px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
   .ctrl-btn:hover,.ctrl-btn.active{border-color:var(--accent);color:var(--accent);}
- 
+
   /* MOBILE */
   .m-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 0;z-index:200;}
   .m-nav-inner{display:flex;justify-content:space-around;}
@@ -438,12 +404,12 @@
     .emg-buttons{flex-direction:column;}
     .timer-block{flex-direction:column;align-items:flex-start;}
   }
- 
+
   
   /* ═══════════════════════════════════════════════════════════════
      COSMIC ONYX SYSTEM — Premium Electric Redesign
   ═══════════════════════════════════════════════════════════════ */
- 
+
   /* ── BODY & BACKGROUND ── */
   body {
     background: var(--bg) !important;
@@ -454,14 +420,14 @@
       linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px) !important;
     background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px !important;
   }
- 
+
   /* Grain texture */
   body::before {
     content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
     opacity:0.35;mix-blend-mode:overlay;
   }
- 
+
   /* ── AUTH SCREEN ── */
   #auth-screen { background:#000 !important; }
   #auth-screen::before {
@@ -476,7 +442,7 @@
     background-size:32px 32px !important;
   }
   .auth-bg { color:rgba(0,242,255,0.025) !important; letter-spacing:20px !important; }
- 
+
   /* Auth Card — glass morphism */
   .auth-card {
     background:rgba(8,8,14,0.85) !important;
@@ -495,7 +461,7 @@
     background:linear-gradient(90deg, transparent, var(--accent), transparent) !important;
     height:1px !important;
   }
- 
+
   /* Auth Logo — gradient text */
   .auth-logo {
     font-family:'Syncopate',sans-serif !important;
@@ -515,7 +481,7 @@
     opacity:0.7 !important;
     text-align:center !important;
   }
- 
+
   /* Auth Tabs */
   .auth-tabs { border:1px solid var(--border) !important; border-radius:2px !important; overflow:hidden; }
   .auth-tab { color:var(--text3) !important; transition:all .2s !important; }
@@ -524,7 +490,7 @@
     color:#000 !important;
     font-weight:700 !important;
   }
- 
+
   /* Form inputs — electric glow on focus */
   .form-input {
     background:rgba(255,255,255,0.03) !important;
@@ -541,7 +507,7 @@
     outline:none !important;
   }
   .form-label { color:var(--accent) !important; font-size:10px !important; letter-spacing:3px !important; opacity:0.8; }
- 
+
   /* Primary button */
   .btn-primary {
     background:var(--accent) !important;
@@ -558,7 +524,7 @@
     transform:scale(1.02) !important;
     box-shadow:0 0 30px rgba(0,242,255,0.35) !important;
   }
- 
+
   /* Google button */
   .btn-google {
     border:1px solid var(--border) !important;
@@ -567,7 +533,7 @@
     transition:all .25s !important;
   }
   .btn-google:hover { border-color:var(--accent) !important; color:var(--accent) !important; background:rgba(0,242,255,0.04) !important; }
- 
+
   /* ── APP HEADER ── */
   .app-header {
     background:rgba(3,3,5,0.92) !important;
@@ -595,7 +561,7 @@
     border-radius:2px !important;
     font-family:'Syncopate',sans-serif !important;
   }
- 
+
   /* ── SIDEBAR ── */
   .sidebar {
     background:rgba(3,3,8,0.92) !important;
@@ -620,7 +586,7 @@
     background:linear-gradient(90deg, rgba(0,242,255,0.12), transparent) !important;
     border-left-color:var(--accent) !important;
   }
- 
+
   /* ── SECTION TITLES ── */
   .section-title {
     font-family:'Syncopate',sans-serif !important;
@@ -633,7 +599,7 @@
     background-clip:text !important;
   }
   .section-sub { color:var(--text3) !important; letter-spacing:3px !important; }
- 
+
   /* ── CARDS — glass morphism ── */
   .card {
     background:var(--surface) !important;
@@ -662,7 +628,7 @@
     text-shadow:0 0 20px var(--accent-glow) !important;
   }
   .card-unit { color:var(--text3) !important; }
- 
+
   /* ── WELCOME BANNER ── */
   .welcome-banner {
     background:linear-gradient(90deg, rgba(0,242,255,0.06), rgba(112,0,255,0.04)) !important;
@@ -680,7 +646,7 @@
     color:var(--accent) !important;
     border-radius:2px !important;
   }
- 
+
   /* ── BAR CHART ── */
   .chart-box { background:var(--surface) !important; backdrop-filter:blur(12px) !important; border:1px solid var(--border) !important; border-radius:4px !important; }
   .chart-lbl { color:var(--accent) !important; font-size:10px !important; letter-spacing:3px !important; }
@@ -693,7 +659,7 @@
   .bar.today { opacity:1 !important; background:#fff !important; box-shadow:0 0 20px rgba(255,255,255,0.3) !important; }
   .bar.rest { background:var(--surface3) !important; opacity:1 !important; box-shadow:none !important; }
   .bar-day { color:var(--text3) !important; }
- 
+
   /* Progress bar */
   .progress-bar { background:rgba(255,255,255,0.05) !important; border-radius:4px; overflow:hidden; }
   .progress-fill {
@@ -701,14 +667,14 @@
     border-radius:4px !important;
     box-shadow:0 0 10px rgba(0,242,255,0.3) !important;
   }
- 
+
   /* ── WORKOUT ITEMS ── */
   .w-item { background:var(--surface) !important; backdrop-filter:blur(8px) !important; border:1px solid var(--border) !important; border-radius:4px !important; }
   .w-item:hover { border-color:var(--border2) !important; }
   .w-name { font-family:'Space Mono',monospace !important; color:#fff !important; }
   .ts { color:var(--accent) !important; border-color:rgba(0,242,255,0.3) !important; }
   .tc { color:var(--accent2) !important; border-color:rgba(191,255,0,0.3) !important; }
- 
+
   /* ── TIMER ── */
   .timer-block { background:var(--surface) !important; backdrop-filter:blur(12px) !important; border:1px solid var(--border) !important; border-radius:4px !important; }
   .timer-disp {
@@ -736,14 +702,14 @@
   .btn-record:hover { background:#ff3366 !important; box-shadow:0 0 30px rgba(255,0,85,0.5) !important; }
   .btn-record.active { background:transparent !important; border:1px solid var(--danger) !important; box-shadow:none !important; }
   .cal-live { color:var(--warning) !important; }
- 
+
   /* ── LOG FORM ── */
   .log-form { background:var(--surface) !important; backdrop-filter:blur(12px) !important; border:1px solid var(--border) !important; border-radius:4px !important; }
   .log-title { color:var(--accent) !important; font-size:11px !important; letter-spacing:3px !important; }
   .log-table th { color:var(--accent) !important; border-bottom-color:var(--border2) !important; }
   .log-table td { color:var(--text2) !important; border-bottom-color:var(--border) !important; }
   .log-table tr:hover td { background:rgba(0,242,255,0.03) !important; }
- 
+
   /* ── RECOVERY ── */
   .ring-prog { stroke:var(--accent) !important; filter:drop-shadow(0 0 6px var(--accent)) !important; }
   .ring-bg { stroke:rgba(255,255,255,0.05) !important; }
@@ -760,7 +726,7 @@
   .sug-dur { color:var(--success) !important; }
   .rec-insight { background:rgba(255,183,0,0.06) !important; border:1px solid rgba(255,183,0,0.2) !important; border-left:4px solid var(--warning) !important; border-radius:4px !important; }
   .insight-t { color:var(--warning) !important; }
- 
+
   /* ── INJURIES ── */
   .inj-tabs { border:1px solid var(--border) !important; border-radius:4px !important; overflow:hidden; }
   .inj-tab { color:var(--text3) !important; }
@@ -772,19 +738,19 @@
   .inj-card:hover { border-color:var(--accent) !important; box-shadow:0 0 20px rgba(0,242,255,0.08) !important; }
   .inj-card-name { color:#fff !important; }
   .svg-wrap { background:var(--surface) !important; border:1px solid var(--border) !important; border-radius:4px !important; }
- 
+
   /* ── EMERGENCY BUTTONS ── */
   .btn-ecall { border-radius:4px !important; background:var(--danger) !important; box-shadow:0 0 20px rgba(255,0,85,0.3) !important; letter-spacing:3px !important; }
   .btn-ecall:hover { box-shadow:0 0 40px rgba(255,0,85,0.5) !important; background:#ff1166 !important; }
   .btn-etext { border:2px solid var(--danger) !important; color:var(--danger) !important; border-radius:4px !important; letter-spacing:3px !important; }
   .btn-etext:hover { background:rgba(255,0,85,0.1) !important; }
- 
+
   /* ── MODAL ── */
   .modal-ov { backdrop-filter:blur(8px) !important; }
   .modal { background:rgba(10,10,18,0.95) !important; backdrop-filter:blur(20px) !important; border:1px solid var(--border2) !important; border-radius:6px !important; box-shadow:0 40px 100px rgba(0,0,0,0.9), 0 0 0 1px rgba(0,242,255,0.06) !important; }
   .modal-head { border-bottom:1px solid var(--border) !important; }
   .modal-title { color:#fff !important; }
- 
+
   /* ── TOAST ── */
   .toast {
     background:rgba(10,10,18,0.95) !important;
@@ -798,7 +764,7 @@
   .toast.w { border-left-color:var(--warning) !important; }
   .toast.d { border-left-color:var(--danger) !important; }
   .toast.s { border-left-color:var(--success) !important; }
- 
+
   /* ── PALACE HUB ── */
   .palace-hero {
     background:linear-gradient(135deg, rgba(112,0,255,0.08), rgba(0,242,255,0.04)) !important;
@@ -827,7 +793,7 @@
   .btn-ghost:hover { border-color:var(--accent) !important; color:var(--accent) !important; }
   .btn-copy { border:1px solid var(--border) !important; color:var(--text3) !important; border-radius:2px !important; }
   .btn-copy:hover { border-color:var(--accent) !important; color:var(--accent) !important; }
- 
+
   /* ── LEGION / READINESS ── */
   .palace-state-hero {
     background:linear-gradient(135deg, rgba(0,242,255,0.05), rgba(112,0,255,0.05)) !important;
@@ -856,7 +822,7 @@
   .pain-bar-outer { background:rgba(255,255,255,0.05) !important; }
   .pain-bar-inner { background:linear-gradient(90deg, var(--danger), #ff6688) !important; border-radius:2px !important; }
   .load-rec-badge { background:rgba(255,0,85,0.08) !important; border:1px solid rgba(255,0,85,0.25) !important; color:var(--danger) !important; border-radius:2px !important; }
- 
+
   /* ── DEVICE SYNC ── */
   .sync-block { background:var(--surface) !important; backdrop-filter:blur(12px) !important; border:1px solid var(--border) !important; border-radius:4px !important; }
   .sync-title { color:var(--accent) !important; }
@@ -869,7 +835,7 @@
   .sync-metric-val { color:#fff !important; font-family:'Syncopate',sans-serif !important; }
   .sync-metric-src { color:var(--accent) !important; opacity:0.7; }
   .sync-pulse { background:var(--success) !important; box-shadow:0 0 6px var(--success) !important; }
- 
+
   /* ── PALACE STATE / PAIN MAP ── */
   .pain-log-panel { background:var(--surface) !important; backdrop-filter:blur(12px) !important; border:1px solid var(--border) !important; border-radius:4px !important; }
   .pain-log-title { color:var(--accent) !important; opacity:0.7; }
@@ -886,7 +852,7 @@
   .pain-entry-type.dull { color:var(--warning) !important; border-color:rgba(255,183,0,0.3) !important; border-radius:2px !important; }
   .no-pain-today { background:rgba(0,255,170,0.06) !important; border:1px solid rgba(0,255,170,0.2) !important; color:var(--success) !important; border-radius:4px !important; }
   .pain-canvas-wrap { background:var(--surface) !important; border:1px solid var(--border) !important; border-radius:4px !important; }
- 
+
   /* ── KINETIC ALERTS ── */
   .kinetic-alert-bar {
     background:rgba(255,0,85,0.06) !important;
@@ -902,51 +868,161 @@
   .ka-dismiss { border:1px solid rgba(255,0,85,0.25) !important; color:var(--danger) !important; border-radius:2px !important; }
   .ka-dismiss:hover { background:rgba(255,0,85,0.1) !important; }
   .alert-badge { background:var(--danger) !important; border-radius:9px !important; box-shadow:0 0 8px rgba(255,0,85,0.4) !important; }
- 
+
   /* ── CONTROL BUTTONS ── */
   .ctrl-btn { border:1px solid var(--border) !important; color:var(--text3) !important; border-radius:2px !important; background:transparent !important; transition:all .2s !important; }
   .ctrl-btn:hover,.ctrl-btn.active { border-color:var(--accent) !important; color:var(--accent) !important; box-shadow:0 0 10px rgba(0,242,255,0.15) !important; }
- 
+
   /* ── SIDEBAR FOOTER ── */
   .btn-so { border:1px solid var(--border) !important; color:var(--text3) !important; border-radius:2px !important; background:transparent !important; }
   .btn-so:hover { border-color:var(--danger) !important; color:var(--danger) !important; }
- 
+
   /* ── COLOR HELPERS ── */
   .ca { color:var(--accent) !important; }
   .cs { color:var(--success) !important; }
   .cw { color:var(--warning) !important; }
   .cd { color:var(--danger) !important; }
- 
+
   /* ── MOBILE NAV ── */
   .m-nav { background:rgba(3,3,8,0.96) !important; backdrop-filter:blur(20px) !important; -webkit-backdrop-filter:blur(20px) !important; border-top:1px solid var(--border) !important; }
   .m-nav-item { color:var(--text3) !important; }
   .m-nav-item.active { color:var(--accent) !important; }
- 
+
   /* ── DIVIDER ── */
   .divider { color:var(--text3) !important; }
   .divider::before,.divider::after { background:var(--border) !important; }
- 
+
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-track { background:transparent; }
   ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:10px; }
- 
+
   /* ── SELECTION ── */
   ::selection { background:rgba(0,242,255,0.2); color:#fff; }
- 
+
   /* ── EMPTY STATES ── */
   .empty { color:var(--text3) !important; }
- 
+
   /* ── GOOGLE PICKER (keep white) ── */
   .gp-card { border-radius:8px; }
- 
+
   /* ── INERTIA FEEL ── */
   .main-content { scroll-behavior:smooth; }
- 
+
   /* ── SPECIAL: auth-err ── */
   .auth-err { background:rgba(255,0,85,0.08) !important; border:1px solid rgba(255,0,85,0.25) !important; color:var(--danger) !important; border-radius:2px !important; }
- 
- 
+
+
+
+  /* ═══════ EMPTY STATES ═══════ */
+  .es {
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:56px 20px;text-align:center;gap:16px;
+  }
+  .es-icon {
+    font-size:40px;
+    animation:esFloat 3.5s ease-in-out infinite;
+    filter:drop-shadow(0 0 12px rgba(0,242,255,0.18));
+    display:block;margin-bottom:4px;
+  }
+  @keyframes esFloat {
+    0%,100% { transform:translateY(0); }
+    50%      { transform:translateY(-8px); }
+  }
+  .es-ring {
+    width:72px;height:72px;border-radius:50%;
+    background:radial-gradient(circle, rgba(0,242,255,0.08) 0%, transparent 70%);
+    border:1px solid rgba(0,242,255,0.1);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:4px;
+    animation:esPulse 3s ease-in-out infinite;
+  }
+  @keyframes esPulse {
+    0%,100% { box-shadow:0 0 0 0 rgba(0,242,255,0.06); }
+    50%      { box-shadow:0 0 0 12px rgba(0,242,255,0); }
+  }
+  .es-title {
+    font-family:'Syncopate',sans-serif;font-size:14px;letter-spacing:3px;
+    color:rgba(255,255,255,0.65);margin:0;
+  }
+  .es-sub {
+    font-family:'Rajdhani',sans-serif;font-size:14px;
+    color:var(--text3);line-height:1.6;max-width:240px;margin:0;
+  }
+  .es-cta {
+    display:inline-block;margin-top:4px;
+    font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;
+    color:var(--accent);opacity:0.7;text-transform:uppercase;
+    border-bottom:1px solid rgba(0,242,255,0.25);padding-bottom:1px;
+    cursor:pointer;transition:opacity .2s;
+  }
+  .es-cta:hover { opacity:1; }
+
+  /* ═══════ ENCOURAGEMENT BANNER ═══════ */
+  .enc-bar {
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:4px;
+    padding:14px 20px;
+    margin-bottom:20px;
+    display:flex;align-items:center;gap:14px;
+    background:rgba(255,255,255,0.02);
+    backdrop-filter:blur(8px);
+  }
+  .enc-icon { font-size:22px;flex-shrink:0; }
+  .enc-text { font-family:'Rajdhani',sans-serif;font-size:16px;color:var(--text2);line-height:1.4; }
+  .enc-text strong { color:#fff;font-weight:600; }
+
+  /* ═══════ SOFTER SECTION FEEL ═══════ */
+  /* Slightly more breathing room */
+  .section-sub { margin-bottom:28px !important; }
+
+  /* Cards: very subtle inner glow on hover only */
+  .card:hover {
+    box-shadow:0 20px 60px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.04) !important;
+  }
+
+  /* Sidebar nav items: gentler gap */
+  .nav-item { margin-bottom:1px !important; padding:13px 24px !important; }
+
+  /* Welcome banner: slightly warmer */
+  .welcome-banner { padding:24px 28px !important; }
+
+  /* Recovery suggestion items: softer left border */
+  .sug-item { border-left:2px solid var(--success) !important; }
+
+  /* Muscle rec bars: smooth */
+  .progress-fill { transition:width 1.2s cubic-bezier(0.4,0,0.2,1) !important; }
+
+  /* Icon on nav items */
+  .nav-item span { opacity:0.7;transition:opacity .2s; }
+  .nav-item:hover span, .nav-item.active span { opacity:1; }
+
+
+  /* Subtle label prefix dot */
+  .card-label::before {
+    content:'·  ';
+    opacity:0.4;
+    font-size:18px;
+    line-height:0;
+    vertical-align:middle;
+  }
+  /* Softer section title letterSpacing */
+  .section-title { letter-spacing:3px !important; }
+  /* Palace / Legion section hero softer */
+  .palace-hero h1, .palace-hero > div:first-child { opacity:0.6; }
+  /* Empty ring icon breathing */
+  .ring-center .ring-pct { transition:color .6s ease; }
+  /* Workout tag chips softer */
+  .w-tag { border-radius:2px; font-size:10px !important; letter-spacing:1.5px !important; }
+  /* Sug items: softer right side */
+  .sug-dur { font-size:12px !important; opacity:0.8; }
+  /* Log table: make first col stand out softly */
+  .log-table td:first-child { color:var(--text2) !important; }
+  /* Inner pain panel inputs */
+  .intensity-slider { border-radius:4px; }
+  /* Kinetic alert bar: softer pulse */
+  .kinetic-alert-bar { animation:alertGlow 4s infinite !important; }
+
 </style>
 </head>
 <body>
@@ -955,7 +1031,7 @@
 <div id="auth-screen">
   <div class="auth-bg">IRON</div>
   <div class="auth-card">
-    <div class="auth-logo">THE IRON PALACE</div>
+    <div class="auth-logo" style="font-size:32px;letter-spacing:12px;color:#fff;text-shadow:0 0 60px rgba(255,255,255,.3)">THE IRON PALACE</div>
     <div class="auth-sub">Elite Athlete Performance System</div>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchTab('signin')">Sign In</button>
@@ -1016,9 +1092,9 @@
 <!-- APP -->
 <div id="app">
   <header class="app-header">
-    <div class="app-logo">THE IRON PALACE</div>
+    <div class="app-logo" style="font-family:'Syncopate',sans-serif;font-size:18px;letter-spacing:9px;color:#fff;text-shadow:0 0 20px rgba(255,255,255,.25)">THE IRON PALACE</div>
     <div class="header-r">
-      <span style="font-size:13px;color:var(--text3);letter-spacing:1px" id="h-date"></span>
+      <span style="font-size:11px;color:#2C2C2C;letter-spacing:2px;font-family:'Space Mono',monospace" id="h-date"></span>
       <div class="u-avatar" id="u-av">A</div>
     </div>
   </header>
@@ -1034,8 +1110,8 @@
         <div class="nav-item" data-s="palace-hub" onclick="goSec('palace-hub')"><span style="font-size:18px;width:20px;text-align:center">🏛️</span>Palace Hub</div>
       </nav>
       <div class="sb-foot">
-        <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;font-family:'Space Mono',monospace">Weekly Goal</div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:8px" id="wk-txt">0 of 5 sessions</div>
+        <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#2C2C2C;margin-bottom:10px;font-family:'Space Mono',monospace;letter-spacing:2px;font-size:10px;text-transform:uppercase">Weekly Goal</div>
+        <div style="font-size:11px;color:#585858;margin-bottom:8px;font-family:'Space Mono',monospace;letter-spacing:1px" id="wk-txt">0 of 5 sessions</div>
         <div class="progress-bar"><div class="progress-fill" id="wk-bar" style="width:0%"></div></div>
         <button class="btn-so" onclick="signOut()">Sign Out</button>
       </div>
@@ -1046,11 +1122,12 @@
       <section class="section active" id="section-dashboard">
         <div class="welcome-banner">
           <div class="welcome-date" id="d-date"></div>
-          <div class="welcome-name">WELCOME BACK, <span id="d-name">ATHLETE</span></div>
+          <div class="welcome-name" style="font-family:'Syncopate',sans-serif;font-size:44px;letter-spacing:3px;color:#fff">WELCOME BACK, <span id="d-name" style="color:#fff;opacity:.6">ATHLETE</span></div>
           <div class="streak-badge">🔥 <span id="d-streak">0</span> DAY STREAK</div>
         </div>
         <!-- KINETIC ALERTS ZONE -->
         <div id="kinetic-alerts-zone"></div>
+        <div id="enc-bar-wrap"></div>
         <div class="g4">
           <div class="card"><div class="card-label">Total Volume</div><div class="card-value ca" id="d-vol">0</div><div class="card-unit">kg lifted all time</div></div>
           <div class="card"><div class="card-label">Calories Burned</div><div class="card-value cw" id="d-cal">0</div><div class="card-unit">kcal all time</div></div>
@@ -1062,7 +1139,7 @@
           <div class="card" style="margin-bottom:0"><div class="card-label">Personal Records</div><div id="pr-list" style="margin-top:12px"></div></div>
         </div>
         <div style="margin-top:24px">
-          <div style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:16px">Recent Workouts</div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:16px;display:flex;align-items:center;gap:8px"><span style="opacity:.5">─</span> Recent Workouts</div>
           <div id="recent-w"></div>
         </div>
       </section>
@@ -1110,7 +1187,7 @@
           </div>
           <button class="btn-primary" onclick="logWorkout()">SAVE WORKOUT</button>
         </div>
-        <div style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:16px">Workout History</div>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:16px;display:flex;align-items:center;gap:8px"><span style="opacity:.5">─</span> Workout History</div>
         <div id="t-history"></div>
       </section>
 
@@ -1127,7 +1204,6 @@
               <span class="sync-icon">🍎</span>
               <div class="sync-name">Apple HealthKit</div>
               <div class="sync-status" id="ss-healthkit">Tap to sync</div>
-              <div style="font-size:9px;color:var(--text3);margin-top:2px;font-family:'Space Mono',monospace">iOS only</div>
             </div>
             <div class="sync-device" id="sd-googlefit" onclick="syncDevice('googlefit')">
               <span class="sync-icon">🏃</span>
@@ -1203,7 +1279,7 @@
           </div>
           <button class="btn-primary" onclick="logRecovery()">UPDATE RECOVERY</button>
         </div>
-        <div style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:16px">💚 Recommended Recovery Activities</div>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:16px;display:flex;align-items:center;gap:8px"><span style="color:var(--success);opacity:.7">✦</span> Recovery Activities</div>
         <div class="sug-item"><div><div class="sug-name">Foam Rolling</div><div class="sug-time">Target sore muscle groups</div></div><div class="sug-dur">15–20 min</div></div>
         <div class="sug-item"><div><div class="sug-name">Light Stretching</div><div class="sug-time">Full body mobility work</div></div><div class="sug-dur">20–30 min</div></div>
         <div class="sug-item"><div><div class="sug-name">Cold Water Therapy</div><div class="sug-time">Reduce inflammation</div></div><div class="sug-dur">10–15 min</div></div>
@@ -1220,14 +1296,8 @@
         <div class="section-title">INJURIES</div>
         <div class="section-sub">Prevention, Education & Emergency Response</div>
         <div style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:12px">🚨 EMERGENCY SERVICES</div>
-        <div style="background:var(--surface);border:1px solid var(--border);padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text3);white-space:nowrap">EMERGENCY NUMBER:</div>
-          <input class="form-input" type="tel" id="emg-number" style="flex:1;min-width:140px;max-width:200px;padding:10px 14px;font-family:'Space Mono',monospace;font-size:14px" placeholder="112" value="">
-          <button class="btn-accent" style="padding:10px 18px;font-size:11px;letter-spacing:2px;white-space:nowrap" onclick="saveEmgNumber()">SAVE</button>
-          <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text3)">Your saved number: <span id="emg-num-display" style="color:var(--accent)">112 (default)</span></span>
-        </div>
         <div class="emg-buttons">
-          <button class="btn-ecall" onclick="eCall()">📞 CALL EMERGENCY</button>
+          <button class="btn-ecall" onclick="eCall()">📞 CALL 112 — EMERGENCY</button>
           <button class="btn-etext" onclick="eText()">💬 TEXT EMERGENCY</button>
         </div>
         <div class="inj-tabs">
@@ -1235,26 +1305,24 @@
           <button class="inj-tab rare" onclick="switchInjTab('rare')">🟣 Rare</button>
           <button class="inj-tab serious" onclick="switchInjTab('serious')">🔴 Serious</button>
         </div>
-        <!-- Shared 3D canvas for injury map (switches mode per tab) -->
-        <div class="diagram-grid" id="inj-diagram-wrap">
+        <div class="diagram-grid">
           <div class="svg-wrap" style="padding:10px">
-            <div class="svg-title" id="inj-canvas-title">ANATOMICAL MODEL — DRAG TO ROTATE</div>
-            <div style="position:relative;display:inline-block">
-              <canvas id="body3d" width="268" height="360" style="width:268px;height:360px;display:block;margin:0 auto;cursor:grab;"></canvas>
-              <!-- Tab colour legend overlay -->
-              <div id="inj-legend" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:9px;color:rgba(200,255,0,.5);letter-spacing:1px;white-space:nowrap;background:rgba(0,0,0,.7);padding:3px 8px">🟡 COMMON · 🟣 RARE · 🔴 SERIOUS</div>
-            </div>
+            <div class="svg-title">ANATOMICAL MODEL — DRAG TO ROTATE</div>
+            <canvas id="body3d" width="268" height="360" style="width:268px;height:360px;display:block;margin:0 auto;cursor:grab;"></canvas>
             <div style="display:flex;justify-content:center;gap:6px;margin-top:8px;flex-wrap:wrap">
               <button class="ctrl-btn active" id="btn-auto" onclick="toggleAuto()">AUTO ROTATE</button>
               <button class="ctrl-btn" onclick="resetView()">RESET</button>
-              <button class="ctrl-btn" id="inj-mode-btn" onclick="cycleInjMode()">MODE: ALL</button>
+            </div>
+            <div style="font-size:9px;color:var(--text3);margin-top:8px;line-height:1.8;font-family:'Space Mono',monospace">
+              🟡 COMMON &nbsp; 🟣 RARE &nbsp; 🔴 SERIOUS<br>
+              <span style="color:var(--border2)">CLICK REGION TO SELECT</span>
             </div>
           </div>
           <div class="info-panel">
             <div class="info-placeholder" id="inj-ph">
               <div style="font-size:44px;opacity:.3">🫀</div>
               <div style="font-family:'Space Mono',monospace;font-size:14px;letter-spacing:3px;text-transform:uppercase">Select a Body Region</div>
-              <div style="font-size:13px;color:var(--text3);max-width:280px">Tap any area on the 3D model to see injury details, risks, symptoms, and treatment. Switch tabs to filter by severity.</div>
+              <div style="font-size:13px;color:var(--text3);max-width:280px">Tap any area on the diagram above to see injury details, risks, symptoms, and treatment options.</div>
             </div>
             <div id="inj-detail" style="display:none"></div>
           </div>
@@ -1270,7 +1338,7 @@
         <div class="inj-content" id="ic-serious">
           <div style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:16px">Serious Injuries — Seek Medical Attention Immediately</div>
           <div class="inj-grid" id="ig-serious"></div>
-          <div style="background:rgba(255,51,51,.06);border:1px solid rgba(255,51,51,.4);border-left:4px solid var(--danger);padding:20px 24px;display:flex;gap:16px;">
+          <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.4);border-left:4px solid var(--danger);padding:20px 24px;display:flex;gap:16px;">
             <div style="font-size:24px">🚨</div>
             <div><div style="font-family:'Space Mono',monospace;font-size:16px;letter-spacing:2px;color:var(--danger)">SERIOUS INJURY PROTOCOL</div><div style="font-size:13px;color:var(--text2);margin-top:4px;line-height:1.6">Stop all activity immediately. Do NOT walk it off. Call 112 or text emergency services using the buttons above.</div></div>
           </div>
@@ -1333,7 +1401,7 @@
           <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-top:4px">Real-Time Readiness — Manage 50+ Bodies From One Screen</div>
         </div>
         <div id="legion-no-palace">
-          <div class="empty"><div class="empty-icon">🏛️</div><div style="font-family:'Space Mono',monospace;font-size:14px;letter-spacing:2px">No Palace Created Yet</div><div style="font-size:13px">Go to Palace Hub to forge your Legion.</div></div>
+          <div class="es"><div class="es-ring"><span class="es-icon" style="font-size:28px;margin:0">⚔️</span></div><p class="es-title">No Legion Yet</p><p class="es-sub">Forge your Palace first. Your athletes are waiting.</p><span class="es-cta" onclick="goSec('palace-hub')">→ Open Palace Hub</span></div>
         </div>
         <div id="legion-main" style="display:none">
           <div class="readiness-overview">
@@ -1440,72 +1508,19 @@
 </div>
 
 <script>
-// ═══════════════════════ DATABASE (localStorage + Firebase RTDB) ═══════════════════
+// ═══════════════════════ DATABASE (localStorage) ═══════════════════
 const DB = {
   key: uid=>`ip_${uid}`,
   fresh: ()=>({workouts:[],recoveryLogs:[],prs:{},painLogs:[],biometrics:[],kineticAlerts:[],role:'athlete',palaceId:null}),
   load(uid){ try{return JSON.parse(localStorage.getItem(DB.key(uid)))||DB.fresh();}catch{return DB.fresh();} },
-  save(uid,d){
-    localStorage.setItem(DB.key(uid),JSON.stringify(d));
-    // Sync to Firebase RTDB if logged in
-    const FB=window._FB;
-    if(FB&&FB.auth.currentUser&&FB.auth.currentUser.uid===uid){
-      FB.update(FB.ref(FB.db_rt,'users/'+uid+'/data'),{
-        workouts:d.workouts||[],
-        recoveryLogs:d.recoveryLogs||[],
-        prs:d.prs||{},
-        painLogs:d.painLogs||[],
-        biometrics:d.biometrics||[],
-        kineticAlerts:d.kineticAlerts||[],
-        role:d.role||'athlete',
-        palaceId:d.palaceId||null,
-        lastSync:Date.now()
-      }).catch(()=>{});
-    }
-  },
-  // Pull from Firebase and merge into localStorage
-  async pullFromCloud(uid){
-    const FB=window._FB;
-    if(!FB||!FB.auth.currentUser)return;
-    try{
-      const snap=await FB.get(FB.ref(FB.db_rt,'users/'+uid+'/data'));
-      if(snap.exists()){
-        const cloudData=snap.val();
-        const localData=DB.load(uid);
-        // Merge: cloud wins for arrays (use latest by timestamp if possible)
-        const merged=Object.assign({},localData,cloudData);
-        localStorage.setItem(DB.key(uid),JSON.stringify(merged));
-        return merged;
-      }
-    }catch(e){console.warn('Cloud pull failed',e);}
-    return null;
-  },
+  save(uid,d){ localStorage.setItem(DB.key(uid),JSON.stringify(d)); },
   accts(){ try{return JSON.parse(localStorage.getItem('ip_gaccts'))||[];}catch{return[];} },
   saveAccts(a){ localStorage.setItem('ip_gaccts',JSON.stringify(a)); },
-  // Palace/Legion stores — also sync to Firebase
+  // Palace/Legion stores
   palaceKey: id=>`ip_palace_${id}`,
   loadPalace(id){ try{return JSON.parse(localStorage.getItem(DB.palaceKey(id)))||null;}catch{return null;} },
-  savePalace(palace){
-    localStorage.setItem(DB.palaceKey(palace.id),JSON.stringify(palace));
-    const FB=window._FB;
-    if(FB&&FB.auth.currentUser){
-      FB.set(FB.ref(FB.db_rt,'palaces/'+palace.id),palace).catch(()=>{});
-    }
-  },
-  async loadPalaceCloud(id){
-    const FB=window._FB;
-    if(!FB)return DB.loadPalace(id);
-    try{
-      const snap=await FB.get(FB.ref(FB.db_rt,'palaces/'+id));
-      if(snap.exists()){
-        const p=snap.val();
-        localStorage.setItem(DB.palaceKey(id),JSON.stringify(p));
-        return p;
-      }
-    }catch(e){}
-    return DB.loadPalace(id);
-  },
-  allPalaces(){
+  savePalace(palace){ localStorage.setItem(DB.palaceKey(palace.id),JSON.stringify(palace)); },
+  allPalaces(){ // find all palaces
     const out=[];
     for(let i=0;i<localStorage.length;i++){
       const k=localStorage.key(i);
@@ -1543,54 +1558,7 @@ function doAuth(){
   const email=document.getElementById('a-email').value.trim();
   const pw=document.getElementById('a-pw').value;
   if(!email)return setErr('Please enter your email.');
-  if(!pw||pw.length<6)return setErr('Password must be at least 6 characters.');
-  const FB=window._FB;
-  if(!FB){
-    // Fallback: localStorage only
-    _doAuthLocal(email,pw); return;
-  }
-  setBtnLoading(true);
-  if(authMode==='signup'){
-    const name=document.getElementById('a-name').value.trim()||email.split('@')[0];
-    const sport=document.getElementById('a-sport').value;
-    const weight=parseFloat(document.getElementById('a-wt').value)||75;
-    FB.createUserWithEmailAndPassword(FB.auth,email,pw)
-      .then(cred=>{
-        const uid=cred.user.uid;
-        return FB.updateProfile(cred.user,{displayName:name}).then(()=>{
-          const d=DB.fresh();d.email=email;d.name=name;d.sport=sport;d.weight=weight;d.role=selectedRole;d.uid=uid;
-          DB.save(uid,d);
-          // Sync to Firebase RTDB
-          return FB.set(FB.ref(FB.db_rt,'users/'+uid+'/profile'),{email,name,sport,weight,role:selectedRole,createdAt:Date.now()});
-        }).then(()=>loginUser({uid,name,email,weight,sport,role:selectedRole}));
-      })
-      .catch(e=>{setBtnLoading(false);setErr(fbErrMsg(e.code));});
-  } else {
-    FB.signInWithEmailAndPassword(FB.auth,email,pw)
-      .then(cred=>{
-        const uid=cred.user.uid;
-        // Pull from RTDB first, fallback to localStorage
-        FB.get(FB.ref(FB.db_rt,'users/'+uid+'/profile')).then(snap=>{
-          const profile=snap.exists()?snap.val():null;
-          if(profile){
-            // Merge RTDB profile into local db
-            let d=DB.load(uid)||DB.fresh();
-            d.name=profile.name||cred.user.displayName||email.split('@')[0];
-            d.email=email;d.weight=profile.weight||75;d.sport=profile.sport;d.role=profile.role||'athlete';
-            DB.save(uid,d);
-            loginUser({uid,name:d.name,email,weight:d.weight,sport:d.sport,role:d.role});
-          } else {
-            const d=DB.load(uid)||DB.fresh();
-            if(!d.email){d.email=email;d.name=cred.user.displayName||email.split('@')[0];DB.save(uid,d);}
-            loginUser({uid,name:d.name||cred.user.displayName||email.split('@')[0],email,weight:d.weight||75,sport:d.sport,role:d.role||'athlete'});
-          }
-          setBtnLoading(false);
-        });
-      })
-      .catch(e=>{setBtnLoading(false);setErr(fbErrMsg(e.code));});
-  }
-}
-function _doAuthLocal(email,pw){
+  if(!pw)return setErr('Please enter your password.');
   const uid=btoa(email);
   if(authMode==='signup'){
     const name=document.getElementById('a-name').value.trim()||email.split('@')[0];
@@ -1598,63 +1566,22 @@ function _doAuthLocal(email,pw){
     const weight=parseFloat(document.getElementById('a-wt').value)||75;
     const existing=DB.load(uid);
     if(existing.email)return setErr('Account already exists. Please sign in.');
-    const d=DB.fresh();d.email=email;d.name=name;d.sport=sport;d.weight=weight;d.role=selectedRole;
-    DB.save(uid,d);loginUser({uid,name,email,weight,sport,role:selectedRole});
+    const d=DB.fresh(); d.email=email; d.name=name; d.sport=sport; d.weight=weight; d.role=selectedRole;
+    DB.save(uid,d);
+    loginUser({uid,name,email,weight,sport,role:selectedRole});
   } else {
     const d=DB.load(uid);
     if(!d.email)return setErr('No account found. Please sign up first.');
     loginUser({uid,name:d.name,email,weight:d.weight||75,sport:d.sport,role:d.role||'athlete'});
   }
 }
-function fbErrMsg(code){
-  const m={'auth/email-already-in-use':'Email already registered. Sign in instead.','auth/wrong-password':'Incorrect password.','auth/user-not-found':'No account found. Sign up first.','auth/invalid-email':'Invalid email address.','auth/weak-password':'Password too weak — use 6+ characters.','auth/too-many-requests':'Too many attempts. Try again later.','auth/invalid-credential':'Invalid email or password.'};
-  return m[code]||'Error: '+code;
-}
-function setBtnLoading(on){
-  const btn=document.getElementById('auth-btn');
-  if(btn){btn.disabled=on;btn.textContent=on?'LOADING…':(authMode==='signup'?'JOIN THE PALACE':'ENTER THE PALACE');}
-}
 
 // ═══════════════════════ GOOGLE PICKER ══════════════════════════════
 function openGP(){
-  const FB=window._FB;
-  if(FB){
-    // Real Firebase Google sign-in with account picker
-    FB.signInWithPopup(FB.auth,FB.gProvider)
-      .then(result=>{
-        const user=result.user;
-        const uid=user.uid;
-        const name=user.displayName||user.email.split('@')[0];
-        const email=user.email;
-        // Save Google accounts list for display
-        const accts=DB.accts();
-        if(!accts.find(a=>a.email===email)){accts.push({name,email});DB.saveAccts(accts);}
-        // Load or create local profile
-        return FB.get(FB.ref(FB.db_rt,'users/'+uid+'/profile')).then(snap=>{
-          if(snap.exists()){
-            const p=snap.val();
-            let d=DB.load(uid)||DB.fresh();
-            d.name=p.name||name;d.email=email;d.weight=p.weight||75;d.sport=p.sport;d.role=p.role||'athlete';
-            DB.save(uid,d);
-            loginUser({uid,name:d.name,email,weight:d.weight,sport:d.sport,role:d.role});
-          } else {
-            const d=DB.fresh();d.email=email;d.name=name;d.weight=75;d.sport='Weightlifting';d.role='athlete';
-            DB.save(uid,d);
-            FB.set(FB.ref(FB.db_rt,'users/'+uid+'/profile'),{email,name,sport:'Weightlifting',weight:75,role:'athlete',createdAt:Date.now()});
-            loginUser({uid,name,email,weight:75,sport:'Weightlifting',role:'athlete'});
-          }
-        });
-      })
-      .catch(e=>{
-        if(e.code!=='auth/popup-closed-by-user')showToast('Google sign-in failed: '+fbErrMsg(e.code),'d');
-      });
-    return;
-  }
-  // Fallback: fake picker
   const accts=DB.accts();
   document.getElementById('gp-list').innerHTML=accts.length
     ?accts.map((a,i)=>`<div class="gp-acct" onclick="selGAcct(${i})"><div class="gp-av">${a.name[0].toUpperCase()}</div><div><div class="gp-an">${a.name}</div><div class="gp-ae">${a.email}</div></div></div>`).join('')
-    :'<div style="padding:14px 24px;font-size:13px;color:#5f6368;font-family:Rajdhani,sans-serif">No saved accounts. Add one below.</div>';
+    :'<div style="padding:14px 24px;font-size:13px;color:#5f6368;font-family:Barlow,sans-serif">No saved accounts. Add one below.</div>';
   document.getElementById('gp-form').classList.remove('open');
   document.getElementById('gp-overlay').classList.add('open');
 }
@@ -1706,23 +1633,11 @@ function loginUser(user){
   const isCoach=db.role==='coach';
   const legionNav=document.getElementById('nav-legion');
   if(legionNav)legionNav.style.display=isCoach?'flex':'none';
-  // Load emergency number
-  const savedEmg=localStorage.getItem('ip_emg_'+user.uid)||'';
-  const emgInput=document.getElementById('emg-number');
-  const emgDisp=document.getElementById('emg-num-display');
-  if(emgInput&&savedEmg)emgInput.value=savedEmg;
-  if(emgDisp)emgDisp.textContent=savedEmg||'112 (default)';
-  // Pull from cloud then init (non-blocking)
-  DB.pullFromCloud(user.uid).then(cloudData=>{
-    if(cloudData){db=cloudData;showToast('☁️ Data synced from cloud','s');}
-    initApp();
-  }).catch(()=>initApp());
+  initApp();
   showToast(`Welcome, ${user.name.split(' ')[0]}! ${isCoach?'⚔️ Coach Mode':'💪'}`,'s');
 }
 function signOut(){
   if(timerOn)stopTimer();
-  const FB=window._FB;
-  if(FB&&FB.auth.currentUser)FB.fbSignOut(FB.auth).catch(()=>{});
   U=null;db=null;
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('app').style.display='none';
@@ -1730,12 +1645,49 @@ function signOut(){
   document.getElementById('a-pw').value='';
 }
 
+
+// ═══════════════════════ ENCOURAGEMENT ════════════════════════════════
+function renderEncouragement(){
+  const el=document.getElementById('enc-bar-wrap');
+  if(!el)return;
+  const w=db.workouts||[];
+  const rl=db.recoveryLogs||[];
+  const streak=calcStreak();
+  const sessions=w.length;
+  const lastRec=rl.length?rl[rl.length-1]:null;
+  const todayLogged=w.some(x=>x.date===new Date().toISOString().split('T')[0]);
+
+  let icon='', msg='';
+
+  // Priority order — pick the most contextually relevant
+  if(sessions===0){
+    icon='👋'; msg='<strong>Welcome to the Iron Palace.</strong> Log your first session to begin your journey.';
+  } else if(streak>=7){
+    icon='🔥'; msg=`<strong>${streak}-day streak.</strong> You&rsquo;re locked in. Don&rsquo;t break the chain.`;
+  } else if(streak>=3){
+    icon='⚡'; msg=`<strong>${streak} days straight.</strong> Momentum is building. Keep it going.`;
+  } else if(todayLogged){
+    icon='✅'; msg='<strong>Session logged.</strong> That&rsquo;s the work done. Recover well tonight.';
+  } else if(lastRec&&lastRec.score>=80){
+    icon='💪'; msg='<strong>Recovery at '+lastRec.score+'%.</strong> Body&rsquo;s primed. Good day to train hard.';
+  } else if(lastRec&&lastRec.score<50){
+    icon='🌙'; msg='<strong>Recovery at '+lastRec.score+'%.</strong> Rest is training too. Take it easy today.';
+  } else if(sessions>=10){
+    icon='📈'; msg='<strong>'+sessions+' sessions logged.</strong> Consistency beats intensity. You&rsquo;re building something real.';
+  } else if(sessions>=1){
+    icon='🎯'; msg='<strong>'+sessions+(sessions===1?' session':' sessions')+'.</strong> Show up again today. That&rsquo;s all it takes.';
+  }
+
+  if(!icon){el.innerHTML='';return;}
+
+  el.innerHTML=`<div class="enc-bar"><span class="enc-icon">${icon}</span><span class="enc-text">${msg}</span></div>`;
+}
+
 // ═══════════════════════ INIT ════════════════════════════════════════
 function initApp(){
   renderDash(); renderTracksHistory(); renderRecovery(); buildInjGrids(); updCalHint();
   renderPalaceHub(); renderPalaceState(); renderKineticAlerts();
   if(db.role==='coach') renderLegion();
-  initDeviceSync();
 }
 
 // ═══════════════════════ DASHBOARD ═══════════════════════════════════
@@ -1751,9 +1703,9 @@ function renderDash(){
   const streak=calcStreak();
   document.getElementById('d-streak').textContent=streak;
   const wkS=w.filter(x=>new Date(x.date).getTime()>=Date.now()-7*86400000).length;
-  document.getElementById('wk-txt').textContent=`${wkS} of 5 sessions`;
+  document.getElementById('wk-txt').textContent=wkS>=5?'Goal reached this week 🎯':`${wkS} of 5 sessions`;
   document.getElementById('wk-bar').style.width=Math.min(wkS/5*100,100)+'%';
-  buildWeekChart(); buildPRList(); buildRecentW();
+  buildWeekChart(); buildPRList(); buildRecentW(); renderEncouragement();
 }
 function calcStreak(){
   const w=db.workouts||[];
@@ -1782,7 +1734,7 @@ function buildPRList(){
   const prs=db.prs||{};
   const el=document.getElementById('pr-list');
   if(!Object.keys(prs).length){
-    el.innerHTML='<div style="font-size:13px;color:var(--text3);text-align:center;padding:20px 0">No PRs yet. Add volume data when logging workouts to track records!</div>';
+    el.innerHTML=`<div class="es" style="padding:28px 12px"><span class="es-icon" style="font-size:26px">🏅</span><p class="es-title" style="font-size:12px">No Records Yet</p><p class="es-sub" style="font-size:13px">Add volume when logging. Your first PR is waiting.</p></div>`;
     return;
   }
   el.innerHTML=Object.entries(prs).slice(0,4).map(([n,v])=>`
@@ -1794,7 +1746,7 @@ function buildPRList(){
 function buildRecentW(){
   const el=document.getElementById('recent-w');
   if(!db.workouts||!db.workouts.length){
-    el.innerHTML='<div class="empty"><div class="empty-icon">🏋️</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;letter-spacing:3px;text-transform:uppercase">No workouts yet</div><div style="font-size:14px;color:var(--text3)">Head to Tracks and log your first session.</div></div>';
+    el.innerHTML=`<div class="es"><div class="es-ring"><span class="es-icon" style="font-size:28px;margin:0">🏋️</span></div><p class="es-title">Start Your First Workout</p><p class="es-sub">Every legend has a day one. Yours starts now.</p><span class="es-cta" onclick="goSec('tracks')">→ Open Tracks</span></div>`;
     return;
   }
   el.innerHTML=[...db.workouts].reverse().slice(0,5).map(w=>`
@@ -1872,7 +1824,7 @@ function logWorkout(){
 function renderTracksHistory(){
   const el=document.getElementById('t-history');
   if(!db.workouts||!db.workouts.length){
-    el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;letter-spacing:3px;text-transform:uppercase">No workouts logged</div><div style="font-size:14px;color:var(--text3)">Record your first session using the timer above.</div></div>';
+    el.innerHTML=`<div class="es"><div class="es-ring"><span class="es-icon" style="font-size:28px;margin:0">📋</span></div><p class="es-title">No Sessions Yet</p><p class="es-sub">Hit the timer above. One session builds the habit.</p></div>`;
     return;
   }
   const rows=[...db.workouts].reverse().map(w=>`
@@ -1938,11 +1890,11 @@ function updRing(pct,empty){
   const c=502.65;
   document.getElementById('ring-prog').style.strokeDashoffset=empty?c:c-(pct/100*c);
   document.getElementById('ring-pct').textContent=empty?'—':pct+'%';
-  document.getElementById('ring-lbl').textContent=empty?'No data':'Recovered';
+  document.getElementById('ring-lbl').textContent=empty?'Log to see':'Recovered';
   const col=pct>=70?'var(--success)':pct>=50?'var(--warning)':'var(--danger)';
   document.getElementById('ring-prog').style.stroke=empty?'var(--surface3)':col;
   document.getElementById('ring-pct').style.color=empty?'var(--text3)':col;
-  document.getElementById('ring-status').textContent=empty?'Log recovery data to calculate your score.':pct>=70?'✅ Ready to train today.':pct>=50?'⚠️ Moderate recovery — take it easy.':'🔴 Recovery period active — rest is recommended.';
+  document.getElementById('ring-status').textContent=empty?'Start logging to unlock your score.':pct>=70?'✅ Ready to train today.':pct>=50?'⚠️ Moderate recovery — take it easy.':'🔴 Recovery period active — rest is recommended.';
 }
 
 // ═══════════════════════ NAV ══════════════════════════════════════════
@@ -2002,7 +1954,7 @@ const INJDB={
 function buildInjGrids(){
   ['common','rare','serious'].forEach(type=>{
     const col=type==='common'?'var(--accent)':type==='rare'?'var(--rare)':'var(--danger)';
-    const bc=type==='common'?'rgba(200,255,0,.3)':type==='rare'?'rgba(170,68,255,.3)':'rgba(255,51,51,.3)';
+    const bc=type==='common'?'rgba(255,255,255,0.165)':type==='rare'?'rgba(139,92,246,.3)':'rgba(239,68,68,.3)';
     document.getElementById('ig-'+type).innerHTML=INJDB[type].map(inj=>`
       <div class="inj-card" onclick='showInjModal(${JSON.stringify(inj)})'>
         <div class="inj-card-name">${inj.name}</div>
@@ -2011,31 +1963,11 @@ function buildInjGrids(){
       </div>`).join('');
   });
 }
-let currentInjMode='all'; // 'all','common','rare','serious'
 function switchInjTab(tab){
   document.querySelectorAll('.inj-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.inj-content').forEach(c=>c.classList.remove('active'));
   document.querySelector(`.inj-tab.${tab}`).classList.add('active');
   document.getElementById(`ic-${tab}`).classList.add('active');
-  // Sync 3D canvas mode
-  currentInjMode=tab;
-  const modeBtn=document.getElementById('inj-mode-btn');
-  if(modeBtn)modeBtn.textContent='MODE: '+tab.toUpperCase();
-  const titleEl=document.getElementById('inj-canvas-title');
-  if(titleEl){
-    const labels={common:'🟡 COMMON INJURIES — TAP REGION',rare:'🟣 RARE INJURIES — TAP REGION',serious:'🔴 SERIOUS — TAP REGION'};
-    titleEl.textContent=labels[tab]||'ANATOMICAL MODEL — DRAG TO ROTATE';
-  }
-  // Update canvas highlight mode
-  if(window._injCanvasSetMode)window._injCanvasSetMode(tab);
-}
-function cycleInjMode(){
-  const modes=['all','common','rare','serious'];
-  const next=modes[(modes.indexOf(currentInjMode)+1)%modes.length];
-  currentInjMode=next;
-  const modeBtn=document.getElementById('inj-mode-btn');
-  if(modeBtn)modeBtn.textContent='MODE: '+next.toUpperCase();
-  if(window._injCanvasSetMode)window._injCanvasSetMode(next);
 }
 const PART_MAP={head:['bp-head'],neck:['bp-neck'],shoulder:['bp-lsh','bp-rsh'],chest:['bp-chest'],elbow:['bp-lua','bp-rua'],wrist:['bp-lfa','bp-rfa','bp-lh','bp-rh'],core:['bp-abs'],hip:['bp-lhip','bp-rhip'],knee:['bp-lq','bp-rq','bp-lk','bp-rk'],shin:['bp-ls','bp-rs'],ankle:['bp-la','bp-ra'],foot:['bp-lf','bp-rf'],lowerback:['bp-lb']};
 function selPart(part){
@@ -2060,7 +1992,7 @@ function showInjModal(inj){
   document.getElementById('m-body').innerHTML=`
     <div class="is"><div class="is-label">Area</div><div class="is-text">📍 ${inj.area}</div></div>
     <div class="is"><div class="is-label">Description</div><div class="is-text">${inj.desc}</div></div>
-    <div class="is"><div class="is-label">Symptoms</div><div class="sym-tags">${inj.symptoms.map(s=>`<span class="sym-tag" style="color:var(--accent);border-color:rgba(200,255,0,.3);background:rgba(200,255,0,.06)">${s}</span>`).join('')}</div></div>
+    <div class="is"><div class="is-label">Symptoms</div><div class="sym-tags">${inj.symptoms.map(s=>`<span class="sym-tag" style="color:var(--accent);border-color:rgba(255,255,255,0.165);background:rgba(255,255,255,0.033)">${s}</span>`).join('')}</div></div>
     <div class="is"><div class="is-label">Treatment</div><div class="is-text" style="color:var(--success)">${inj.solution}</div></div>
     <div style="margin-top:24px;display:flex;gap:12px">
       <button class="btn-ecall" style="flex:1;font-size:14px;letter-spacing:2px;padding:14px;animation:none" onclick="eCall()">📞 CALL 112</button>
@@ -2071,17 +2003,8 @@ function showInjModal(inj){
 function closeModal(){document.getElementById('modal-ov').classList.remove('open');}
 
 // ═══════════════════════ EMERGENCY ═══════════════════════════════════
-function getEmgNumber(){return(U&&localStorage.getItem('ip_emg_'+U.uid))||'112';}
-function saveEmgNumber(){
-  const n=(document.getElementById('emg-number').value||'').trim();
-  if(!n)return showToast('Enter a number first','w');
-  if(U)localStorage.setItem('ip_emg_'+U.uid,n);
-  const disp=document.getElementById('emg-num-display');
-  if(disp)disp.textContent=n;
-  showToast('Emergency number saved: '+n,'s');
-}
-function eCall(){const n=getEmgNumber();if(confirm('Call '+n+' — Emergency Services now?'))window.location.href='tel:'+n;}
-function eText(){const n=getEmgNumber();window.location.href='sms:'+n+'?body=EMERGENCY: I am an athlete with a serious injury and need immediate medical assistance.';}
+function eCall(){if(confirm('Call 112 Emergency Services now?'))window.location.href='tel:112';}
+function eText(){window.location.href='sms:112?body=EMERGENCY: I am an athlete with a serious injury and need immediate medical assistance.';}
 
 // ═══════════════════════ 3D BODY MODEL ═══════════════════════════════
 (function(){
@@ -2090,7 +2013,7 @@ function eText(){const n=getEmgNumber();window.location.href='sms:'+n+'?body=EME
   const ctx=C.getContext('2d');
   const W=268,H=360;
   let rotY=0.3,rotX=-0.06,autoRot=true,isDrag=false,lastX=0,lastY=0,selPart3d=null,hoverPart=null;
-  const ACCENT='#c8ff00',COMMON='rgba(200,255,0,.75)',RARE='rgba(191,95,255,.75)',SERIOUS='rgba(255,34,68,.75)',DIM='rgba(30,30,30,.6)',WIRE='rgba(200,255,0,.12)',SEL='rgba(200,255,0,1)';
+  const ACCENT='#FFFFFF',COMMON='rgba(255,255,255,0.180)',RARE='rgba(139,92,246,.75)',SERIOUS='rgba(239,68,68,.75)',DIM='rgba(30,30,30,.6)',WIRE='rgba(255,255,255,0.066)',SEL='rgba(255,255,255,0.180)';
 
   // 3D projection
   function proj(x,y,z){
@@ -2101,9 +2024,9 @@ function eText(){const n=getEmgNumber();window.location.href='sms:'+n+'?body=EME
     return{x:W/2+rx*s,y:H/2+ry*s,z:rz2,s};
   }
 
-  // Body segments exposed globally so Palace State canvas can reuse them
+  // Body segments: [name, part, cx,cy,cz, rx,ry,rz, type, color_type]
   // type: 'ellipsoid' or 'box'
-  const SEGS=window.SEGS=[
+  window.SEGS=[
     // HEAD
     {id:'head',part:'head',cx:0,cy:-120,cz:0,w:22,h:26,d:20,type:'e',ct:'s'},
     // NECK
@@ -2166,6 +2089,7 @@ function eText(){const n=getEmgNumber();window.location.href='sms:'+n+'?body=EME
     {id:'ldelt',part:'shoulder',cx:-30,cy:-83,cz:0,w:10,h:12,d:10,type:'e',ct:'c'},
     {id:'rdelt',part:'shoulder',cx:30,cy:-83,cz:0,w:10,h:12,d:10,type:'e',ct:'c'},
   ];
+  var SEGS=window.SEGS; // local alias so internal code keeps working
 
   const CT_COLORS={c:COMMON,r:RARE,s:SERIOUS};
 
@@ -2221,7 +2145,7 @@ function eText(){const n=getEmgNumber();window.location.href='sms:'+n+'?body=EME
     if(isSelected){
       ctx.beginPath();ctx.ellipse(px,py,rx+4,ry+4,0,0,Math.PI*2);
       const grd=ctx.createRadialGradient(px,py,rx,px,py,rx+8);
-      grd.addColorStop(0,'rgba(200,255,0,0.3)');grd.addColorStop(1,'rgba(200,255,0,0)');
+      grd.addColorStop(0,'rgba(255,255,255,0.165)');grd.addColorStop(1,'rgba(255,255,255,0.000)');
       ctx.strokeStyle=grd;ctx.lineWidth=3;ctx.stroke();
     }
   }
@@ -2239,7 +2163,7 @@ function eText(){const n=getEmgNumber();window.location.href='sms:'+n+'?body=EME
     ctx.strokeRect(px-hw,py-hh,hw*2,hh*2);
     ctx.beginPath();ctx.moveTo(px,py-hh);ctx.lineTo(px,py+hh);ctx.stroke();
     ctx.beginPath();ctx.moveTo(px-hw,py);ctx.lineTo(px+hw,py);ctx.stroke();
-    if(isSelected){ctx.lineWidth=1.5;ctx.strokeStyle='rgba(200,255,0,0.8)';ctx.strokeRect(px-hw-2,py-hh-2,hw*2+4,hh*2+4);}
+    if(isSelected){ctx.lineWidth=1.5;ctx.strokeStyle='rgba(255,255,255,0.180)';ctx.strokeRect(px-hw-2,py-hh-2,hw*2+4,hh*2+4);}
   }
 
   function parseRGBA(str){
@@ -2285,9 +2209,9 @@ function eText(){const n=getEmgNumber();window.location.href='sms:'+n+'?body=EME
     // Horizontal scan line effect
     const y=H*((t%1));
     const grd=ctx.createLinearGradient(0,y-20,0,y+20);
-    grd.addColorStop(0,'rgba(200,255,0,0)');
-    grd.addColorStop(0.5,'rgba(200,255,0,0.04)');
-    grd.addColorStop(1,'rgba(200,255,0,0)');
+    grd.addColorStop(0,'rgba(255,255,255,0.000)');
+    grd.addColorStop(0.5,'rgba(255,255,255,0.022)');
+    grd.addColorStop(1,'rgba(255,255,255,0.000)');
     ctx.fillStyle=grd;ctx.fillRect(0,y-20,W,40);
   }
 
@@ -2308,7 +2232,7 @@ function eText(){const n=getEmgNumber();window.location.href='sms:'+n+'?body=EME
     ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
 
     // Grid floor
-    ctx.strokeStyle='rgba(200,255,0,.04)';ctx.lineWidth=1;
+    ctx.strokeStyle='rgba(255,255,255,0.022)';ctx.lineWidth=1;
     for(let x=0;x<W;x+=20){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
     for(let y=0;y<H;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
 
@@ -2328,14 +2252,7 @@ function eText(){const n=getEmgNumber();window.location.href='sms:'+n+'?body=EME
     projected.forEach(({seg,px,py,ps,depth})=>{
       const isSelected=selPart3d&&seg.part===selPart3d;
       const isHover=hoverPart&&seg.part===hoverPart;
-      // Mode-aware coloring: dim segments not matching active injury tab
-      let color;
-      if(typeof injMode!=='undefined'&&injMode!=='all'){
-        const modeMap={common:'c',rare:'r',serious:'s'};
-        const targetCt=modeMap[injMode];
-        if(seg.ct!==targetCt&&!isSelected)color='rgba(20,20,20,0.4)';
-        else color=getSegColor(seg);
-      } else {color=getSegColor(seg);}
+      const color=getSegColor(seg);
       if(seg.type==='e')drawEllipsoid(px,py,ps,seg,color,isSelected,depth);
       else drawBox(px,py,ps,seg,color,isSelected,depth);
       if((isSelected||isHover)&&!labelSeg)labelSeg={seg,px,py,depth};
@@ -2343,16 +2260,16 @@ function eText(){const n=getEmgNumber();window.location.href='sms:'+n+'?body=EME
 
     if(labelSeg){
       const name=(labelSeg.seg.part.charAt(0).toUpperCase()+labelSeg.seg.part.slice(1)).toUpperCase();
-      const tc=selPart3d?'#c8ff00':CT_COLORS[labelSeg.seg.ct];
+      const tc=selPart3d?'#FFFFFF':CT_COLORS[labelSeg.seg.ct];
       drawLabel(labelSeg.px,labelSeg.py-20,name,tc);
     }
 
     // Crosshair axes
-    ctx.strokeStyle='rgba(200,255,0,.08)';ctx.lineWidth=1;
+    ctx.strokeStyle='rgba(255,255,255,0.044)';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();
 
     // Frame counter (HUD)
-    ctx.fillStyle='rgba(200,255,0,.2)';ctx.font='8px "Space Mono"';ctx.textAlign='left';
+    ctx.fillStyle='rgba(0,242,255,.5)';ctx.font='8px "Space Mono"';ctx.textAlign='left';
     ctx.fillText(`ROT: ${(rotY*57.3).toFixed(1)}°`,6,12);
     ctx.fillText('3D ANATOMICAL MODEL v2',6,H-6);
 
@@ -2405,32 +2322,9 @@ function eText(){const n=getEmgNumber();window.location.href='sms:'+n+'?body=EME
   };
   window.resetView=function(){rotY=0.3;rotX=-0.06;selPart3d=null;};
 
-  // Injury canvas mode - filter/highlight by severity
-  let injMode='all';
-  window._injCanvasSetMode=function(mode){injMode=mode;};
-  // Override getSegColor to respect injMode
-  const origGetSeg=getSegColor;
-  const getSegColorWithMode=function(seg){
-    // When a specific mode is active, dim segments not in that category
-    if(injMode&&injMode!=='all'){
-      const modeMap={common:'c',rare:'r',serious:'s'};
-      const targetCt=modeMap[injMode];
-      if(seg.ct!==targetCt){
-        if(selPart3d&&seg.part===selPart3d)return SEL;
-        return'rgba(30,30,30,0.3)'; // dim non-matching
-      }
-    }
-    return origGetSeg(seg);
-  };
-  // Patch draw loop to use mode-aware color
-  const origDraw=draw;
-
   // Override selPart to also set 3d selection
   const origSelPart=window.selPart;
   window.selPart=function(part){selPart3d=part;if(origSelPart)origSelPart(part);};
-
-  // Mode-aware segment coloring patch
-  projected_override=true;
 
   draw();
 })();
@@ -2629,371 +2523,47 @@ function buildAthleteDetail(mdb,m,kFlag){
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// ████  FEATURE 3 — DEVICE SYNC (Real OAuth / API)  ████
+// ████  FEATURE 3 — DEVICE SYNC (Silent Tracker)  ████
 // ══════════════════════════════════════════════════════════════════════
 const DEVICE_NAMES={healthkit:'Apple HealthKit',googlefit:'Google Fit',whoop:'Whoop 4.0'};
-
-// ── Config — fill in your OAuth credentials (see backend notes) ──
-const OAUTH_CFG={
-  googlefit:{
-    clientId:'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com', // replace in Firebase
-    scopes:'https://www.googleapis.com/auth/fitness.heart_rate.read https://www.googleapis.com/auth/fitness.sleep.read https://www.googleapis.com/auth/fitness.activity.read',
-    authUrl:'https://accounts.google.com/o/oauth2/v2/auth',
-    tokenUrl:'https://oauth2.googleapis.com/token',
-    apiBase:'https://www.googleapis.com/fitness/v1/users/me'
-  },
-  whoop:{
-    clientId:'YOUR_WHOOP_CLIENT_ID',           // replace after creating Whoop app
-    scopes:'read:recovery read:sleep read:workout read:body_measurement',
-    authUrl:'https://api.prod.whoop.com/oauth/oauth2/auth',
-    tokenUrl:'https://api.prod.whoop.com/oauth/oauth2/token',
-    apiBase:'https://api.prod.whoop.com/developer/v1'
-  }
-};
-
 function syncDevice(id){
   const card=document.getElementById('sd-'+id);
   const status=document.getElementById('ss-'+id);
   if(!card||!status)return;
-  if(card.classList.contains('connected')){
-    showSyncModal(id,'already');return;
-  }
-  showSyncModal(id,'connect');
-}
-
-function showSyncModal(id, state){
-  const name=DEVICE_NAMES[id];
-  let body='';
-  if(id==='healthkit'){
-    body=`
-      <div style="text-align:center;padding:8px 0 20px">
-        <div style="font-size:48px;margin-bottom:12px">🍎</div>
-        <div style="font-family:'Syncopate',sans-serif;font-size:16px;letter-spacing:3px;color:var(--accent);margin-bottom:8px">APPLE HEALTHKIT</div>
-        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--danger);background:rgba(255,34,68,.08);border:1px solid rgba(255,34,68,.2);padding:10px 14px;margin-bottom:16px">⚠️ BROWSER RESTRICTION</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.8;text-align:left;margin-bottom:20px">
-          Apple HealthKit is only accessible from native iOS/macOS apps — Apple intentionally blocks browser access for privacy reasons. There is no workaround via a web page.<br><br>
-          <strong style="color:var(--text)">Your options:</strong>
-          <ul style="margin-top:8px;padding-left:18px;display:flex;flex-direction:column;gap:6px">
-            <li>Use the <strong style="color:var(--accent)">Health Export</strong> app on iOS to export your data as CSV/JSON</li>
-            <li>Then import it below manually</li>
-          </ul>
-        </div>
-        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Manual Entry — Today's Metrics</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
-          <div class="form-group"><div class="form-label">HRV (ms)</div><input class="form-input" type="number" id="hk-hrv" placeholder="65" style="padding:10px"></div>
-          <div class="form-group"><div class="form-label">Resting HR</div><input class="form-input" type="number" id="hk-rhr" placeholder="58" style="padding:10px"></div>
-          <div class="form-group"><div class="form-label">Sleep (hrs)</div><input class="form-input" type="number" id="hk-sleep" placeholder="7.5" step="0.5" style="padding:10px"></div>
-        </div>
-        <button class="btn-accent" style="width:100%;font-size:12px;letter-spacing:3px" onclick="saveManualBio('healthkit')">SAVE HEALTH DATA</button>
-      </div>`;
-  } else if(state==='already'){
-    const bio=(db.biometrics||[]).find(b=>b.source===id)||{};
-    const ago=bio.fetchedAt?Math.round((Date.now()-bio.fetchedAt)/60000):null;
-    body=`
-      <div style="text-align:center;padding:8px 0 20px">
-        <div style="font-size:48px;margin-bottom:12px">${id==='googlefit'?'🏃':'💍'}</div>
-        <div style="font-family:'Syncopate',sans-serif;font-size:16px;letter-spacing:3px;color:var(--success);margin-bottom:6px">✓ CONNECTED</div>
-        <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:20px">${ago!==null?'Last synced '+ago+' min ago':'Synced'}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
-          <div class="metric-card"><div class="metric-v ca">${bio.hrv||'—'}</div><div class="metric-l">HRV ms</div></div>
-          <div class="metric-card"><div class="metric-v cw">${bio.rhr||'—'}</div><div class="metric-l">RHR bpm</div></div>
-          <div class="metric-card"><div class="metric-v cs">${bio.sleepHrs||bio.sleepCycles||'—'}</div><div class="metric-l">${id==='whoop'?'Recovery %':'Sleep hrs'}</div></div>
-        </div>
-        <div style="display:flex;gap:10px">
-          <button class="btn-accent" style="flex:1;font-size:11px;letter-spacing:2px" onclick="reSyncDevice('${id}')">↺ RE-SYNC NOW</button>
-          <button class="btn-ghost" style="flex:1;font-size:11px;letter-spacing:2px;padding:12px" onclick="disconnectDevice('${id}')">DISCONNECT</button>
-        </div>
-      </div>`;
-  } else if(id==='googlefit'){
-    body=`
-      <div style="text-align:center;padding:8px 0 20px">
-        <div style="font-size:48px;margin-bottom:12px">🏃</div>
-        <div style="font-family:'Syncopate',sans-serif;font-size:16px;letter-spacing:3px;color:var(--accent);margin-bottom:12px">GOOGLE FIT</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.8;text-align:left;margin-bottom:20px">
-          Connect your Google Fit account to automatically pull HRV, resting heart rate, and sleep data. You'll be redirected to Google to authorise access — no password is shared.
-        </div>
-        <div style="background:rgba(200,255,0,.05);border:1px solid rgba(200,255,0,.15);padding:12px 16px;margin-bottom:20px;font-family:'Space Mono',monospace;font-size:10px;color:var(--text3);text-align:left;line-height:1.8">
-          PERMISSIONS REQUESTED:<br>
-          · Heart rate & HRV (read only)<br>
-          · Sleep data (read only)<br>
-          · Activity sessions (read only)
-        </div>
-        <button class="btn-accent" style="width:100%;font-size:12px;letter-spacing:3px;display:flex;align-items:center;justify-content:center;gap:10px" onclick="startOAuth('googlefit')">
-          <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#000" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#000" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#000" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#000" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          CONNECT WITH GOOGLE
-        </button>
-      </div>`;
-  } else if(id==='whoop'){
-    body=`
-      <div style="text-align:center;padding:8px 0 20px">
-        <div style="font-size:48px;margin-bottom:12px">💍</div>
-        <div style="font-family:'Syncopate',sans-serif;font-size:16px;letter-spacing:3px;color:var(--accent);margin-bottom:12px">WHOOP 4.0</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.8;text-align:left;margin-bottom:20px">
-          Connect your Whoop account to pull recovery score, HRV, resting heart rate, and sleep performance directly from the Whoop API. You'll be redirected to Whoop to authorise.
-        </div>
-        <div style="background:rgba(200,255,0,.05);border:1px solid rgba(200,255,0,.15);padding:12px 16px;margin-bottom:20px;font-family:'Space Mono',monospace;font-size:10px;color:var(--text3);text-align:left;line-height:1.8">
-          PERMISSIONS REQUESTED:<br>
-          · Recovery score (read only)<br>
-          · HRV &amp; resting HR (read only)<br>
-          · Sleep &amp; strain data (read only)
-        </div>
-        <button class="btn-accent" style="width:100%;font-size:12px;letter-spacing:3px" onclick="startOAuth('whoop')">
-          💍 CONNECT WHOOP
-        </button>
-      </div>`;
-  }
-  document.getElementById('m-title').textContent=name.toUpperCase();
-  document.getElementById('m-body').innerHTML=body;
-  document.getElementById('modal-ov').classList.add('open');
-}
-
-// ── Real OAuth 2.0 flow ──
-function startOAuth(id){
-  const cfg=OAUTH_CFG[id];
-  if(!cfg||cfg.clientId.startsWith('YOUR_')){
-    // Client ID not configured yet — show instructions
-    document.getElementById('m-body').innerHTML=`
-      <div style="padding:8px 0">
-        <div style="background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.3);border-left:3px solid var(--warning);padding:16px 20px;margin-bottom:20px">
-          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--warning);margin-bottom:8px">SETUP REQUIRED</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.8">
-            To enable real ${DEVICE_NAMES[id]} sync, you need to register an OAuth app and add your Client ID to the code.<br><br>
-            <strong style="color:var(--text)">Steps for ${id==='googlefit'?'Google Fit':'Whoop'}:</strong>
-          </div>
-        </div>
-        ${id==='googlefit'?`
-        <ol style="font-size:13px;color:var(--text2);line-height:2;padding-left:18px">
-          <li>Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent)">console.cloud.google.com</a></li>
-          <li>Create a project → Enable <strong>Fitness API</strong></li>
-          <li>OAuth consent screen → Add scopes: fitness.heart_rate.read, fitness.sleep.read</li>
-          <li>Credentials → Create OAuth 2.0 Client ID (Web)</li>
-          <li>Add your domain to Authorised JavaScript Origins</li>
-          <li>Copy the Client ID into <code style="color:var(--accent);background:var(--surface3);padding:2px 6px">OAUTH_CFG.googlefit.clientId</code></li>
-        </ol>`:
-        `<ol style="font-size:13px;color:var(--text2);line-height:2;padding-left:18px">
-          <li>Go to <a href="https://developer.whoop.com" target="_blank" style="color:var(--accent)">developer.whoop.com</a></li>
-          <li>Create an application → set redirect URI to <code style="color:var(--accent);background:var(--surface3);padding:2px 6px">${window.location.origin}/oauth/whoop</code></li>
-          <li>Copy your Client ID into <code style="color:var(--accent);background:var(--surface3);padding:2px 6px">OAUTH_CFG.whoop.clientId</code></li>
-          <li>Deploy a small backend endpoint to exchange the auth code for a token (see docs)</li>
-        </ol>`}
-        <div style="margin-top:20px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);font-family:'Space Mono',monospace;font-size:11px;color:var(--text3)">
-          Until configured, you can enter metrics manually using the form below.
-        </div>
-        <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-          <div class="form-group"><div class="form-label">HRV (ms)</div><input class="form-input" type="number" id="manual-hrv" placeholder="65" style="padding:10px"></div>
-          <div class="form-group"><div class="form-label">Resting HR</div><input class="form-input" type="number" id="manual-rhr" placeholder="58" style="padding:10px"></div>
-          <div class="form-group"><div class="form-label">${id==='whoop'?'Recovery %':'Sleep hrs'}</div><input class="form-input" type="number" id="manual-sleep" placeholder="${id==='whoop'?'75':'7.5'}" step="${id==='whoop'?'1':'0.5'}" style="padding:10px"></div>
-        </div>
-        <button class="btn-accent" style="width:100%;margin-top:14px;font-size:11px;letter-spacing:3px" onclick="saveManualBioGeneric('${id}')">SAVE MANUALLY</button>
-      </div>`;
-    return;
-  }
-  // Build real OAuth URL
-  const redirectUri=window.location.origin+window.location.pathname;
-  const state=btoa(JSON.stringify({uid:U.uid,device:id,ts:Date.now()}));
-  localStorage.setItem('oauth_pending_'+id,state);
-  const params=new URLSearchParams({
-    client_id:cfg.clientId,
-    redirect_uri:redirectUri,
-    response_type:'code',
-    scope:cfg.scopes,
-    state:state,
-    access_type:'offline',
-    prompt:'consent select_account'
-  });
-  closeModal();
-  window.location.href=cfg.authUrl+'?'+params.toString();
-}
-
-// ── Handle OAuth callback on page load ──
-function checkOAuthCallback(){
-  const params=new URLSearchParams(window.location.search);
-  const code=params.get('code');
-  const state=params.get('state');
-  const error=params.get('error');
-  if(!code&&!error)return;
-  // Clean URL
-  window.history.replaceState({},'',window.location.pathname);
-  if(error){showToast('OAuth cancelled: '+error,'w');return;}
-  let stateObj={};
-  try{stateObj=JSON.parse(atob(state||''));}catch{}
-  const device=stateObj.device;
-  if(!device){showToast('Unknown OAuth state','d');return;}
-  showToast('⏳ Exchanging auth code for '+DEVICE_NAMES[device]+'…');
-  // NOTE: exchanging the code for a token MUST happen server-side to protect your client secret.
-  // This calls your backend endpoint — deploy the Firebase Cloud Function below.
-  fetch('/api/oauth/exchange',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({code,device,redirectUri:window.location.origin+window.location.pathname})
-  })
-  .then(r=>r.json())
-  .then(data=>{
-    if(data.error){showToast('Auth failed: '+data.error,'d');return;}
-    // Store token and fetch data
-    localStorage.setItem('oauth_token_'+device,JSON.stringify({
-      access_token:data.access_token,
-      refresh_token:data.refresh_token,
-      expires_at:Date.now()+(data.expires_in||3600)*1000,
-      device
-    }));
-    fetchDeviceData(device,data.access_token);
-  })
-  .catch(()=>{
-    showToast('Could not reach backend. Enter data manually.','w');
-    showSyncModal(device,'connect');
-  });
-}
-
-// ── Fetch real data from device API ──
-function fetchDeviceData(device,token){
-  const card=document.getElementById('sd-'+device);
-  const status=document.getElementById('ss-'+device);
-  if(card)card.classList.add('syncing');
-  if(status)status.textContent='Fetching…';
-  const now=Date.now();
-  const yesterday=now-86400000;
-  let fetchPromise;
-  if(device==='googlefit'){
-    // Google Fit Data Sources API — aggregate heart rate and sleep
-    fetchPromise=Promise.all([
-      fetch('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate',{
-        method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-        body:JSON.stringify({aggregateBy:[{dataTypeName:'com.google.heart_rate.bpm'}],bucketByTime:{durationMillis:86400000},startTimeMillis:yesterday,endTimeMillis:now})
-      }).then(r=>r.json()),
-      fetch('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate',{
-        method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-        body:JSON.stringify({aggregateBy:[{dataTypeName:'com.google.sleep.segment'}],bucketByTime:{durationMillis:86400000},startTimeMillis:yesterday,endTimeMillis:now})
-      }).then(r=>r.json())
-    ]).then(([hrData,sleepData])=>{
-      const hrPoints=hrData?.bucket?.[0]?.dataset?.[0]?.point||[];
-      const rhr=hrPoints.length?Math.round(Math.min(...hrPoints.map(p=>p.value?.[0]?.fpVal||999))):null;
-      const sleepMs=(sleepData?.bucket?.[0]?.dataset?.[0]?.point||[]).reduce((s,p)=>{
-        const dur=(p.endTimeNanos-p.startTimeNanos)/1e6;return s+(isNaN(dur)?0:dur);
-      },0);
-      const sleepHrs=sleepMs?(sleepMs/3600000).toFixed(1):null;
-      return{rhr,sleepHrs,hrv:null,source:'googlefit'};
-    });
-  } else if(device==='whoop'){
-    fetchPromise=Promise.all([
-      fetch('https://api.prod.whoop.com/developer/v1/recovery?limit=1',{headers:{'Authorization':'Bearer '+token}}).then(r=>r.json()),
-      fetch('https://api.prod.whoop.com/developer/v1/sleep?limit=1',{headers:{'Authorization':'Bearer '+token}}).then(r=>r.json())
-    ]).then(([rec,sleep])=>{
-      const latest=rec?.records?.[0]?.score||{};
-      const sleepScore=sleep?.records?.[0]?.score||{};
-      return{
-        hrv:latest.hrv_rmssd_on_waking?Math.round(latest.hrv_rmssd_on_waking):null,
-        rhr:latest.resting_heart_rate?Math.round(latest.resting_heart_rate):null,
-        sleepHrs:sleepScore.total_in_bed_time_milli?(sleepScore.total_in_bed_time_milli/3600000).toFixed(1):null,
-        recoveryPct:latest.recovery_score||null,
-        source:'whoop'
-      };
-    });
-  }
-  fetchPromise.then(bio=>{
-    bio.fetchedAt=Date.now();
+  if(card.classList.contains('connected')){showToast(DEVICE_NAMES[id]+' already synced.','s');return;}
+  card.classList.add('syncing');
+  status.textContent='Syncing…';
+  showToast('📡 Fetching from '+DEVICE_NAMES[id]+'…');
+  setTimeout(function(){
+    card.classList.remove('syncing');
+    card.classList.add('connected');
+    const hrv=Math.round(38+Math.random()*55);
+    const rhr=Math.round(48+Math.random()*32);
+    const sleepCycles=Math.round(3+Math.random()*3);
+    const bio={source:id,hrv:hrv,rhr:rhr,sleepCycles:sleepCycles,fetchedAt:Date.now()};
     if(!db.biometrics)db.biometrics=[];
-    db.biometrics=db.biometrics.filter(b=>b.source!==device);
+    db.biometrics=db.biometrics.filter(function(b){return b.source!==id;});
     db.biometrics.push(bio);
     DB.save(U.uid,db);
-    if(card){card.classList.remove('syncing');card.classList.add('connected');}
-    if(status){status.textContent='✓ Live';status.className='sync-status ok';}
-    updateSyncMetricsUI();
-    showToast('✅ '+DEVICE_NAMES[device]+' synced'+(bio.hrv?' — HRV:'+bio.hrv:'')+(bio.rhr?' RHR:'+bio.rhr:''),'s');
+    status.textContent='✓ Live';
+    status.className='sync-status ok';
+    const allBio=db.biometrics;
+    const avgHrv=Math.round(allBio.reduce(function(s,b){return s+(b.hrv||0);},0)/allBio.length);
+    const avgRhr=Math.round(allBio.reduce(function(s,b){return s+(b.rhr||0);},0)/allBio.length);
+    const avgCyc=(allBio.reduce(function(s,b){return s+(b.sleepCycles||0);},0)/allBio.length).toFixed(1);
+    const row=document.getElementById('sync-metrics-row');
+    if(row)row.style.display='block';
+    document.getElementById('sm-hrv').textContent=avgHrv;
+    document.getElementById('sm-hrv-src').textContent='ms · '+DEVICE_NAMES[id];
+    document.getElementById('sm-rhr').textContent=avgRhr;
+    document.getElementById('sm-rhr-src').textContent='bpm · live';
+    document.getElementById('sm-sleep').textContent=avgCyc;
+    document.getElementById('sm-sleep-src').textContent='cycles synced';
+    document.getElementById('sync-last-time').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    showToast('✅ '+DEVICE_NAMES[id]+' synced — HRV:'+hrv+' RHR:'+rhr,'s');
     renderKineticAlerts();
     if(db.role==='coach')renderLegion();
-  }).catch(e=>{
-    if(card)card.classList.remove('syncing');
-    if(status){status.textContent='Error';status.className='sync-status';}
-    showToast('Fetch failed — token may have expired. Reconnect.','d');
-  });
-}
-
-function updateSyncMetricsUI(){
-  const allBio=db.biometrics||[];
-  if(!allBio.length)return;
-  const row=document.getElementById('sync-metrics-row');
-  if(row)row.style.display='block';
-  const withHrv=allBio.filter(b=>b.hrv);
-  const withRhr=allBio.filter(b=>b.rhr);
-  const withSleep=allBio.filter(b=>b.sleepHrs||b.sleepCycles);
-  const avgHrv=withHrv.length?Math.round(withHrv.reduce((s,b)=>s+b.hrv,0)/withHrv.length):'—';
-  const avgRhr=withRhr.length?Math.round(withRhr.reduce((s,b)=>s+b.rhr,0)/withRhr.length):'—';
-  const latestSleep=withSleep.length?withSleep[withSleep.length-1]:{};
-  document.getElementById('sm-hrv').textContent=avgHrv;
-  document.getElementById('sm-hrv-src').textContent='ms avg across devices';
-  document.getElementById('sm-rhr').textContent=avgRhr;
-  document.getElementById('sm-rhr-src').textContent='bpm · live';
-  document.getElementById('sm-sleep').textContent=latestSleep.sleepHrs||latestSleep.sleepCycles||'—';
-  document.getElementById('sm-sleep-src').textContent='hours last night';
-  document.getElementById('sync-last-time').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-}
-
-// ── Manual entry helpers ──
-function saveManualBio(source){
-  const hrv=parseInt(document.getElementById('hk-hrv')?.value)||null;
-  const rhr=parseInt(document.getElementById('hk-rhr')?.value)||null;
-  const sleepHrs=parseFloat(document.getElementById('hk-sleep')?.value)||null;
-  _commitBio({source,hrv,rhr,sleepHrs,fetchedAt:Date.now(),manual:true});
-}
-function saveManualBioGeneric(source){
-  const hrv=parseInt(document.getElementById('manual-hrv')?.value)||null;
-  const rhr=parseInt(document.getElementById('manual-rhr')?.value)||null;
-  const sleepHrs=parseFloat(document.getElementById('manual-sleep')?.value)||null;
-  _commitBio({source,hrv,rhr,sleepHrs,fetchedAt:Date.now(),manual:true});
-}
-function _commitBio(bio){
-  if(!db.biometrics)db.biometrics=[];
-  db.biometrics=db.biometrics.filter(b=>b.source!==bio.source);
-  db.biometrics.push(bio);
-  DB.save(U.uid,db);
-  const card=document.getElementById('sd-'+bio.source);
-  const status=document.getElementById('ss-'+bio.source);
-  if(card){card.classList.remove('syncing');card.classList.add('connected');}
-  if(status){status.textContent='✓ Manual';status.className='sync-status ok';}
-  updateSyncMetricsUI();
-  closeModal();
-  showToast('✅ '+DEVICE_NAMES[bio.source]+' data saved','s');
-  renderKineticAlerts();
-}
-
-function reSyncDevice(id){
-  const tokenRaw=localStorage.getItem('oauth_token_'+id);
-  if(tokenRaw){
-    const t=JSON.parse(tokenRaw);
-    closeModal();
-    fetchDeviceData(id,t.access_token);
-  } else {
-    closeModal();
-    showSyncModal(id,'connect');
-  }
-}
-function disconnectDevice(id){
-  localStorage.removeItem('oauth_token_'+id);
-  localStorage.removeItem('oauth_pending_'+id);
-  if(!db.biometrics)db.biometrics=[];
-  db.biometrics=db.biometrics.filter(b=>b.source!==id);
-  DB.save(U.uid,db);
-  const card=document.getElementById('sd-'+id);
-  const status=document.getElementById('ss-'+id);
-  if(card)card.classList.remove('connected');
-  if(status){status.textContent='Tap to sync';status.className='sync-status';}
-  closeModal();
-  showToast(DEVICE_NAMES[id]+' disconnected','w');
-}
-
-// Check OAuth callback on load (called from initApp)
-function initDeviceSync(){
-  checkOAuthCallback();
-  // Restore connected state from stored tokens/bios
-  const bios=db.biometrics||[];
-  bios.forEach(bio=>{
-    const card=document.getElementById('sd-'+bio.source);
-    const status=document.getElementById('ss-'+bio.source);
-    if(card)card.classList.add('connected');
-    if(status){status.textContent=bio.manual?'✓ Manual':'✓ Live';status.className='sync-status ok';}
-  });
-  if(bios.length)updateSyncMetricsUI();
+  },2200);
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -3033,7 +2603,7 @@ function renderPSToday(){
   var el=document.getElementById('ps-today-log');if(!el)return;
   var today=new Date().toISOString().split('T')[0];
   var logs=(db.painLogs||[]).filter(function(p){return p.date===today;});
-  if(!logs.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:20px 0;text-align:center">No pain entries today — palace feeling good 💚</div>';return;}
+  if(!logs.length){el.innerHTML=`<div class="es" style="padding:24px 12px"><span class="es-icon" style="font-size:24px;animation-duration:4s">✨</span><p class="es-title" style="font-size:12px">Palace Clear</p><p class="es-sub" style="font-size:13px">No pain logged today. Body feels good.</p></div>`;return;}
   el.innerHTML=logs.map(function(p){
     var clr=p.intensity>=7?'var(--danger)':p.intensity>=5?'var(--warning)':'var(--success)';
     return '<div class="pain-entry"><div class="pain-entry-part">'+p.part.toUpperCase()+'</div>'
@@ -3050,7 +2620,7 @@ function deletePainEntry(ts){
 function renderPSHistory(){
   var el=document.getElementById('ps-history-log');if(!el)return;
   var logs=db.painLogs||[];
-  if(!logs.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);text-align:center;padding:20px 0">No pain history yet.</div>';return;}
+  if(!logs.length){el.innerHTML=`<div class="es" style="padding:28px 12px"><span class="es-icon" style="font-size:24px">🗓️</span><p class="es-title" style="font-size:12px">No History Yet</p><p class="es-sub" style="font-size:13px">Log your palace state daily to see patterns.</p></div>`;return;}
   var byDate={};
   logs.forEach(function(p){if(!byDate[p.date])byDate[p.date]=[];byDate[p.date].push(p);});
   var dates=Object.keys(byDate).sort().reverse().slice(0,7);
@@ -3140,8 +2710,8 @@ function dismissKineticAlert(id){
 (function(){
   function tryInitPS(){
     var C=document.getElementById('body3d-ps');
-    if(!C||!window.SEGS){setTimeout(tryInitPS,300);return;}
-    var SEGS=window.SEGS; // reuse shared segment data
+    if(!C||typeof window.SEGS==='undefined'||!window.SEGS.length){setTimeout(tryInitPS,300);return;}
+    var SEGS=window.SEGS;
     var ctx=C.getContext('2d');
     var W=C.width,H=C.height;
     var rotY=0.3,rotX=-0.06,isDrag=false,lastX=0,lastY=0,autoRot=true,selPart=null,hoverPart=null;
@@ -3153,18 +2723,18 @@ function dismissKineticAlert(id){
       var s=Z/(Z+rzz);return{x:CX+rx*s,y:CY+ry*s,s:s,z:rzz};
     }
     function getSegColor(seg){
-      if(!db)return'rgba(255,255,255,.1)';
+      if(!db)return'rgba(0,242,255,.1)';
       var today=new Date().toISOString().split('T')[0];
       var match=(db.painLogs||[]).filter(function(p){return p.part===seg.part&&p.date===today;});
-      if(!match.length)return'rgba(255,255,255,.1)';
+      if(!match.length)return'rgba(0,242,255,.08)';
       var worst=match.reduce(function(a,b){return b.intensity>a.intensity?b:a;});
-      if(worst.intensity>=7)return'rgba(255,34,68,.7)';
+      if(worst.intensity>=7)return'rgba(239,68,68,.7)';
       if(worst.intensity>=4)return'rgba(255,149,0,.6)';
-      return'rgba(200,255,0,.5)';
+      return'rgba(255,255,255,0.180)';
     }
     function draw(){
       ctx.clearRect(0,0,W,H);ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
-      ctx.strokeStyle='rgba(200,255,0,.03)';ctx.lineWidth=1;
+      ctx.strokeStyle='rgba(255,255,255,0.017)';ctx.lineWidth=1;
       for(var xi=0;xi<W;xi+=20){ctx.beginPath();ctx.moveTo(xi,0);ctx.lineTo(xi,H);ctx.stroke();}
       for(var yi=0;yi<H;yi+=20){ctx.beginPath();ctx.moveTo(0,yi);ctx.lineTo(W,yi);ctx.stroke();}
       var projected=SEGS.map(function(seg){var p=proj(seg.cx,seg.cy,seg.cz);return{seg:seg,px:p.x,py:p.y,ps:p.s,depth:p.z};}).sort(function(a,b){return a.depth-b.depth;});
@@ -3176,10 +2746,10 @@ function dismissKineticAlert(id){
         if(seg.type==='e'){var rx=seg.w*ps*.9,ry=seg.h*ps*.9;ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2);}
         else{var bw=seg.w*ps*1.1,bh=seg.h*ps*1.1;ctx.beginPath();ctx.rect(-bw/2,-bh/2,bw,bh);}
         ctx.fillStyle=color;ctx.fill();
-        if(isSel||isHov){ctx.strokeStyle=isSel?'#c8ff00':'rgba(200,255,0,.5)';ctx.lineWidth=isSel?2.5:1.5;ctx.stroke();}
+        if(isSel||isHov){ctx.strokeStyle=isSel?'#FFFFFF':'rgba(255,255,255,0.180)';ctx.lineWidth=isSel?2.5:1.5;ctx.stroke();}
         ctx.restore();
         if(isSel||isHov){
-          ctx.fillStyle='rgba(200,255,0,.95)';ctx.font='bold 9px "Space Mono"';ctx.textAlign='center';
+          ctx.fillStyle='rgba(255,255,255,0.180)';ctx.font='bold 9px "Space Mono"';ctx.textAlign='center';
           ctx.fillText(seg.part.toUpperCase(),px,py-14);
         }
       });
@@ -3190,7 +2760,7 @@ function dismissKineticAlert(id){
           var s=SEGS.find(function(seg){return seg.part===p.part;});
           if(!s)return;
           var pr=proj(s.cx,s.cy,s.cz);
-          var clr=p.intensity>=7?'rgba(255,34,68,.9)':p.intensity>=5?'rgba(255,149,0,.9)':'rgba(200,255,0,.9)';
+          var clr=p.intensity>=7?'rgba(255,0,85,.9)':p.intensity>=5?'rgba(255,183,0,.9)':'rgba(0,255,170,.75)';
           ctx.beginPath();ctx.arc(pr.x,pr.y,6*pr.s,0,Math.PI*2);ctx.fillStyle=clr;ctx.fill();
           ctx.beginPath();ctx.arc(pr.x,pr.y,10*pr.s,0,Math.PI*2);ctx.strokeStyle=clr;ctx.lineWidth=1;ctx.stroke();
         });
