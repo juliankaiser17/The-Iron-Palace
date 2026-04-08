@@ -420,11 +420,11 @@
   .ctrl-btn:hover,.ctrl-btn.active{border-color:var(--accent);color:var(--accent);}
 
   /* MOBILE */
-  .m-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 0;z-index:200;}
-  .m-nav-inner{display:flex;justify-content:space-around;}
-  .m-nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 16px;cursor:pointer;color:var(--text3);font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;}
+  /* .m-nav — redefined below */
+  /* .m-nav-inner — overridden below */
+  /* .m-nav-item — overridden below */
   .m-nav-item.active{color:var(--accent);}
-  .m-nav-icon{font-size:20px;}
+  /* .m-nav-icon — overridden below */
   @media(max-width:768px){
     .sidebar{display:none;}.m-nav{display:block;}
     .main-content{padding:20px;padding-bottom:80px;}
@@ -1054,6 +1054,88 @@
   /* Kinetic alert bar: softer pulse */
   .kinetic-alert-bar { animation:alertGlow 4s infinite !important; }
 
+
+  /* ── PROFILE MODAL ── */
+  .profile-modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+  .profile-modal-ov.open{display:flex;}
+  .profile-modal{background:#0a0a0a;border:1px solid #272727;width:min(420px,94vw);animation:slideUp .3s ease;position:relative;}
+  .profile-modal-head{padding:22px 28px;border-bottom:1px solid #1e1e1e;display:flex;justify-content:space-between;align-items:center;}
+  .profile-modal-title{font-family:'Syncopate',sans-serif;font-size:16px;letter-spacing:4px;color:#f0f0f0;}
+  .profile-modal-x{background:none;border:none;color:#444;font-size:20px;cursor:pointer;transition:color .15s;}
+  .profile-modal-x:hover{color:#fff;}
+  .profile-modal-body{padding:28px;}
+  .profile-avatar-big{width:64px;height:64px;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-family:'Syncopate',sans-serif;font-size:26px;font-weight:700;margin:0 auto 24px;}
+  .profile-row{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
+  .profile-lbl{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#3a3a3a;}
+  .profile-val{font-family:'Space Mono',monospace;font-size:13px;color:#848484;letter-spacing:1px;}
+  .profile-name-input{background:#111;border:1px solid #1e1e1e;color:#f0f0f0;padding:12px 14px;font-family:'Space Mono',monospace;font-size:13px;letter-spacing:1px;outline:none;width:100%;transition:border-color .15s;appearance:none;-webkit-appearance:none;}
+  .profile-name-input option{background:#111;color:#f0f0f0;}
+  .profile-name-input:focus{border-color:var(--accent);}
+  .profile-save-btn{background:var(--accent);color:#000;padding:14px;font-family:'Syncopate',sans-serif;font-size:11px;letter-spacing:4px;border:none;cursor:pointer;width:100%;margin-top:8px;transition:background .15s;}
+  .profile-save-btn:hover{background:#fff;}
+  .profile-signout{background:transparent;border:1px solid #1e1e1e;color:#585858;padding:12px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;width:100%;margin-top:10px;transition:all .2s;}
+  .profile-signout:hover{border-color:#ef4444;color:#ef4444;}
+
+  /* ── MOBILE NAV — scrollable with all sections ── */
+  .m-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(3,3,8,0.98);border-top:1px solid #1e1e1e;z-index:200;padding:0;}
+  .m-nav-inner{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:0;padding:6px 4px 8px;}
+  .m-nav-inner::-webkit-scrollbar{display:none;}
+  .m-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 14px;cursor:pointer;color:#3a3a3a;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:1px;white-space:nowrap;flex-shrink:0;transition:color .15s;}
+  .m-nav-item.active{color:var(--accent);}
+  .m-nav-icon{font-size:18px;}
+
+  /* ── MOBILE PERF — kill all heavy effects on mobile ── */
+  @media(max-width:768px){
+    .sidebar{display:none;}
+    .m-nav{display:block;}
+    .main-content{padding:16px;padding-bottom:88px;}
+    .g4,.g3{grid-template-columns:repeat(2,1fr);}
+    .diagram-grid{grid-template-columns:1fr;}
+    .inj-grid{grid-template-columns:1fr;}
+    .form-row{grid-template-columns:1fr;}
+    .emg-buttons{flex-direction:column;}
+    .ps-grid{grid-template-columns:1fr!important;}
+    .timer-block{flex-direction:column;align-items:flex-start;}
+
+    /* kill ALL backdrop-filter on mobile — biggest perf win */
+    *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+
+    /* kill continuous glow animations on mobile */
+    .kinetic-alert-bar{animation:none!important;}
+    .athlete-row.alert-red{animation:none!important;border-color:#ef4444!important;}
+    .btn-ecall{animation:none!important;box-shadow:none!important;}
+    .rec-warn{animation:none!important;}
+    .sync-pulse{animation:none!important;}
+    .es-ring{animation:none!important;}
+    .es-icon{animation:none!important;}
+
+    /* kill hover transforms — cause repaints on mobile */
+    .card:hover{transform:none!important;box-shadow:none!important;}
+    .role-card:hover{transform:none!important;}
+    .athlete-row:hover{transform:none!important;}
+    .inj-card:hover{border-color:var(--border)!important;}
+
+    /* simplify all box-shadows on mobile */
+    .card,.log-form,.sync-block,.pain-log-panel,.palace-hero,.overview-card,
+    .palace-setup-card,.athlete-row,.sync-device,.modal,.toast{box-shadow:none!important;}
+
+    /* disable text-shadows on mobile */
+    *{text-shadow:none!important;}
+
+    /* section transition: instant on mobile = much smoother feel */
+    .section{animation:none!important;}
+
+    /* reduce padding on mobile */
+    .section-title{font-size:36px!important;letter-spacing:2px!important;}
+    .card-value{font-size:40px!important;}
+    .timer-disp{font-size:48px!important;}
+    .palace-hero{padding:20px!important;}
+    .palace-setup-card{padding:20px!important;}
+
+    /* header date hidden on mobile */
+    #h-date{display:none;}
+  }
+
 </style>
 </head>
 <body>
@@ -1126,7 +1208,7 @@
     <div class="app-logo" style="font-family:'Syncopate',sans-serif;font-size:18px;letter-spacing:9px;color:#fff;text-shadow:0 0 20px rgba(255,255,255,.25)">THE IRON PALACE</div>
     <div class="header-r">
       <span style="font-size:11px;color:#2C2C2C;letter-spacing:2px;font-family:'Space Mono',monospace" id="h-date"></span>
-      <div class="u-avatar" id="u-av">A</div>
+      <div class="u-avatar" id="u-av" onclick="openProfile()" title="Edit Profile">A</div>
     </div>
   </header>
   <div class="app-layout">
@@ -1522,13 +1604,66 @@
     </main>
   </div>
   <nav class="m-nav">
-    <div class="m-nav-inner">
-      <div class="m-nav-item active" onclick="goSec('dashboard')"><div class="m-nav-icon">⚡</div>Dash</div>
-      <div class="m-nav-item" onclick="goSec('tracks')"><div class="m-nav-icon">📊</div>Tracks</div>
-      <div class="m-nav-item" onclick="goSec('recovery')"><div class="m-nav-icon">💠</div>Recovery</div>
-      <div class="m-nav-item" onclick="goSec('palace-hub')"><div class="m-nav-icon">🏛️</div>Palace</div>
+    <div class="m-nav-inner" id="m-nav-inner">
+      <div class="m-nav-item active" data-ms="dashboard" onclick="goSec('dashboard')"><div class="m-nav-icon">⚡</div>Dash</div>
+      <div class="m-nav-item" data-ms="tracks" onclick="goSec('tracks')"><div class="m-nav-icon">📊</div>Tracks</div>
+      <div class="m-nav-item" data-ms="recovery" onclick="goSec('recovery')"><div class="m-nav-icon">💠</div>Recovery</div>
+      <div class="m-nav-item" data-ms="injuries" onclick="goSec('injuries')"><div class="m-nav-icon">🩺</div>Injuries</div>
+      <div class="m-nav-item" data-ms="palace-state" onclick="goSec('palace-state')"><div class="m-nav-icon">🧬</div>Palace</div>
+      <div class="m-nav-item" data-ms="palace-hub" onclick="goSec('palace-hub')"><div class="m-nav-icon">🏛️</div>Hub</div>
     </div>
   </nav>
+</div>
+
+
+<!-- PROFILE MODAL -->
+<div class="profile-modal-ov" id="profile-modal-ov" onclick="if(event.target===this)closeProfile()">
+  <div class="profile-modal">
+    <div class="profile-modal-head">
+      <div class="profile-modal-title">PROFILE</div>
+      <button class="profile-modal-x" onclick="closeProfile()">✕</button>
+    </div>
+    <div class="profile-modal-body">
+      <div class="profile-avatar-big" id="pm-av">A</div>
+      <div class="profile-row">
+        <div class="profile-lbl">Display Name</div>
+        <input class="profile-name-input" id="pm-name" type="text" placeholder="Your name" maxlength="32">
+      </div>
+      <div class="profile-row">
+        <div class="profile-lbl">Email</div>
+        <div class="profile-val" id="pm-email">—</div>
+      </div>
+      <div class="profile-row">
+        <div class="profile-lbl">Role</div>
+        <div class="profile-val" id="pm-role">—</div>
+      </div>
+      <div class="profile-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div class="profile-lbl">Sport</div>
+          <select class="profile-name-input" id="pm-sport" style="padding:11px 14px;">
+            <option value="Weightlifting">Weightlifting</option>
+            <option value="CrossFit">CrossFit</option>
+            <option value="Powerlifting">Powerlifting</option>
+            <option value="Bodybuilding">Bodybuilding</option>
+            <option value="Running">Running</option>
+            <option value="Cycling">Cycling</option>
+            <option value="Swimming">Swimming</option>
+            <option value="MMA / Boxing">MMA / Boxing</option>
+            <option value="Football">Football</option>
+            <option value="Basketball">Basketball</option>
+            <option value="Yoga">Yoga</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div>
+          <div class="profile-lbl">Weight (kg)</div>
+          <input class="profile-name-input" id="pm-weight" type="number" min="30" max="200" placeholder="75" style="padding:11px 14px;">
+        </div>
+      </div>
+      <button class="profile-save-btn" onclick="saveProfile()">SAVE CHANGES</button>
+      <button class="profile-signout" onclick="signOut()">Sign Out</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-ov" id="modal-ov" onclick="if(event.target===this)closeModal()">
@@ -2037,8 +2172,7 @@ function goSec(sec){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('section-'+sec).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.s===sec));
-  document.querySelectorAll('.m-nav-item').forEach(n=>n.classList.remove('active'));
-  document.querySelectorAll('.m-nav-item').forEach(n=>{if(n.textContent.toLowerCase().includes(sec.slice(0,4)))n.classList.add('active');});
+  document.querySelectorAll('.m-nav-item').forEach(n=>n.classList.toggle('active',n.dataset.ms===sec));
   const last=db?.recoveryLogs?.slice(-1)[0];
   if(sec==='tracks'&&last&&last.score<55)showToast('⚠️ Recovery is low — consider resting today','w');
 }
@@ -2934,6 +3068,47 @@ function dismissKineticAlert(id){
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(tryInitPS,600);});}
   else{setTimeout(tryInitPS,600);}
 })();
+
+
+// ═══════════════════════ PROFILE ═══════════════════════════════════════
+function openProfile(){
+  if(!U)return;
+  document.getElementById('pm-av').textContent=U.name[0].toUpperCase();
+  document.getElementById('pm-name').value=U.name||'';
+  document.getElementById('pm-email').textContent=U.email||'—';
+  document.getElementById('pm-role').textContent=(db.role||'athlete').charAt(0).toUpperCase()+(db.role||'athlete').slice(1);
+  // Set sport dropdown
+  const sportEl=document.getElementById('pm-sport');
+  if(sportEl){
+    const currentSport=U.sport||db.sport||'Weightlifting';
+    Array.from(sportEl.options).forEach(o=>o.selected=o.value===currentSport);
+  }
+  // Set weight
+  const wtEl=document.getElementById('pm-weight');
+  if(wtEl) wtEl.value=U.weight||db.weight||75;
+  document.getElementById('profile-modal-ov').classList.add('open');
+  setTimeout(()=>document.getElementById('pm-name').focus(),120);
+}
+function closeProfile(){
+  document.getElementById('profile-modal-ov').classList.remove('open');
+}
+function saveProfile(){
+  const newName=document.getElementById('pm-name').value.trim();
+  if(!newName)return showToast('Name cannot be empty.','w');
+  const newSport=document.getElementById('pm-sport')?.value||U.sport||'Weightlifting';
+  const newWeight=parseFloat(document.getElementById('pm-weight')?.value)||U.weight||75;
+  // Update U object
+  U.name=newName; U.sport=newSport; U.weight=newWeight;
+  // Update db
+  db.name=newName; db.sport=newSport; db.weight=newWeight;
+  DB.save(U.uid,db);
+  // Update all display elements
+  document.getElementById('u-av').textContent=newName[0].toUpperCase();
+  document.getElementById('d-name').textContent=newName.split(' ')[0].toUpperCase();
+  document.getElementById('pm-av').textContent=newName[0].toUpperCase();
+  showToast('Profile updated! 👤','s');
+  closeProfile();
+}
 
 // ═══════════════════════ TOAST ════════════════════════════════════════
 function showToast(msg,type=''){
