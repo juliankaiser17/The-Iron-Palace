@@ -1,11 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Iron Palace</title>
 <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Space+Mono:wght@400;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="images/title.png">
+<!-- Firebase SDKs -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    signOut as fbSignOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup,
+    updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDGdecWngN_zZFlJyq_L0_BLD8KEMcBpgI",
+    authDomain: "theironpalace-ffb85.firebaseapp.com",
+    databaseURL: "https://theironpalace-ffb85-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "theironpalace-ffb85",
+    storageBucket: "theironpalace-ffb85.firebasestorage.app",
+    messagingSenderId: "708398928493",
+    appId: "1:708398928493:web:79ac3030178c938af9a564"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db_rt = getDatabase(app);
+  const gProvider = new GoogleAuthProvider();
+  gProvider.setCustomParameters({ prompt: 'select_account' });
+
+  window._FB = { auth, db_rt, ref, set, get, update,
+    createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    fbSignOut, GoogleAuthProvider, signInWithPopup, gProvider, updateProfile };
+</script>
+
 <style>
   :root{
     --bg:#030305;
@@ -1559,7 +1589,49 @@ function doAuth(){
   const email=document.getElementById('a-email').value.trim();
   const pw=document.getElementById('a-pw').value;
   if(!email)return setErr('Please enter your email.');
-  if(!pw)return setErr('Please enter your password.');
+  if(!pw||pw.length<6)return setErr('Password must be at least 6 characters.');
+  const FB=window._FB;
+  if(!FB){ _doAuthLocal(email,pw); return; }
+  setBtnLoading(true);
+  if(authMode==='signup'){
+    const name=document.getElementById('a-name').value.trim()||email.split('@')[0];
+    const sport=document.getElementById('a-sport').value;
+    const weight=parseFloat(document.getElementById('a-wt').value)||75;
+    FB.createUserWithEmailAndPassword(FB.auth,email,pw)
+      .then(cred=>{
+        const uid=cred.user.uid;
+        return FB.updateProfile(cred.user,{displayName:name}).then(()=>{
+          const d=DB.fresh();d.email=email;d.name=name;d.sport=sport;d.weight=weight;d.role=selectedRole;
+          DB.save(uid,d);
+          return FB.set(FB.ref(FB.db_rt,'users/'+uid+'/profile'),
+            {email,name,sport,weight,role:selectedRole,createdAt:Date.now()});
+        }).then(()=>{setBtnLoading(false);loginUser({uid,name,email,weight,sport,role:selectedRole});});
+      })
+      .catch(e=>{setBtnLoading(false);setErr(fbErrMsg(e.code));});
+  } else {
+    FB.signInWithEmailAndPassword(FB.auth,email,pw)
+      .then(cred=>{
+        const uid=cred.user.uid;
+        FB.get(FB.ref(FB.db_rt,'users/'+uid+'/profile')).then(snap=>{
+          setBtnLoading(false);
+          if(snap.exists()){
+            const p=snap.val();
+            let d=DB.load(uid)||DB.fresh();
+            d.name=p.name||cred.user.displayName||email.split('@')[0];
+            d.email=email;d.weight=p.weight||75;d.sport=p.sport;d.role=p.role||'athlete';
+            DB.save(uid,d);
+            loginUser({uid,name:d.name,email,weight:d.weight,sport:d.sport,role:d.role});
+          } else {
+            const d=DB.load(uid)||DB.fresh();
+            if(!d.email){d.email=email;d.name=cred.user.displayName||email.split('@')[0];DB.save(uid,d);}
+            loginUser({uid,name:d.name,email,weight:d.weight||75,sport:d.sport,role:d.role||'athlete'});
+          }
+        }).catch(()=>{setBtnLoading(false);_doAuthLocal(email,pw);});
+      })
+      .catch(e=>{setBtnLoading(false);setErr(fbErrMsg(e.code));});
+  }
+}
+function _doAuthLocal(email,pw){
   const uid=btoa(email);
   if(authMode==='signup'){
     const name=document.getElementById('a-name').value.trim()||email.split('@')[0];
@@ -1567,24 +1639,85 @@ function doAuth(){
     const weight=parseFloat(document.getElementById('a-wt').value)||75;
     const existing=DB.load(uid);
     if(existing.email)return setErr('Account already exists. Please sign in.');
-    const d=DB.fresh(); d.email=email; d.name=name; d.sport=sport; d.weight=weight; d.role=selectedRole;
-    DB.save(uid,d);
-    loginUser({uid,name,email,weight,sport,role:selectedRole});
+    const d=DB.fresh();d.email=email;d.name=name;d.sport=sport;d.weight=weight;d.role=selectedRole;
+    DB.save(uid,d);loginUser({uid,name,email,weight,sport,role:selectedRole});
   } else {
     const d=DB.load(uid);
     if(!d.email)return setErr('No account found. Please sign up first.');
     loginUser({uid,name:d.name,email,weight:d.weight||75,sport:d.sport,role:d.role||'athlete'});
   }
 }
+function fbErrMsg(code){
+  const m={
+    'auth/email-already-in-use':'Email already registered. Sign in instead.',
+    'auth/wrong-password':'Incorrect password.',
+    'auth/user-not-found':'No account found. Sign up first.',
+    'auth/invalid-email':'Invalid email address.',
+    'auth/weak-password':'Password too weak — use 6+ characters.',
+    'auth/too-many-requests':'Too many attempts. Try again later.',
+    'auth/invalid-credential':'Invalid email or password.',
+    'auth/popup-blocked':'Popup was blocked. Allow popups for this site.',
+    'auth/popup-closed-by-user':'Sign-in cancelled.'
+  };
+  return m[code]||'Error: '+code;
+}
+function setBtnLoading(on){
+  const btn=document.getElementById('auth-btn');
+  if(btn){btn.disabled=on;btn.textContent=on?'LOADING…':(authMode==='signup'?'JOIN THE PALACE':'ENTER THE PALACE');}
+}
 
 // ═══════════════════════ GOOGLE PICKER ══════════════════════════════
 function openGP(){
-  const accts=DB.accts();
-  document.getElementById('gp-list').innerHTML=accts.length
-    ?accts.map((a,i)=>`<div class="gp-acct" onclick="selGAcct(${i})"><div class="gp-av">${a.name[0].toUpperCase()}</div><div><div class="gp-an">${a.name}</div><div class="gp-ae">${a.email}</div></div></div>`).join('')
-    :'<div style="padding:14px 24px;font-size:13px;color:#5f6368;font-family:Barlow,sans-serif">No saved accounts. Add one below.</div>';
-  document.getElementById('gp-form').classList.remove('open');
-  document.getElementById('gp-overlay').classList.add('open');
+  const FB=window._FB;
+  if(!FB){
+    // Firebase not loaded yet — fallback to fake picker
+    const accts=DB.accts();
+    document.getElementById('gp-list').innerHTML=accts.length
+      ?accts.map((a,i)=>`<div class="gp-acct" onclick="selGAcct(${i})"><div class="gp-av">${a.name[0].toUpperCase()}</div><div><div class="gp-an">${a.name}</div><div class="gp-ae">${a.email}</div></div></div>`).join('')
+      :'<div style="padding:14px 24px;font-size:13px;color:#5f6368">No saved accounts. Add one below.</div>';
+    document.getElementById('gp-form').classList.remove('open');
+    document.getElementById('gp-overlay').classList.add('open');
+    return;
+  }
+  // Real Firebase Google sign-in — opens actual Google account chooser
+  FB.signInWithPopup(FB.auth, FB.gProvider)
+    .then(result => {
+      const user = result.user;
+      const uid = user.uid;
+      const name = user.displayName || user.email.split('@')[0];
+      const email = user.email;
+      // Save to local accounts list for display
+      const accts = DB.accts();
+      if (!accts.find(a => a.email === email)) { accts.push({name, email}); DB.saveAccts(accts); }
+      // Pull profile from Firebase RTDB, or create fresh
+      FB.get(FB.ref(FB.db_rt, 'users/' + uid + '/profile')).then(snap => {
+        if (snap.exists()) {
+          const p = snap.val();
+          let d = DB.load(uid) || DB.fresh();
+          d.name = p.name || name; d.email = email;
+          d.weight = p.weight || 75; d.sport = p.sport; d.role = p.role || 'athlete';
+          DB.save(uid, d);
+          loginUser({uid, name: d.name, email, weight: d.weight, sport: d.sport, role: d.role});
+        } else {
+          const d = DB.fresh();
+          d.email = email; d.name = name; d.weight = 75; d.sport = 'Weightlifting'; d.role = 'athlete';
+          DB.save(uid, d);
+          FB.set(FB.ref(FB.db_rt, 'users/' + uid + '/profile'),
+            {email, name, sport: 'Weightlifting', weight: 75, role: 'athlete', createdAt: Date.now()});
+          loginUser({uid, name, email, weight: 75, sport: 'Weightlifting', role: 'athlete'});
+        }
+      }).catch(() => {
+        // RTDB failed — use local only
+        let d = DB.load(uid) || DB.fresh();
+        d.email = email; d.name = name;
+        DB.save(uid, d);
+        loginUser({uid, name, email, weight: d.weight || 75, sport: d.sport, role: d.role || 'athlete'});
+      });
+    })
+    .catch(e => {
+      if (e.code !== 'auth/popup-closed-by-user')
+        showToast('Google sign-in failed: ' + fbErrMsg(e.code), 'd');
+    });
 }
 function closeGP(){
   document.getElementById('gp-overlay').classList.remove('open');
@@ -1639,13 +1772,14 @@ function loginUser(user){
 }
 function signOut(){
   if(timerOn)stopTimer();
+  const FB=window._FB;
+  if(FB&&FB.auth.currentUser) FB.fbSignOut(FB.auth).catch(()=>{});
   U=null;db=null;
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('app').style.display='none';
   document.getElementById('a-email').value='';
   document.getElementById('a-pw').value='';
 }
-
 
 // ═══════════════════════ ENCOURAGEMENT ════════════════════════════════
 function renderEncouragement(){
