@@ -1136,6 +1136,29 @@
     #h-date{display:none;}
   }
 
+
+  /* ── CANVAS MOBILE RESPONSIVE ── */
+  @media(max-width:768px){
+    #body3d, #body3d-ps {
+      width:100% !important;
+      height:auto !important;
+      max-width:300px !important;
+      aspect-ratio:268/360;
+    }
+    #body3d-ps {
+      aspect-ratio:268/340 !important;
+    }
+    .svg-wrap, .pain-canvas-wrap {
+      padding:10px !important;
+    }
+    .diagram-grid {
+      grid-template-columns:1fr !important;
+    }
+    .ps-grid {
+      grid-template-columns:1fr !important;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -2581,9 +2604,39 @@ function eText(){window.location.href='sms:112?body=EMERGENCY: I am an athlete w
   });
 
   // Touch
-  C.addEventListener('touchstart',e=>{e.preventDefault();isDrag=true;autoRot=false;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;document.getElementById('btn-auto').classList.remove('active');},{passive:false});
-  C.addEventListener('touchmove',e=>{e.preventDefault();if(!isDrag)return;rotY+=(e.touches[0].clientX-lastX)*0.012;rotX+=(e.touches[0].clientY-lastY)*0.008;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;},{passive:false});
-  C.addEventListener('touchend',()=>{isDrag=false;});
+  let touchStartX=0,touchStartY=0;
+  C.addEventListener('touchstart',e=>{
+    e.preventDefault();isDrag=true;autoRot=false;
+    lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;
+    touchStartX=lastX;touchStartY=lastY;
+    document.getElementById('btn-auto').classList.remove('active');
+  },{passive:false});
+  C.addEventListener('touchmove',e=>{
+    e.preventDefault();if(!isDrag)return;
+    rotY+=(e.touches[0].clientX-lastX)*0.012;
+    rotX+=(e.touches[0].clientY-lastY)*0.008;
+    lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;
+  },{passive:false});
+  C.addEventListener('touchend',e=>{
+    if(isDrag){
+      const dx=lastX-touchStartX,dy=lastY-touchStartY;
+      if(Math.abs(dx)<8&&Math.abs(dy)<8){
+        // It was a tap — find closest segment using canvas coords
+        const rect=C.getBoundingClientRect();
+        const scaleX=C.width/rect.width,scaleY=C.height/rect.height;
+        const mx=(touchStartX-rect.left)*scaleX;
+        const my=(touchStartY-rect.top)*scaleY;
+        let best=null,bestD=9999;
+        SEGS.forEach(seg=>{
+          const p=proj(seg.cx,seg.cy,seg.cz);
+          const d=Math.hypot(p.x-mx,p.y-my);
+          if(d<Math.max(seg.w,seg.h)*p.s*3&&d<bestD){bestD=d;best=seg;}
+        });
+        if(best){selPart3d=best.part;selPart(best.part);}
+      }
+    }
+    isDrag=false;
+  });
 
   window.toggleAuto=function(){
     autoRot=!autoRot;
@@ -3058,9 +3111,38 @@ function dismissKineticAlert(id){
         hoverPart=best?best.part:null;C.style.cursor=hoverPart?'pointer':'grab';
       }
     });
-    C.addEventListener('touchstart',function(e){e.preventDefault();isDrag=true;autoRot=false;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;},{passive:false});
-    C.addEventListener('touchmove',function(e){e.preventDefault();if(!isDrag)return;rotY+=(e.touches[0].clientX-lastX)*0.012;rotX+=(e.touches[0].clientY-lastY)*0.008;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;},{passive:false});
-    C.addEventListener('touchend',function(){isDrag=false;});
+    var tsX=0,tsY=0;
+    C.addEventListener('touchstart',function(e){
+      e.preventDefault();isDrag=true;autoRot=false;
+      lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;
+      tsX=lastX;tsY=lastY;
+    },{passive:false});
+    C.addEventListener('touchmove',function(e){
+      e.preventDefault();if(!isDrag)return;
+      rotY+=(e.touches[0].clientX-lastX)*0.012;
+      rotX+=(e.touches[0].clientY-lastY)*0.008;
+      lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;
+    },{passive:false});
+    C.addEventListener('touchend',function(e){
+      if(isDrag){
+        var dx=lastX-tsX,dy=lastY-tsY;
+        if(Math.abs(dx)<8&&Math.abs(dy)<8){
+          // Tap — convert to canvas coords
+          var rect=C.getBoundingClientRect();
+          var scaleX=C.width/rect.width,scaleY=C.height/rect.height;
+          var mx=(tsX-rect.left)*scaleX;
+          var my=(tsY-rect.top)*scaleY;
+          var best=null,bestD=9999;
+          SEGS.forEach(function(seg){
+            var p=proj(seg.cx,seg.cy,seg.cz);
+            var d=Math.hypot(p.x-mx,p.y-my);
+            if(d<Math.max(seg.w,seg.h)*p.s*3&&d<bestD){bestD=d;best=seg;}
+          });
+          if(best){selPart=best.part;setSelectedPainPart(best.part);}
+        }
+      }
+      isDrag=false;
+    });
     window.toggleAutoPS=function(){autoRot=!autoRot;var b=document.getElementById('btn-auto-ps');if(b)b.classList.toggle('active',autoRot);};
     window.resetViewPS=function(){rotY=0.3;rotX=-0.06;selPart=null;setSelectedPainPart(null);};
     draw();
