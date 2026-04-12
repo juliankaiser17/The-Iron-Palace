@@ -1954,13 +1954,13 @@ const Validator = {
       type: 'string', required: true,
       minLen: 1, maxLen: 50,
       // No HTML, no control chars — letters, numbers, spaces, hyphens, apostrophes
-      pattern: /^[\p{L}\p{N} '\-_.]{1,50}$/u,
+      pattern: /^[\p{L}\p{N} '_. -]{1,50}$/u,
       patternMsg: 'Name can only contain letters, numbers, spaces, hyphens, and apostrophes.'
     },
     palateName: {
       type: 'string', required: true,
       minLen: 2, maxLen: 40,
-      pattern: /^[\p{L}\p{N} '\-_.!]{2,40}$/u,
+      pattern: /^[\p{L}\p{N} '_.! -]{2,40}$/u,
       patternMsg: 'Palace name: 2–40 characters, letters and numbers only.'
     },
     inviteCode: {
