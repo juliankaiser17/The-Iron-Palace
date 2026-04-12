@@ -4,50 +4,6 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- SECURITY: Content Security Policy
-     NOTE: CSP via meta tag is NOT used here because Firebase Auth's signInWithPopup
-     needs ~8 Google/Firebase domains that are hard to enumerate inline, and a
-     meta-tag CSP fires too late to protect inline scripts anyway.
-
-     INSTEAD — set CSP as an HTTP response header in vercel.json:
-
-     {
-       "headers": [
-         {
-           "source": "/(.*)",
-           "headers": [
-             {
-               "key": "Content-Security-Policy",
-               "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.firebase.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; img-src 'self' data: https:; frame-src https://accounts.google.com https://theironpalace-ffb85.firebaseapp.com; frame-ancestors 'none';"
-             },
-             {
-               "key": "X-Frame-Options",
-               "value": "DENY"
-             },
-             {
-               "key": "X-Content-Type-Options",
-               "value": "nosniff"
-             },
-             {
-               "key": "Referrer-Policy",
-               "value": "strict-origin-when-cross-origin"
-             },
-             {
-               "key": "Permissions-Policy",
-               "value": "camera=(), microphone=(), geolocation=()"
-             }
-           ]
-         }
-       ]
-     }
-
-     Save this as vercel.json in your repo root. These 5 headers together:
-     - CSP: blocks XSS script injection
-     - X-Frame-Options: prevents clickjacking
-     - X-Content-Type-Options: prevents MIME sniffing attacks
-     - Referrer-Policy: limits data leakage in referrer headers
-     - Permissions-Policy: locks down sensor APIs you don't use
--->
 <title>The Iron Palace</title>
 <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Space+Mono:wght@400;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="images/title.png">
@@ -59,39 +15,7 @@
     updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  /*
-   * SECURITY NOTE — Firebase Web API Key
-   * ─────────────────────────────────────
-   * Firebase Web API keys are PUBLIC identifiers, NOT secrets. They identify
-   * your Firebase project to Google's servers but do not grant access to data.
-   * Security is enforced via Firebase Authentication + RTDB/Firestore Rules.
-   *
-   * ACTION REQUIRED (one-time, takes 5 min):
-   *   1. Go to: console.cloud.google.com → APIs & Services → Credentials
-   *   2. Click the API key → "API restrictions" → restrict to your domain
-   *   3. Also restrict to: "Identity Toolkit API" + "Firebase Realtime Database"
-   *   4. Go to: Firebase Console → RTDB → Rules → paste the hardened rules below:
-   *
-   *   {
-   *     "rules": {
-   *       "users": {
-   *         "$uid": {
-   *           ".read": "$uid === auth.uid",
-   *           ".write": "$uid === auth.uid",
-   *           "profile": {
-   *             ".validate": "newData.hasChildren(['email','name','role']) &&
-   *                           newData.child('name').val().length <= 50 &&
-   *                           newData.child('email').val().length <= 100"
-   *           }
-   *         }
-   *       }
-   *     }
-   *   }
-   */
   const firebaseConfig = {
-    /* NOTE: This key is a public project identifier — see comment above.
-     * For production: load from your build system as an env var and
-     * inject at build time. e.g. process.env.VITE_FIREBASE_API_KEY      */
     apiKey: "AIzaSyDGdecWngN_zZFlJyq_L0_BLD8KEMcBpgI",
     authDomain: "theironpalace-ffb85.firebaseapp.com",
     databaseURL: "https://theironpalace-ffb85-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -1754,17 +1678,7 @@
 const DB = {
   key: uid=>`ip_${uid}`,
   fresh: ()=>({workouts:[],recoveryLogs:[],prs:{},painLogs:[],biometrics:[],kineticAlerts:[],role:'athlete',palaceId:null}),
-  load(uid){
-    try{
-      const raw=JSON.parse(localStorage.getItem(DB.key(uid)));
-      if(!raw)return DB.fresh();
-      // SECURITY: Strip unexpected top-level fields before use
-      const ALLOWED_KEYS=['workouts','recoveryLogs','prs','painLogs','biometrics','kineticAlerts','role','palaceId','email','name','sport','weight','createdAt'];
-      return typeof Validator!=='undefined'
-        ? Object.assign(DB.fresh(), Validator.stripUnknownFields(raw, ALLOWED_KEYS))
-        : raw;
-    }catch{return DB.fresh();}
-  },
+  load(uid){ try{return JSON.parse(localStorage.getItem(DB.key(uid)))||DB.fresh();}catch{return DB.fresh();} },
   save(uid,d){ localStorage.setItem(DB.key(uid),JSON.stringify(d)); },
   accts(){ try{return JSON.parse(localStorage.getItem('ip_gaccts'))||[];}catch{return[];} },
   saveAccts(a){ localStorage.setItem('ip_gaccts',JSON.stringify(a)); },
@@ -1805,309 +1719,12 @@ function selRole(r){
 }
 function setErr(msg){const e=document.getElementById('auth-err');e.textContent=msg;e.style.display=msg?'block':'none';}
 
-
-// ╔══════════════════════════════════════════════════════════════════════╗
-// ║              IRON PALACE — SECURITY MODULE v1.0                     ║
-// ║  Three layers: Rate Limiting | Input Validation | XSS Sanitization  ║
-// ╚══════════════════════════════════════════════════════════════════════╝
-
-// ── LAYER 1: CLIENT-SIDE RATE LIMITER ─────────────────────────────────
-// Tracks attempts per action key (login, signup, palace, pain-log, etc.)
-// Uses localStorage so limits persist across page refreshes.
-// On server-side: Firebase Auth already rate-limits sign-in attempts
-// natively (auth/too-many-requests). This layer adds UX-level protection
-// before requests even leave the browser.
-const RateLimit = (() => {
-  // Config: { maxAttempts, windowMs, lockoutMs }
-  const LIMITS = {
-    login:        { max: 5,  windowMs: 60_000,  lockoutMs: 300_000 }, // 5/min → 5min lockout
-    signup:       { max: 3,  windowMs: 60_000,  lockoutMs: 600_000 }, // 3/min → 10min lockout
-    googleAuth:   { max: 5,  windowMs: 60_000,  lockoutMs: 120_000 }, // 5/min → 2min lockout
-    createPalace: { max: 3,  windowMs: 300_000, lockoutMs: 600_000 }, // 3/5min → 10min lockout
-    joinPalace:   { max: 10, windowMs: 300_000, lockoutMs: 60_000  }, // 10/5min → 1min lockout
-    logWorkout:   { max: 30, windowMs: 300_000, lockoutMs: 60_000  }, // 30/5min (generous)
-    logPain:      { max: 20, windowMs: 300_000, lockoutMs: 60_000  }, // 20/5min
-    logRecovery:  { max: 10, windowMs: 300_000, lockoutMs: 60_000  }, // 10/5min
-    saveProfile:  { max: 10, windowMs: 300_000, lockoutMs: 60_000  }, // 10/5min
-  };
-
-  function _key(action) { return `_rl_${action}`; }
-
-  function _load(action) {
-    try { return JSON.parse(localStorage.getItem(_key(action))) || { attempts: [], lockedUntil: 0 }; }
-    catch { return { attempts: [], lockedUntil: 0 }; }
-  }
-
-  function _save(action, state) {
-    try { localStorage.setItem(_key(action), JSON.stringify(state)); } catch {}
-  }
-
-  function _fmtTime(ms) {
-    const s = Math.ceil(ms / 1000);
-    if (s < 60) return `${s} second${s !== 1 ? 's' : ''}`;
-    const m = Math.ceil(s / 60);
-    return `${m} minute${m !== 1 ? 's' : ''}`;
-  }
-
-  return {
-    /**
-     * Check and record an attempt. Returns { allowed: bool, retryAfter?, message? }
-     * Call BEFORE performing the action. If allowed, the attempt is already recorded.
-     */
-    check(action) {
-      const cfg = LIMITS[action];
-      if (!cfg) return { allowed: true }; // unknown action → allow (fail open on limits)
-
-      const now = Date.now();
-      const state = _load(action);
-
-      // Check active lockout first
-      if (state.lockedUntil && now < state.lockedUntil) {
-        const remaining = state.lockedUntil - now;
-        return {
-          allowed: false,
-          retryAfter: remaining,
-          // OWASP: generic message, no info about why
-          message: `Too many attempts. Please wait ${_fmtTime(remaining)} before trying again.`
-        };
-      }
-
-      // Prune attempts outside the window
-      state.attempts = (state.attempts || []).filter(t => now - t < cfg.windowMs);
-
-      // Check if over limit
-      if (state.attempts.length >= cfg.max) {
-        state.lockedUntil = now + cfg.lockoutMs;
-        state.attempts = [];
-        _save(action, state);
-        return {
-          allowed: false,
-          retryAfter: cfg.lockoutMs,
-          message: `Too many attempts. Please wait ${_fmtTime(cfg.lockoutMs)} before trying again.`
-        };
-      }
-
-      // Record this attempt
-      state.attempts.push(now);
-      if (state.lockedUntil && now >= state.lockedUntil) state.lockedUntil = 0;
-      _save(action, state);
-      return { allowed: true };
-    },
-
-    /** Call on successful auth to reset login/signup counters */
-    reset(action) {
-      localStorage.removeItem(_key(action));
-    }
-  };
-})();
-
-
-// ── LAYER 2: INPUT SANITIZER (XSS prevention) ─────────────────────────
-// All user-controlled strings that flow into innerHTML MUST go through
-// Sanitizer.escape() first. This converts the 5 HTML metacharacters into
-// their named entities so browsers never interpret them as markup.
-// Rule: .textContent for simple values, Sanitizer.escape() before any
-// template-literal concatenation that ends in innerHTML.
-const Sanitizer = {
-  /**
-   * Escape the 5 HTML metacharacters. Sufficient for attribute and
-   * text-node injection. Does NOT sanitize CSS or JS contexts.
-   */
-  escape(str) {
-    if (str == null) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;');
-  },
-
-  /** Strip to only printable ASCII + common unicode. No control chars. */
-  stripControl(str) {
-    if (str == null) return '';
-    // eslint-disable-next-line no-control-regex
-    return String(str).replace(/[\x00-\x1F\x7F]/g, '');
-  }
-};
-
-
-// ── LAYER 3: INPUT VALIDATOR (schema-based) ────────────────────────────
-// Each schema defines: type, required, min/max length or value, regex,
-// and an allowlist of valid values where applicable.
-// Returns { valid: bool, errors: string[] }
-const Validator = {
-  SCHEMAS: {
-    email: {
-      type: 'string', required: true,
-      maxLen: 100,
-      // RFC 5322 simplified — good enough for display-layer validation
-      pattern: /^[^@\s]+@[^@\s]+\.[^@\s]+$/,
-      patternMsg: 'Enter a valid email address.'
-    },
-    password: {
-      type: 'string', required: true,
-      minLen: 6, maxLen: 128,
-      // Firebase max is 4096 chars, we cap at 128 for sanity
-    },
-    displayName: {
-      type: 'string', required: true,
-      minLen: 1, maxLen: 50,
-      // No HTML, no control chars — letters, numbers, spaces, hyphens, apostrophes
-      pattern: /^[\p{L}\p{N} '_. -]{1,50}$/u,
-      patternMsg: 'Name can only contain letters, numbers, spaces, hyphens, and apostrophes.'
-    },
-    palateName: {
-      type: 'string', required: true,
-      minLen: 2, maxLen: 40,
-      pattern: /^[\p{L}\p{N} '_.! -]{2,40}$/u,
-      patternMsg: 'Palace name: 2–40 characters, letters and numbers only.'
-    },
-    inviteCode: {
-      type: 'string', required: true,
-      minLen: 4, maxLen: 12,
-      // Our codes are alphanumeric uppercase — enforce it
-      pattern: /^[A-Z0-9\-]{4,12}$/,
-      patternMsg: 'Invite code format is invalid.'
-    },
-    weight: {
-      type: 'number', required: false,
-      min: 20, max: 300
-    },
-    sport: {
-      type: 'string', required: false,
-      maxLen: 30,
-      // Allowlist — only values from the dropdown are valid
-      allowlist: [
-        'Weightlifting','CrossFit','Powerlifting','Bodybuilding',
-        'Running','Cycling','Swimming','MMA / Boxing','Football',
-        'Basketball','Yoga','Other'
-      ]
-    },
-    painIntensity: {
-      type: 'number', required: true,
-      min: 1, max: 10
-    },
-    painType: {
-      type: 'string', required: true,
-      allowlist: ['sharp', 'dull']
-    },
-    sleepHours: {
-      type: 'number', required: true,
-      min: 0, max: 24
-    },
-    sorenessLevel: {
-      type: 'number', required: true,
-      min: 1, max: 10
-    },
-    energyLevel: {
-      type: 'number', required: true,
-      min: 1, max: 10
-    },
-    hydration: {
-      type: 'number', required: false,
-      min: 0, max: 20
-    },
-    mood: {
-      type: 'string', required: false,
-      allowlist: ['Excellent','Good','Neutral','Tired','Stressed']
-    },
-    workoutVolume: {
-      type: 'number', required: false,
-      min: 0, max: 100_000  // kg — 100,000 is already absurd, good cap
-    },
-    role: {
-      type: 'string', required: false,
-      allowlist: ['athlete', 'coach']
-    }
-  },
-
-  /**
-   * Validate a single value against a schema key.
-   * @returns { valid: bool, error: string|null }
-   */
-  field(schemaKey, value) {
-    const schema = this.SCHEMAS[schemaKey];
-    if (!schema) return { valid: true, error: null }; // unknown key → pass
-
-    // Required check
-    if (schema.required && (value === null || value === undefined || value === '')) {
-      return { valid: false, error: `${schemaKey} is required.` };
-    }
-    if (!schema.required && (value === null || value === undefined || value === '')) {
-      return { valid: true, error: null };
-    }
-
-    // Type check
-    if (schema.type === 'number') {
-      const n = Number(value);
-      if (isNaN(n)) return { valid: false, error: `${schemaKey} must be a number.` };
-      if (schema.min !== undefined && n < schema.min)
-        return { valid: false, error: `${schemaKey} must be at least ${schema.min}.` };
-      if (schema.max !== undefined && n > schema.max)
-        return { valid: false, error: `${schemaKey} must be at most ${schema.max}.` };
-    }
-
-    if (schema.type === 'string') {
-      const s = String(value);
-      if (schema.minLen !== undefined && s.length < schema.minLen)
-        return { valid: false, error: `${schemaKey} must be at least ${schema.minLen} characters.` };
-      if (schema.maxLen !== undefined && s.length > schema.maxLen)
-        return { valid: false, error: `${schemaKey} must be no longer than ${schema.maxLen} characters.` };
-      if (schema.allowlist && !schema.allowlist.includes(s))
-        return { valid: false, error: `${schemaKey}: invalid value.` };
-      if (schema.pattern && !schema.pattern.test(s))
-        return { valid: false, error: schema.patternMsg || `${schemaKey} format is invalid.` };
-    }
-
-    return { valid: true, error: null };
-  },
-
-  /**
-   * Validate multiple fields at once.
-   * @param {Object} data — { schemaKey: value, ... }
-   * @returns { valid: bool, errors: string[] }
-   */
-  fields(data) {
-    const errors = [];
-    for (const [key, val] of Object.entries(data)) {
-      const result = this.field(key, val);
-      if (!result.valid) errors.push(result.error);
-    }
-    return { valid: errors.length === 0, errors };
-  },
-
-  /**
-   * Strip unexpected keys from an object before writing to storage.
-   * Prevents prototype pollution and over-posting attacks.
-   * @param {Object} obj — incoming data
-   * @param {string[]} allowedKeys — whitelist
-   */
-  stripUnknownFields(obj, allowedKeys) {
-    if (typeof obj !== 'object' || obj === null) return {};
-    return allowedKeys.reduce((acc, key) => {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) acc[key] = obj[key];
-      return acc;
-    }, {});
-  }
-};
-
 function doAuth(){
   setErr('');
   const email=document.getElementById('a-email').value.trim();
   const pw=document.getElementById('a-pw').value;
-
-  // SECURITY: Schema-based validation before any network call
-  const vEmail=Validator.field('email',email);
-  if(!vEmail.valid)return setErr(vEmail.error);
-  const vPw=Validator.field('password',pw);
-  if(!vPw.valid)return setErr(vPw.error);
-
-  // SECURITY: Rate limit login/signup attempts (client-side guard)
-  // Firebase Auth also rate-limits server-side (auth/too-many-requests)
-  const rlAction=authMode==='signup'?'signup':'login';
-  const rl=RateLimit.check(rlAction);
-  if(!rl.allowed)return setErr(rl.message);
+  if(!email)return setErr('Please enter your email.');
+  if(!pw||pw.length<6)return setErr('Password must be at least 6 characters.');
   const FB=window._FB;
   if(!FB){ _doAuthLocal(email,pw); return; }
   setBtnLoading(true);
@@ -2115,11 +1732,6 @@ function doAuth(){
     const name=document.getElementById('a-name').value.trim()||email.split('@')[0];
     const sport=document.getElementById('a-sport').value;
     const weight=parseFloat(document.getElementById('a-wt').value)||75;
-
-    // SECURITY: Validate all signup fields against schema
-    const vSignup=Validator.fields({displayName:name,weight,sport,role:selectedRole});
-    if(!vSignup.valid)return(setBtnLoading(false),setErr(vSignup.errors[0]));
-
     FB.createUserWithEmailAndPassword(FB.auth,email,pw)
       .then(cred=>{
         const uid=cred.user.uid;
@@ -2128,7 +1740,7 @@ function doAuth(){
           DB.save(uid,d);
           return FB.set(FB.ref(FB.db_rt,'users/'+uid+'/profile'),
             {email,name,sport,weight,role:selectedRole,createdAt:Date.now()});
-        }).then(()=>{setBtnLoading(false);RateLimit.reset('signup');RateLimit.reset('login');loginUser({uid,name,email,weight,sport,role:selectedRole});});
+        }).then(()=>{setBtnLoading(false);loginUser({uid,name,email,weight,sport,role:selectedRole});});
       })
       .catch(e=>{setBtnLoading(false);setErr(fbErrMsg(e.code));});
   } else {
@@ -2195,18 +1807,14 @@ function openGP(){
   if(!FB){
     // Firebase not loaded yet — fallback to fake picker
     const accts=DB.accts();
-    // SECURITY: Sanitize name/email before innerHTML — prevents stored XSS from tampered localStorage
-  document.getElementById('gp-list').innerHTML=accts.length
-      ?accts.map((a,i)=>`<div class="gp-acct" onclick="selGAcct(${i})"><div class="gp-av">${Sanitizer.escape(a.name[0].toUpperCase())}</div><div><div class="gp-an">${Sanitizer.escape(a.name)}</div><div class="gp-ae">${Sanitizer.escape(a.email)}</div></div></div>`).join('')
+    document.getElementById('gp-list').innerHTML=accts.length
+      ?accts.map((a,i)=>`<div class="gp-acct" onclick="selGAcct(${i})"><div class="gp-av">${a.name[0].toUpperCase()}</div><div><div class="gp-an">${a.name}</div><div class="gp-ae">${a.email}</div></div></div>`).join('')
       :'<div style="padding:14px 24px;font-size:13px;color:#5f6368">No saved accounts. Add one below.</div>';
     document.getElementById('gp-form').classList.remove('open');
     document.getElementById('gp-overlay').classList.add('open');
     return;
   }
   // Real Firebase Google sign-in — opens actual Google account chooser
-  // SECURITY: Rate limit Google sign-in attempts
-  const rlG=RateLimit.check('googleAuth');
-  if(!rlG.allowed)return showToast(rlG.message,'w');
   FB.signInWithPopup(FB.auth, FB.gProvider)
     .then(result => {
       const user = result.user;
@@ -2256,11 +1864,7 @@ function toggleGPForm(){document.getElementById('gp-form').classList.toggle('ope
 function addGAccount(){
   const email=document.getElementById('gp-email').value.trim();
   const name=document.getElementById('gp-name').value.trim()||email.split('@')[0];
-  // SECURITY: Validate before writing to localStorage
-  const vE=Validator.field('email',email);
-  if(!vE.valid)return alert(vE.error);
-  const vN=Validator.field('displayName',name);
-  if(!vN.valid)return alert(vN.error);
+  if(!email||!email.includes('@'))return alert('Please enter a valid email.');
   const accts=DB.accts();
   const idx=accts.findIndex(a=>a.email===email);
   if(idx>=0){selGAcct(idx);return;}
@@ -2403,10 +2007,9 @@ function buildPRList(){
     el.innerHTML=`<div class="es" style="padding:28px 12px"><span class="es-icon" style="font-size:26px">🏅</span><p class="es-title" style="font-size:12px">No Records Yet</p><p class="es-sub" style="font-size:13px">Add volume when logging. Your first PR is waiting.</p></div>`;
     return;
   }
-  // SECURITY: Sanitize PR names from localStorage
   el.innerHTML=Object.entries(prs).slice(0,4).map(([n,v])=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border)">
-      <div><div style="font-family:'Space Mono',monospace;font-size:15px">${Sanitizer.escape(n)}</div><div style="font-size:12px;color:var(--text3)">${Sanitizer.escape(v.date||'')}</div></div>
+      <div><div style="font-family:'Space Mono',monospace;font-size:15px">${n}</div><div style="font-size:12px;color:var(--text3)">${v.date}</div></div>
       <div style="font-family:'Syncopate',sans-serif;font-size:28px;color:var(--accent)">${v.val}<span style="font-size:14px">kg</span></div>
     </div>`).join('');
 }
@@ -2416,10 +2019,9 @@ function buildRecentW(){
     el.innerHTML=`<div class="es"><div class="es-ring"><span class="es-icon" style="font-size:28px;margin:0">🏋️</span></div><p class="es-title">Start Your First Workout</p><p class="es-sub">Every legend has a day one. Yours starts now.</p><span class="es-cta" onclick="goSec('tracks')">→ Open Tracks</span></div>`;
     return;
   }
-  // SECURITY: Sanitize workout data from localStorage
   el.innerHTML=[...db.workouts].reverse().slice(0,5).map(w=>`
     <div class="w-item">
-      <div><div class="w-name">${Sanitizer.escape(w.type||'')} — ${Sanitizer.escape(w.muscle||'')}</div><div class="w-meta">${Sanitizer.escape(w.dateLabel||'')} · ${fmtDur(w.duration)} · ${w.calories} kcal${w.volume?' · '+w.volume+'kg':''}</div></div>
+      <div><div class="w-name">${w.type} — ${w.muscle}</div><div class="w-meta">${w.dateLabel} · ${fmtDur(w.duration)} · ${w.calories} kcal${w.volume?' · '+w.volume+'kg':''}</div></div>
       <div class="w-tag ${w.type.includes('Cardio')||w.type==='HIIT'||w.type==='Cycling'||w.type==='Swimming'?'tc':'ts'}">${w.type.split(' ')[0].toUpperCase()}</div>
     </div>`).join('');
 }
@@ -2460,18 +2062,9 @@ function updCalHint(){if(timerSecs>0)document.getElementById('cal-est').textCont
 function logWorkout(){
   if(timerOn){showToast('Stop the timer first!','w');return;}
   if(timerSecs===0){showToast('Record a session first using the timer!','w');return;}
-
-  // SECURITY: Rate limiting
-  const rlW=RateLimit.check('logWorkout');
-  if(!rlW.allowed)return showToast(rlW.message,'w');
-
   const type=document.getElementById('l-type').value;
   const muscle=document.getElementById('l-muscle').value;
   const volume=parseInt(document.getElementById('l-vol').value)||0;
-
-  // SECURITY: Validate volume field
-  const vVol=Validator.field('workoutVolume',volume||0);
-  if(!vVol.valid)return showToast(vVol.error,'w');
   const calories=calcCal(timerSecs);
   const now=new Date();
   const entry={id:Date.now(),date:now.toISOString().split('T')[0],dateLabel:now.toLocaleDateString('en-US',{month:'short',day:'numeric'}),type:TYPE_LABEL[type],muscle,volume,calories,duration:timerSecs};
@@ -2504,12 +2097,11 @@ function renderTracksHistory(){
     el.innerHTML=`<div class="es"><div class="es-ring"><span class="es-icon" style="font-size:28px;margin:0">📋</span></div><p class="es-title">No Sessions Yet</p><p class="es-sub">Hit the timer above. One session builds the habit.</p></div>`;
     return;
   }
-  // SECURITY: Sanitize localStorage data before HTML interpolation
   const rows=[...db.workouts].reverse().map(w=>`
     <tr>
-      <td>${Sanitizer.escape(w.dateLabel||'')}</td>
-      <td><span class="w-tag ${w.type&&(w.type.includes('Cardio')||w.type==='HIIT'||w.type==='Cycling'||w.type==='Swimming')?'tc':'ts'}" style="font-size:11px">${Sanitizer.escape(w.type||'')}</span></td>
-      <td>${Sanitizer.escape(w.muscle||'')}</td>
+      <td>${w.dateLabel}</td>
+      <td><span class="w-tag ${w.type.includes('Cardio')||w.type==='HIIT'||w.type==='Cycling'||w.type==='Swimming'?'tc':'ts'}" style="font-size:11px">${w.type}</span></td>
+      <td>${w.muscle}</td>
       <td>${fmtDur(w.duration)}</td>
       <td>${w.volume?w.volume+'kg':'—'}</td>
       <td style="color:var(--warning)">${w.calories} kcal</td>
@@ -2519,18 +2111,13 @@ function renderTracksHistory(){
 
 // ═══════════════════════ RECOVERY ════════════════════════════════════
 function logRecovery(){
-  // SECURITY: Rate limiting
-  const rlR=RateLimit.check('logRecovery');
-  if(!rlR.allowed)return showToast(rlR.message,'w');
-
   const sleep=parseFloat(document.getElementById('r-sleep').value);
   const sore=parseInt(document.getElementById('r-sore').value);
   const energy=parseInt(document.getElementById('r-energy').value);
   const hydration=parseFloat(document.getElementById('r-hydration').value)||2;
-
-  // SECURITY: Schema-based validation
-  const vRec=Validator.fields({sleepHours:sleep,sorenessLevel:sore,energyLevel:energy,hydration});
-  if(!vRec.valid)return showToast(vRec.errors[0],'w');
+  if(isNaN(sleep))return showToast('Enter sleep hours','w');
+  if(isNaN(sore))return showToast('Enter soreness (1–10)','w');
+  if(isNaN(energy))return showToast('Enter energy level (1–10)','w');
   let score=50+(sleep-6)*8-sore*4+(energy-5)*5+(hydration-2)*4;
   score=Math.min(100,Math.max(15,Math.round(score)));
   const today=new Date().toISOString().split('T')[0];
@@ -3014,23 +2601,8 @@ function eText(){window.location.href='sms:112?body=EMERGENCY: I am an athlete w
 // ══════════════════════════════════════════════════════════════════════
 // ████  FEATURE 1 — PALACE HUB (Multi-Tenant Architecture)  ████
 // ══════════════════════════════════════════════════════════════════════
-function genPalaceId(){
-  // SECURITY: Use crypto.getRandomValues for unpredictable IDs
-  // Math.random() is NOT cryptographically secure — predictable invite codes
-  // could allow an attacker to guess codes and join private palaces
-  const arr=new Uint8Array(3);
-  crypto.getRandomValues(arr);
-  const hex=Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();
-  return 'IRON-'+hex.slice(0,4);
-}
-function genInviteCode(){
-  // SECURITY: crypto.getRandomValues instead of Math.random
-  const arr=new Uint8Array(4);
-  crypto.getRandomValues(arr);
-  // Map to alphanumeric: A-Z0-9
-  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // removed ambiguous chars O,0,I,1
-  return Array.from(arr).map(b=>chars[b%chars.length]).join('');
-}
+function genPalaceId(){return 'IRON-'+Math.random().toString(36).toUpperCase().slice(2,6);}
+function genInviteCode(){return Math.random().toString(36).toUpperCase().slice(2,8);}
 
 function renderPalaceHub(){
   const isCoach=db.role==='coach';
@@ -3067,14 +2639,7 @@ function findMyPalace(){
 
 function createPalace(){
   const name=document.getElementById('ph-palace-name').value.trim();
-
-  // SECURITY: Rate limiting — prevent rapid palace spam
-  const rlC=RateLimit.check('createPalace');
-  if(!rlC.allowed)return showToast(rlC.message,'w');
-
-  // SECURITY: Validate palace name schema
-  const vPal=Validator.field('palateName',name);
-  if(!vPal.valid)return showToast(vPal.error,'w');
+  if(!name)return showToast('Enter a palace name.','w');
   const id=genPalaceId();
   const inviteCode=genInviteCode();
   const palace={id,name,inviteCode,coachUid:U.uid,coachName:U.name,members:[],createdAt:Date.now()};
@@ -3086,14 +2651,7 @@ function createPalace(){
 
 function joinPalace(){
   const code=(document.getElementById('ph-invite').value||'').trim().toUpperCase();
-
-  // SECURITY: Rate limiting — prevent invite code brute-force
-  const rlJ=RateLimit.check('joinPalace');
-  if(!rlJ.allowed)return showToast(rlJ.message,'w');
-
-  // SECURITY: Validate invite code format
-  const vCode=Validator.field('inviteCode',code);
-  if(!vCode.valid)return showToast(vCode.error,'w');
+  if(!code)return showToast('Enter an invite code.','w');
   const pal=DB.allPalaces().find(p=>p.inviteCode===code);
   if(!pal)return showToast('Invalid invite code. Ask your coach.','d');
   if(db.palaceId===pal.id)return showToast('Already in this palace.','w');
@@ -3126,8 +2684,7 @@ function renderPalaceMembers(palace){
     const mdb=DB.load(m.uid);
     const rs=calcReadinessScore(mdb);
     const clr=rs>=70?'var(--success)':rs>=50?'var(--warning)':'var(--danger)';
-    // SECURITY: Sanitize user-controlled fields before innerHTML
-    return '<div class="palace-member-row"><div class="palace-member-av">'+Sanitizer.escape(m.name[0].toUpperCase())+'</div><div style="flex:1"><div class="palace-member-name">'+Sanitizer.escape(m.name)+'</div><div class="palace-member-meta">'+Sanitizer.escape(m.sport||'—')+' · Joined '+new Date(m.joinedAt).toLocaleDateString()+'</div></div><div style="font-family:\'Syncopate\',sans-serif;font-size:20px;color:'+clr+'">'+rs+'</div><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-family:\'Space Mono\',monospace;margin-left:6px">READY</div><div class="'+(mdb.palaceId?'connected-badge':'pending-badge')+'" style="margin-left:12px">'+(mdb.palaceId?'LIVE':'PENDING')+'</div></div>';
+    return '<div class="palace-member-row"><div class="palace-member-av">'+m.name[0].toUpperCase()+'</div><div style="flex:1"><div class="palace-member-name">'+m.name+'</div><div class="palace-member-meta">'+(m.sport||'—')+' · Joined '+new Date(m.joinedAt).toLocaleDateString()+'</div></div><div style="font-family:\'Syncopate\',sans-serif;font-size:20px;color:'+clr+'">'+rs+'</div><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-family:\'Space Mono\',monospace;margin-left:6px">READY</div><div class="'+(mdb.palaceId?'connected-badge':'pending-badge')+'" style="margin-left:12px">'+(mdb.palaceId?'LIVE':'PENDING')+'</div></div>';
   }).join('');
 }
 
@@ -3202,8 +2759,7 @@ function renderLegion(){
       +'<circle class="sr-bg" cx="28" cy="28" r="24"/>'
       +'<circle class="sr-prog" cx="28" cy="28" r="24" stroke="'+clr+'" stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset+'"/>'
       +'</svg><div class="sr-center"><div class="sr-score" style="color:'+clr+'">'+rs+'</div></div></div>'
-      // SECURITY: Sanitize name in Legion HTML
-      +'<div class="athlete-info"><div class="athlete-name">'+Sanitizer.escape(m.name.toUpperCase())+'</div>'
+      +'<div class="athlete-info"><div class="athlete-name">'+m.name.toUpperCase()+'</div>'
       +'<div class="athlete-why">'+( why.length?why.map(p=>'<span class="why-pill '+p.cls+'">'+p.text+'</span>').join(''):'<span class="why-pill">All systems nominal</span>' )+'</div></div>'
       +(kFlag?'<div class="kinetic-icon">🚨</div>':'<div class="kinetic-icon" style="opacity:.15">⚡</div>')
       +'</div>'
@@ -3240,10 +2796,6 @@ function buildAthleteDetail(mdb,m,kFlag){
 // ══════════════════════════════════════════════════════════════════════
 const DEVICE_NAMES={healthkit:'Apple HealthKit',googlefit:'Google Fit',whoop:'Whoop 4.0'};
 function syncDevice(id){
-  // SECURITY: Validate device id against allowlist — prevents DOM clobbering attack
-  // via crafted 'id' that could escape the 'sd-' prefix into arbitrary element IDs
-  const ALLOWED_DEVICES=['healthkit','googlefit','whoop'];
-  if(!ALLOWED_DEVICES.includes(id))return showToast('Invalid device.','w');
   const card=document.getElementById('sd-'+id);
   const status=document.getElementById('ss-'+id);
   if(!card||!status)return;
@@ -3303,20 +2855,7 @@ function setSelectedPainPart(part){
 }
 function logPainEntry(){
   if(!psSelectedPart)return showToast('Tap a region on the 3D model first.','w');
-
-  // SECURITY: Rate limiting
-  var rlP=RateLimit.check('logPain');
-  if(!rlP.allowed)return showToast(rlP.message,'w');
-
   var intensity=parseInt(document.getElementById('ps-intensity').value)||5;
-
-  // SECURITY: Validate intensity and type
-  var vPain=Validator.fields({painIntensity:intensity,painType:psSelectedType});
-  if(!vPain.valid)return showToast(vPain.errors[0],'w');
-
-  // SECURITY: Validate the selected body part is a known string, not injected
-  var knownParts=['head','neck','shoulder','chest','core','lowerback','elbow','wrist','hip','knee','shin','ankle','foot'];
-  if(!knownParts.includes(psSelectedPart))return showToast('Invalid body region.','w');
   var today=new Date().toISOString().split('T')[0];
   var entry={part:psSelectedPart,intensity:intensity,type:psSelectedType,date:today,ts:Date.now()};
   if(!db.painLogs)db.painLogs=[];
@@ -3334,26 +2873,17 @@ function renderPSToday(){
   var today=new Date().toISOString().split('T')[0];
   var logs=(db.painLogs||[]).filter(function(p){return p.date===today;});
   if(!logs.length){el.innerHTML=`<div class="es" style="padding:24px 12px"><span class="es-icon" style="font-size:24px;animation-duration:4s">✨</span><p class="es-title" style="font-size:12px">Palace Clear</p><p class="es-sub" style="font-size:13px">No pain logged today. Body feels good.</p></div>`;return;}
-  // SECURITY: Sanitize pain log data from localStorage before innerHTML
-  // p.type is restricted to class name — use allowlist check before CSS class injection
   el.innerHTML=logs.map(function(p){
-    var safeType=['sharp','dull'].includes(p.type)?p.type:'dull';
-    var safePart=Sanitizer.escape(p.part||'unknown');
-    var safeInt=Math.min(10,Math.max(1,parseInt(p.intensity)||5));
-    var safeTs=Number.isInteger(Number(p.ts))?Number(p.ts):0;
-    var clr=safeInt>=7?'var(--danger)':safeInt>=5?'var(--warning)':'var(--success)';
-    return '<div class="pain-entry"><div class="pain-entry-part">'+safePart.toUpperCase()+'</div>'
-      +'<div class="pain-entry-type '+safeType+'">'+(safeType==='sharp'?'⚡ SHARP':'🌀 DULL')+'</div>'
-      +'<div class="pain-entry-int" style="color:'+clr+'">'+safeInt+'</div>'
-      +'<div class="pain-entry-date">'+new Date(safeTs).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</div>'
-      +'<div style="cursor:pointer;color:var(--text3);padding:0 4px;font-size:16px" onclick="deletePainEntry('+safeTs+')">✕</div></div>';
+    var clr=p.intensity>=7?'var(--danger)':p.intensity>=5?'var(--warning)':'var(--success)';
+    return '<div class="pain-entry"><div class="pain-entry-part">'+p.part.toUpperCase()+'</div>'
+      +'<div class="pain-entry-type '+p.type+'">'+(p.type==='sharp'?'⚡ SHARP':'🌀 DULL')+'</div>'
+      +'<div class="pain-entry-int" style="color:'+clr+'">'+p.intensity+'</div>'
+      +'<div class="pain-entry-date">'+new Date(p.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</div>'
+      +'<div style="cursor:pointer;color:var(--text3);padding:0 4px;font-size:16px" onclick="deletePainEntry('+p.ts+')">✕</div></div>';
   }).join('');
 }
 function deletePainEntry(ts){
-  // SECURITY: Ensure ts is a safe integer — prevents injection via crafted onclick attr
-  var safeTs=Number(ts);
-  if(!Number.isInteger(safeTs)||safeTs<=0)return;
-  db.painLogs=(db.painLogs||[]).filter(function(p){return p.ts!==safeTs;});
+  db.painLogs=(db.painLogs||[]).filter(function(p){return p.ts!==ts;});
   DB.save(U.uid,db);renderPalaceState();renderKineticAlerts();
 }
 function renderPSHistory(){
@@ -3368,14 +2898,11 @@ function renderPSHistory(){
     return '<div style="background:var(--surface);border:1px solid var(--border);padding:16px 20px;margin-bottom:10px">'
       +'<div style="font-family:\'Space Mono\',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent3);margin-bottom:12px">'+d+'</div>'
       +entries.map(function(p){
-        // SECURITY: Sanitize stored pain log data — p.type injected directly into CSS class
-        var pType=['sharp','dull'].includes(p.type)?p.type:'dull';
-        var pInt=Math.min(10,Math.max(1,parseInt(p.intensity)||5));
-        var clr=pInt>=7?'var(--danger)':pInt>=5?'var(--warning)':'var(--success)';
+        var clr=p.intensity>=7?'var(--danger)':p.intensity>=5?'var(--warning)':'var(--success)';
         return '<div class="pain-entry">'
-          +'<div class="pain-entry-part">'+Sanitizer.escape(p.part||'unknown').toUpperCase()+'</div>'
-          +'<div class="pain-entry-type '+pType+'">'+(pType==='sharp'?'⚡ SHARP':'🌀 DULL')+'</div>'
-          +'<div class="pain-entry-int" style="color:'+clr+'">'+pInt+'</div></div>';
+          +'<div class="pain-entry-part">'+p.part.toUpperCase()+'</div>'
+          +'<div class="pain-entry-type '+p.type+'">'+(p.type==='sharp'?'⚡ SHARP':'🌀 DULL')+'</div>'
+          +'<div class="pain-entry-int" style="color:'+clr+'">'+p.intensity+'</div></div>';
       }).join('')+'</div>';
   }).join('');
 }
@@ -3411,8 +2938,7 @@ function renderKineticAlerts(){
   var zone=document.getElementById('kinetic-alerts-zone');if(!zone)return;
   var alerts=[];
   var selfFlag=checkKineticPattern(db);
-  // SECURITY: sanitize selfFlag before it enters the alert HTML template
-  if(selfFlag)alerts.push({title:'KINETIC ALERT — INJURY RISK',detail:'Pattern detected: '+Sanitizer.escape(selfFlag)+'. Consistent distress signals.',action:'Reduce training load by 40% and consult a physiotherapist.',id:'self'});
+  if(selfFlag)alerts.push({title:'KINETIC ALERT — INJURY RISK',detail:'Pattern detected: '+selfFlag+'. Consistent distress signals.',action:'Reduce training load by 40% and consult a physiotherapist.',id:'self'});
   if(db.role==='coach'){
     var palace=findMyPalace();
     if(palace&&palace.members){
@@ -3438,8 +2964,6 @@ function renderKineticAlerts(){
   }).join('');
 }
 function dismissKineticAlert(id){
-  // SECURITY: Validate alert ID format — must be 'self' or 'member_<uid>'
-  if(typeof id!=='string'||id.length>128||!/^(self|member_[a-zA-Z0-9_-]+)$/.test(id))return;
   if(!db.kineticAlerts)db.kineticAlerts=[];
   var existing=db.kineticAlerts.find(function(a){return a.id===id;});
   if(existing)existing.dismissed=true;else db.kineticAlerts.push({id:id,dismissed:true});
@@ -3570,14 +3094,7 @@ function closeProfile(){
 }
 function saveProfile(){
   const newName=document.getElementById('pm-name').value.trim();
-
-  // SECURITY: Rate limiting
-  const rlSP=RateLimit.check('saveProfile');
-  if(!rlSP.allowed)return showToast(rlSP.message,'w');
-
-  // SECURITY: Schema validation
-  const vName=Validator.field('displayName',newName);
-  if(!vName.valid)return showToast(vName.error,'w');
+  if(!newName)return showToast('Name cannot be empty.','w');
   const newSport=document.getElementById('pm-sport')?.value||U.sport||'Weightlifting';
   const newWeight=parseFloat(document.getElementById('pm-weight')?.value)||U.weight||75;
   // Update U object
