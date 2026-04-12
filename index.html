@@ -5,23 +5,49 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- SECURITY: Content Security Policy
-     Restricts which sources scripts, styles, and connections can load from.
-     This is the strongest XSS mitigation available in the browser.
-     Adjust 'connect-src' if you add new API endpoints.                    -->
-<meta http-equiv="Content-Security-Policy" content="
-  default-src 'self';
-  script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com;
-  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-  font-src https://fonts.gstatic.com;
-  connect-src 'self'
-    https://*.firebaseio.com
-    https://*.firebase.com
-    wss://*.firebaseio.com
-    https://identitytoolkit.googleapis.com
-    https://securetoken.googleapis.com;
-  img-src 'self' data: https:;
-  frame-src https://accounts.google.com;
-">
+     NOTE: CSP via meta tag is NOT used here because Firebase Auth's signInWithPopup
+     needs ~8 Google/Firebase domains that are hard to enumerate inline, and a
+     meta-tag CSP fires too late to protect inline scripts anyway.
+
+     INSTEAD — set CSP as an HTTP response header in vercel.json:
+
+     {
+       "headers": [
+         {
+           "source": "/(.*)",
+           "headers": [
+             {
+               "key": "Content-Security-Policy",
+               "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.firebase.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; img-src 'self' data: https:; frame-src https://accounts.google.com https://theironpalace-ffb85.firebaseapp.com; frame-ancestors 'none';"
+             },
+             {
+               "key": "X-Frame-Options",
+               "value": "DENY"
+             },
+             {
+               "key": "X-Content-Type-Options",
+               "value": "nosniff"
+             },
+             {
+               "key": "Referrer-Policy",
+               "value": "strict-origin-when-cross-origin"
+             },
+             {
+               "key": "Permissions-Policy",
+               "value": "camera=(), microphone=(), geolocation=()"
+             }
+           ]
+         }
+       ]
+     }
+
+     Save this as vercel.json in your repo root. These 5 headers together:
+     - CSP: blocks XSS script injection
+     - X-Frame-Options: prevents clickjacking
+     - X-Content-Type-Options: prevents MIME sniffing attacks
+     - Referrer-Policy: limits data leakage in referrer headers
+     - Permissions-Policy: locks down sensor APIs you don't use
+-->
 <title>The Iron Palace</title>
 <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Space+Mono:wght@400;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="images/title.png">
