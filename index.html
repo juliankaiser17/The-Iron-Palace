@@ -4,114 +4,9 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- SECURITY: Content Security Policy
-     NOTE: CSP via meta tag is NOT used here because Firebase Auth's signInWithPopup
-     needs ~8 Google/Firebase domains that are hard to enumerate inline, and a
-     meta-tag CSP fires too late to protect inline scripts anyway.
-
-     INSTEAD — set CSP as an HTTP response header in vercel.json:
-
-     {
-       "headers": [
-         {
-           "source": "/(.*)",
-           "headers": [
-             {
-               "key": "Content-Security-Policy",
-               "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.firebase.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; img-src 'self' data: https:; frame-src https://accounts.google.com https://theironpalace-ffb85.firebaseapp.com; frame-ancestors 'none';"
-             },
-             {
-               "key": "X-Frame-Options",
-               "value": "DENY"
-             },
-             {
-               "key": "X-Content-Type-Options",
-               "value": "nosniff"
-             },
-             {
-               "key": "Referrer-Policy",
-               "value": "strict-origin-when-cross-origin"
-             },
-             {
-               "key": "Permissions-Policy",
-               "value": "camera=(), microphone=(), geolocation=()"
-             }
-           ]
-         }
-       ]
-     }
-
-     Save this as vercel.json in your repo root. These 5 headers together:
-     - CSP: blocks XSS script injection
-     - X-Frame-Options: prevents clickjacking
-     - X-Content-Type-Options: prevents MIME sniffing attacks
-     - Referrer-Policy: limits data leakage in referrer headers
-     - Permissions-Policy: locks down sensor APIs you don't use
--->
 <title>The Iron Palace</title>
 <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Space+Mono:wght@400;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="images/title.png">
-<!-- Firebase SDKs -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    signOut as fbSignOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup,
-    updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-  /*
-   * SECURITY NOTE — Firebase Web API Key
-   * ─────────────────────────────────────
-   * Firebase Web API keys are PUBLIC identifiers, NOT secrets. They identify
-   * your Firebase project to Google's servers but do not grant access to data.
-   * Security is enforced via Firebase Authentication + RTDB/Firestore Rules.
-   *
-   * ACTION REQUIRED (one-time, takes 5 min):
-   *   1. Go to: console.cloud.google.com → APIs & Services → Credentials
-   *   2. Click the API key → "API restrictions" → restrict to your domain
-   *   3. Also restrict to: "Identity Toolkit API" + "Firebase Realtime Database"
-   *   4. Go to: Firebase Console → RTDB → Rules → paste the hardened rules below:
-   *
-   *   {
-   *     "rules": {
-   *       "users": {
-   *         "$uid": {
-   *           ".read": "$uid === auth.uid",
-   *           ".write": "$uid === auth.uid",
-   *           "profile": {
-   *             ".validate": "newData.hasChildren(['email','name','role']) &&
-   *                           newData.child('name').val().length <= 50 &&
-   *                           newData.child('email').val().length <= 100"
-   *           }
-   *         }
-   *       }
-   *     }
-   *   }
-   */
-  const firebaseConfig = {
-    /* NOTE: This key is a public project identifier — see comment above.
-     * For production: load from your build system as an env var and
-     * inject at build time. e.g. process.env.VITE_FIREBASE_API_KEY      */
-    apiKey: "AIzaSyDGdecWngN_zZFlJyq_L0_BLD8KEMcBpgI",
-    authDomain: "theironpalace-ffb85.firebaseapp.com",
-    databaseURL: "https://theironpalace-ffb85-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "theironpalace-ffb85",
-    storageBucket: "theironpalace-ffb85.firebasestorage.app",
-    messagingSenderId: "708398928493",
-    appId: "1:708398928493:web:79ac3030178c938af9a564"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db_rt = getDatabase(app);
-  const gProvider = new GoogleAuthProvider();
-  gProvider.setCustomParameters({ prompt: 'select_account' });
-
-  window._FB = { auth, db_rt, ref, set, get, update,
-    createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    fbSignOut, GoogleAuthProvider, signInWithPopup, gProvider, updateProfile };
-</script>
-
 <style>
   :root{
     --bg:#030305;
@@ -496,11 +391,11 @@
   .ctrl-btn:hover,.ctrl-btn.active{border-color:var(--accent);color:var(--accent);}
 
   /* MOBILE */
-  /* .m-nav — redefined below */
-  /* .m-nav-inner — overridden below */
-  /* .m-nav-item — overridden below */
+  .m-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 0;z-index:200;}
+  .m-nav-inner{display:flex;justify-content:space-around;}
+  .m-nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 16px;cursor:pointer;color:var(--text3);font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;}
   .m-nav-item.active{color:var(--accent);}
-  /* .m-nav-icon — overridden below */
+  .m-nav-icon{font-size:20px;}
   @media(max-width:768px){
     .sidebar{display:none;}.m-nav{display:block;}
     .main-content{padding:20px;padding-bottom:80px;}
@@ -1130,88 +1025,6 @@
   /* Kinetic alert bar: softer pulse */
   .kinetic-alert-bar { animation:alertGlow 4s infinite !important; }
 
-
-  /* ── PROFILE MODAL ── */
-  .profile-modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
-  .profile-modal-ov.open{display:flex;}
-  .profile-modal{background:#0a0a0a;border:1px solid #272727;width:min(420px,94vw);animation:slideUp .3s ease;position:relative;}
-  .profile-modal-head{padding:22px 28px;border-bottom:1px solid #1e1e1e;display:flex;justify-content:space-between;align-items:center;}
-  .profile-modal-title{font-family:'Syncopate',sans-serif;font-size:16px;letter-spacing:4px;color:#f0f0f0;}
-  .profile-modal-x{background:none;border:none;color:#444;font-size:20px;cursor:pointer;transition:color .15s;}
-  .profile-modal-x:hover{color:#fff;}
-  .profile-modal-body{padding:28px;}
-  .profile-avatar-big{width:64px;height:64px;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-family:'Syncopate',sans-serif;font-size:26px;font-weight:700;margin:0 auto 24px;}
-  .profile-row{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
-  .profile-lbl{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#3a3a3a;}
-  .profile-val{font-family:'Space Mono',monospace;font-size:13px;color:#848484;letter-spacing:1px;}
-  .profile-name-input{background:#111;border:1px solid #1e1e1e;color:#f0f0f0;padding:12px 14px;font-family:'Space Mono',monospace;font-size:13px;letter-spacing:1px;outline:none;width:100%;transition:border-color .15s;appearance:none;-webkit-appearance:none;}
-  .profile-name-input option{background:#111;color:#f0f0f0;}
-  .profile-name-input:focus{border-color:var(--accent);}
-  .profile-save-btn{background:var(--accent);color:#000;padding:14px;font-family:'Syncopate',sans-serif;font-size:11px;letter-spacing:4px;border:none;cursor:pointer;width:100%;margin-top:8px;transition:background .15s;}
-  .profile-save-btn:hover{background:#fff;}
-  .profile-signout{background:transparent;border:1px solid #1e1e1e;color:#585858;padding:12px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;width:100%;margin-top:10px;transition:all .2s;}
-  .profile-signout:hover{border-color:#ef4444;color:#ef4444;}
-
-  /* ── MOBILE NAV — scrollable with all sections ── */
-  .m-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(3,3,8,0.98);border-top:1px solid #1e1e1e;z-index:200;padding:0;}
-  .m-nav-inner{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:0;padding:6px 4px 8px;}
-  .m-nav-inner::-webkit-scrollbar{display:none;}
-  .m-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 14px;cursor:pointer;color:#3a3a3a;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:1px;white-space:nowrap;flex-shrink:0;transition:color .15s;}
-  .m-nav-item.active{color:var(--accent);}
-  .m-nav-icon{font-size:18px;}
-
-  /* ── MOBILE PERF — kill all heavy effects on mobile ── */
-  @media(max-width:768px){
-    .sidebar{display:none;}
-    .m-nav{display:block;}
-    .main-content{padding:16px;padding-bottom:88px;}
-    .g4,.g3{grid-template-columns:repeat(2,1fr);}
-    .diagram-grid{grid-template-columns:1fr;}
-    .inj-grid{grid-template-columns:1fr;}
-    .form-row{grid-template-columns:1fr;}
-    .emg-buttons{flex-direction:column;}
-    .ps-grid{grid-template-columns:1fr!important;}
-    .timer-block{flex-direction:column;align-items:flex-start;}
-
-    /* kill ALL backdrop-filter on mobile — biggest perf win */
-    *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
-
-    /* kill continuous glow animations on mobile */
-    .kinetic-alert-bar{animation:none!important;}
-    .athlete-row.alert-red{animation:none!important;border-color:#ef4444!important;}
-    .btn-ecall{animation:none!important;box-shadow:none!important;}
-    .rec-warn{animation:none!important;}
-    .sync-pulse{animation:none!important;}
-    .es-ring{animation:none!important;}
-    .es-icon{animation:none!important;}
-
-    /* kill hover transforms — cause repaints on mobile */
-    .card:hover{transform:none!important;box-shadow:none!important;}
-    .role-card:hover{transform:none!important;}
-    .athlete-row:hover{transform:none!important;}
-    .inj-card:hover{border-color:var(--border)!important;}
-
-    /* simplify all box-shadows on mobile */
-    .card,.log-form,.sync-block,.pain-log-panel,.palace-hero,.overview-card,
-    .palace-setup-card,.athlete-row,.sync-device,.modal,.toast{box-shadow:none!important;}
-
-    /* disable text-shadows on mobile */
-    *{text-shadow:none!important;}
-
-    /* section transition: instant on mobile = much smoother feel */
-    .section{animation:none!important;}
-
-    /* reduce padding on mobile */
-    .section-title{font-size:36px!important;letter-spacing:2px!important;}
-    .card-value{font-size:40px!important;}
-    .timer-disp{font-size:48px!important;}
-    .palace-hero{padding:20px!important;}
-    .palace-setup-card{padding:20px!important;}
-
-    /* header date hidden on mobile */
-    #h-date{display:none;}
-  }
-
 </style>
 </head>
 <body>
@@ -1252,9 +1065,6 @@
         </div>
       </div>
       <button class="btn-primary" id="auth-btn" onclick="doAuth()">ENTER THE PALACE</button>
-      <div id="rl-reset-wrap" style="display:none;text-align:center;margin-top:10px;">
-        <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text3);cursor:pointer;letter-spacing:2px;text-decoration:underline;" onclick="clearRateLimits()">Locked out? Click to reset</span>
-      </div>
     </div>
   </div>
 </div>
@@ -1287,7 +1097,7 @@
     <div class="app-logo" style="font-family:'Syncopate',sans-serif;font-size:18px;letter-spacing:9px;color:#fff;text-shadow:0 0 20px rgba(255,255,255,.25)">THE IRON PALACE</div>
     <div class="header-r">
       <span style="font-size:11px;color:#2C2C2C;letter-spacing:2px;font-family:'Space Mono',monospace" id="h-date"></span>
-      <div class="u-avatar" id="u-av" onclick="openProfile()" title="Edit Profile">A</div>
+      <div class="u-avatar" id="u-av">A</div>
     </div>
   </header>
   <div class="app-layout">
@@ -1492,6 +1302,13 @@
           <button class="btn-ecall" onclick="eCall()">📞 CALL 112 — EMERGENCY</button>
           <button class="btn-etext" onclick="eText()">💬 TEXT EMERGENCY</button>
         </div>
+        <div style="background:rgba(255,183,0,0.06);border:1px solid rgba(255,183,0,0.2);border-left:4px solid var(--warning);padding:16px 20px;margin-bottom:20px;display:flex;gap:14px;align-items:flex-start">
+          <div style="font-size:20px;flex-shrink:0;margin-top:2px">⚠️</div>
+          <div>
+            <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--warning);margin-bottom:6px">IMPORTANT DISCLAIMER</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.8">The injury information in this app is for <strong style="color:var(--text)">general educational reference only</strong> and is <strong style="color:var(--text)">not a substitute for professional medical advice</strong>. Do not rely solely on this app to diagnose or treat any injury. Always consult a qualified doctor, physiotherapist, or sports medicine professional for any injury, symptom, or health concern. In a life-threatening emergency, call 112 immediately.</div>
+          </div>
+        </div>
         <div class="inj-tabs">
           <button class="inj-tab active common" onclick="switchInjTab('common')">🟡 Common</button>
           <button class="inj-tab rare" onclick="switchInjTab('rare')">🟣 Rare</button>
@@ -1683,66 +1500,13 @@
     </main>
   </div>
   <nav class="m-nav">
-    <div class="m-nav-inner" id="m-nav-inner">
-      <div class="m-nav-item active" data-ms="dashboard" onclick="goSec('dashboard')"><div class="m-nav-icon">⚡</div>Dash</div>
-      <div class="m-nav-item" data-ms="tracks" onclick="goSec('tracks')"><div class="m-nav-icon">📊</div>Tracks</div>
-      <div class="m-nav-item" data-ms="recovery" onclick="goSec('recovery')"><div class="m-nav-icon">💠</div>Recovery</div>
-      <div class="m-nav-item" data-ms="injuries" onclick="goSec('injuries')"><div class="m-nav-icon">🩺</div>Injuries</div>
-      <div class="m-nav-item" data-ms="palace-state" onclick="goSec('palace-state')"><div class="m-nav-icon">🧬</div>Palace</div>
-      <div class="m-nav-item" data-ms="palace-hub" onclick="goSec('palace-hub')"><div class="m-nav-icon">🏛️</div>Hub</div>
+    <div class="m-nav-inner">
+      <div class="m-nav-item active" onclick="goSec('dashboard')"><div class="m-nav-icon">⚡</div>Dash</div>
+      <div class="m-nav-item" onclick="goSec('tracks')"><div class="m-nav-icon">📊</div>Tracks</div>
+      <div class="m-nav-item" onclick="goSec('recovery')"><div class="m-nav-icon">💠</div>Recovery</div>
+      <div class="m-nav-item" onclick="goSec('palace-hub')"><div class="m-nav-icon">🏛️</div>Palace</div>
     </div>
   </nav>
-</div>
-
-
-<!-- PROFILE MODAL -->
-<div class="profile-modal-ov" id="profile-modal-ov" onclick="if(event.target===this)closeProfile()">
-  <div class="profile-modal">
-    <div class="profile-modal-head">
-      <div class="profile-modal-title">PROFILE</div>
-      <button class="profile-modal-x" onclick="closeProfile()">✕</button>
-    </div>
-    <div class="profile-modal-body">
-      <div class="profile-avatar-big" id="pm-av">A</div>
-      <div class="profile-row">
-        <div class="profile-lbl">Display Name</div>
-        <input class="profile-name-input" id="pm-name" type="text" placeholder="Your name" maxlength="32">
-      </div>
-      <div class="profile-row">
-        <div class="profile-lbl">Email</div>
-        <div class="profile-val" id="pm-email">—</div>
-      </div>
-      <div class="profile-row">
-        <div class="profile-lbl">Role</div>
-        <div class="profile-val" id="pm-role">—</div>
-      </div>
-      <div class="profile-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div>
-          <div class="profile-lbl">Sport</div>
-          <select class="profile-name-input" id="pm-sport" style="padding:11px 14px;">
-            <option value="Weightlifting">Weightlifting</option>
-            <option value="CrossFit">CrossFit</option>
-            <option value="Powerlifting">Powerlifting</option>
-            <option value="Bodybuilding">Bodybuilding</option>
-            <option value="Running">Running</option>
-            <option value="Cycling">Cycling</option>
-            <option value="Swimming">Swimming</option>
-            <option value="MMA / Boxing">MMA / Boxing</option>
-            <option value="Football">Football</option>
-            <option value="Basketball">Basketball</option>
-            <option value="Yoga">Yoga</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        <div>
-          <div class="profile-lbl">Weight (kg)</div>
-          <input class="profile-name-input" id="pm-weight" type="number" min="30" max="200" placeholder="75" style="padding:11px 14px;">
-        </div>
-      </div>
-      <button class="profile-save-btn" onclick="saveProfile()">SAVE CHANGES</button>
-      <button class="profile-signout" onclick="signOut()">Sign Out</button>
-    </div>
-  </div>
 </div>
 
 <div class="modal-ov" id="modal-ov" onclick="if(event.target===this)closeModal()">
@@ -1757,17 +1521,7 @@
 const DB = {
   key: uid=>`ip_${uid}`,
   fresh: ()=>({workouts:[],recoveryLogs:[],prs:{},painLogs:[],biometrics:[],kineticAlerts:[],role:'athlete',palaceId:null}),
-  load(uid){
-    try{
-      const raw=JSON.parse(localStorage.getItem(DB.key(uid)));
-      if(!raw)return DB.fresh();
-      // SECURITY: Strip unexpected top-level fields before use
-      const ALLOWED_KEYS=['workouts','recoveryLogs','prs','painLogs','biometrics','kineticAlerts','role','palaceId','email','name','sport','weight','createdAt'];
-      return typeof Validator!=='undefined'
-        ? Object.assign(DB.fresh(), Validator.stripUnknownFields(raw, ALLOWED_KEYS))
-        : raw;
-    }catch{return DB.fresh();}
-  },
+  load(uid){ try{return JSON.parse(localStorage.getItem(DB.key(uid)))||DB.fresh();}catch{return DB.fresh();} },
   save(uid,d){ localStorage.setItem(DB.key(uid),JSON.stringify(d)); },
   accts(){ try{return JSON.parse(localStorage.getItem('ip_gaccts'))||[];}catch{return[];} },
   saveAccts(a){ localStorage.setItem('ip_gaccts',JSON.stringify(a)); },
@@ -1806,381 +1560,14 @@ function selRole(r){
   document.getElementById('rc-athlete').classList.toggle('selected',r==='athlete');
   document.getElementById('rc-coach').classList.toggle('selected',r==='coach');
 }
-function setErr(msg){
-  const e=document.getElementById('auth-err');
-  e.textContent=msg;e.style.display=msg?'block':'none';
-  // Show reset link if it's a rate limit error
-  const rlWrap=document.getElementById('rl-reset-wrap');
-  if(rlWrap)rlWrap.style.display=(msg&&msg.includes('Too many attempts'))?'block':'none';
-}
+function setErr(msg){const e=document.getElementById('auth-err');e.textContent=msg;e.style.display=msg?'block':'none';}
 
-
-// ╔══════════════════════════════════════════════════════════════════════╗
-// ║              IRON PALACE — SECURITY MODULE v1.0                     ║
-// ║  Three layers: Rate Limiting | Input Validation | XSS Sanitization  ║
-// ╚══════════════════════════════════════════════════════════════════════╝
-
-// ── LAYER 1: CLIENT-SIDE RATE LIMITER ─────────────────────────────────
-// Tracks attempts per action key (login, signup, palace, pain-log, etc.)
-// Uses localStorage so limits persist across page refreshes.
-// On server-side: Firebase Auth already rate-limits sign-in attempts
-// natively (auth/too-many-requests). This layer adds UX-level protection
-// before requests even leave the browser.
-const RateLimit = (() => {
-  // Config: { maxAttempts, windowMs, lockoutMs }
-  const LIMITS = {
-    login:        { max: 5,  windowMs: 60_000,  lockoutMs: 300_000 }, // 5/min → 5min lockout
-    signup:       { max: 3,  windowMs: 60_000,  lockoutMs: 600_000 }, // 3/min → 10min lockout
-    googleAuth:   { max: 5,  windowMs: 60_000,  lockoutMs: 120_000 }, // 5/min → 2min lockout
-    createPalace: { max: 3,  windowMs: 300_000, lockoutMs: 600_000 }, // 3/5min → 10min lockout
-    joinPalace:   { max: 10, windowMs: 300_000, lockoutMs: 60_000  }, // 10/5min → 1min lockout
-    logWorkout:   { max: 30, windowMs: 300_000, lockoutMs: 60_000  }, // 30/5min (generous)
-    logPain:      { max: 20, windowMs: 300_000, lockoutMs: 60_000  }, // 20/5min
-    logRecovery:  { max: 10, windowMs: 300_000, lockoutMs: 60_000  }, // 10/5min
-    saveProfile:  { max: 10, windowMs: 300_000, lockoutMs: 60_000  }, // 10/5min
-  };
-
-  function _key(action) { return `_rl_${action}`; }
-
-  function _load(action) {
-    try { return JSON.parse(localStorage.getItem(_key(action))) || { attempts: [], lockedUntil: 0 }; }
-    catch { return { attempts: [], lockedUntil: 0 }; }
-  }
-
-  function _save(action, state) {
-    try { localStorage.setItem(_key(action), JSON.stringify(state)); } catch {}
-  }
-
-  function _fmtTime(ms) {
-    const s = Math.ceil(ms / 1000);
-    if (s < 60) return `${s} second${s !== 1 ? 's' : ''}`;
-    const m = Math.ceil(s / 60);
-    return `${m} minute${m !== 1 ? 's' : ''}`;
-  }
-
-  return {
-    /**
-     * Check and record an attempt. Returns { allowed: bool, retryAfter?, message? }
-     * Call BEFORE performing the action. If allowed, the attempt is already recorded.
-     */
-    check(action) {
-      const cfg = LIMITS[action];
-      if (!cfg) return { allowed: true }; // unknown action → allow (fail open on limits)
-
-      const now = Date.now();
-      const state = _load(action);
-
-      // Check active lockout first
-      if (state.lockedUntil && now < state.lockedUntil) {
-        const remaining = state.lockedUntil - now;
-        return {
-          allowed: false,
-          retryAfter: remaining,
-          // OWASP: generic message, no info about why
-          message: `Too many attempts. Please wait ${_fmtTime(remaining)} before trying again.`
-        };
-      }
-
-      // Prune attempts outside the window
-      state.attempts = (state.attempts || []).filter(t => now - t < cfg.windowMs);
-
-      // Check if over limit
-      if (state.attempts.length >= cfg.max) {
-        state.lockedUntil = now + cfg.lockoutMs;
-        state.attempts = [];
-        _save(action, state);
-        return {
-          allowed: false,
-          retryAfter: cfg.lockoutMs,
-          message: `Too many attempts. Please wait ${_fmtTime(cfg.lockoutMs)} before trying again.`
-        };
-      }
-
-      // Record this attempt
-      state.attempts.push(now);
-      if (state.lockedUntil && now >= state.lockedUntil) state.lockedUntil = 0;
-      _save(action, state);
-      return { allowed: true };
-    },
-
-    /** Call on successful auth to reset login/signup counters */
-    reset(action) {
-      localStorage.removeItem(_key(action));
-    }
-  };
-})();
-
-
-// ── LAYER 2: INPUT SANITIZER (XSS prevention) ─────────────────────────
-// All user-controlled strings that flow into innerHTML MUST go through
-// Sanitizer.escape() first. This converts the 5 HTML metacharacters into
-// their named entities so browsers never interpret them as markup.
-// Rule: .textContent for simple values, Sanitizer.escape() before any
-// template-literal concatenation that ends in innerHTML.
-const Sanitizer = {
-  /**
-   * Escape the 5 HTML metacharacters. Sufficient for attribute and
-   * text-node injection. Does NOT sanitize CSS or JS contexts.
-   */
-  escape(str) {
-    if (str == null) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;');
-  },
-
-  /** Strip to only printable ASCII + common unicode. No control chars. */
-  stripControl(str) {
-    if (str == null) return '';
-    // eslint-disable-next-line no-control-regex
-    return String(str).replace(/[\x00-\x1F\x7F]/g, '');
-  }
-};
-
-
-// ── LAYER 3: INPUT VALIDATOR (schema-based) ────────────────────────────
-// Each schema defines: type, required, min/max length or value, regex,
-// and an allowlist of valid values where applicable.
-// Returns { valid: bool, errors: string[] }
-const Validator = {
-  SCHEMAS: {
-    email: {
-      type: 'string', required: true,
-      maxLen: 100,
-      // RFC 5322 simplified — good enough for display-layer validation
-      pattern: /^[^@\s]+@[^@\s]+\.[^@\s]+$/,
-      patternMsg: 'Enter a valid email address.'
-    },
-    password: {
-      type: 'string', required: true,
-      minLen: 6, maxLen: 128,
-      // Firebase max is 4096 chars, we cap at 128 for sanity
-    },
-    displayName: {
-      type: 'string', required: true,
-      minLen: 1, maxLen: 50,
-      // No HTML, no control chars — letters, numbers, spaces, hyphens, apostrophes
-      pattern: /^[\p{L}\p{N} '_. -]{1,50}$/u,
-      patternMsg: 'Name can only contain letters, numbers, spaces, hyphens, and apostrophes.'
-    },
-    palateName: {
-      type: 'string', required: true,
-      minLen: 2, maxLen: 40,
-      pattern: /^[\p{L}\p{N} '_.! -]{2,40}$/u,
-      patternMsg: 'Palace name: 2–40 characters, letters and numbers only.'
-    },
-    inviteCode: {
-      type: 'string', required: true,
-      minLen: 4, maxLen: 12,
-      // Our codes are alphanumeric uppercase — enforce it
-      pattern: /^[A-Z0-9\-]{4,12}$/,
-      patternMsg: 'Invite code format is invalid.'
-    },
-    weight: {
-      type: 'number', required: false,
-      min: 20, max: 300
-    },
-    sport: {
-      type: 'string', required: false,
-      maxLen: 30,
-      // Allowlist — only values from the dropdown are valid
-      allowlist: [
-        'Weightlifting','CrossFit','Powerlifting','Bodybuilding',
-        'Running','Cycling','Swimming','MMA / Boxing','Football',
-        'Basketball','Yoga','Other'
-      ]
-    },
-    painIntensity: {
-      type: 'number', required: true,
-      min: 1, max: 10
-    },
-    painType: {
-      type: 'string', required: true,
-      allowlist: ['sharp', 'dull']
-    },
-    sleepHours: {
-      type: 'number', required: true,
-      min: 0, max: 24
-    },
-    sorenessLevel: {
-      type: 'number', required: true,
-      min: 1, max: 10
-    },
-    energyLevel: {
-      type: 'number', required: true,
-      min: 1, max: 10
-    },
-    hydration: {
-      type: 'number', required: false,
-      min: 0, max: 20
-    },
-    mood: {
-      type: 'string', required: false,
-      allowlist: ['Excellent','Good','Neutral','Tired','Stressed']
-    },
-    workoutVolume: {
-      type: 'number', required: false,
-      min: 0, max: 100_000  // kg — 100,000 is already absurd, good cap
-    },
-    role: {
-      type: 'string', required: false,
-      allowlist: ['athlete', 'coach']
-    }
-  },
-
-  /**
-   * Validate a single value against a schema key.
-   * @returns { valid: bool, error: string|null }
-   */
-  field(schemaKey, value) {
-    const schema = this.SCHEMAS[schemaKey];
-    if (!schema) return { valid: true, error: null }; // unknown key → pass
-
-    // Required check
-    if (schema.required && (value === null || value === undefined || value === '')) {
-      return { valid: false, error: `${schemaKey} is required.` };
-    }
-    if (!schema.required && (value === null || value === undefined || value === '')) {
-      return { valid: true, error: null };
-    }
-
-    // Type check
-    if (schema.type === 'number') {
-      const n = Number(value);
-      if (isNaN(n)) return { valid: false, error: `${schemaKey} must be a number.` };
-      if (schema.min !== undefined && n < schema.min)
-        return { valid: false, error: `${schemaKey} must be at least ${schema.min}.` };
-      if (schema.max !== undefined && n > schema.max)
-        return { valid: false, error: `${schemaKey} must be at most ${schema.max}.` };
-    }
-
-    if (schema.type === 'string') {
-      const s = String(value);
-      if (schema.minLen !== undefined && s.length < schema.minLen)
-        return { valid: false, error: `${schemaKey} must be at least ${schema.minLen} characters.` };
-      if (schema.maxLen !== undefined && s.length > schema.maxLen)
-        return { valid: false, error: `${schemaKey} must be no longer than ${schema.maxLen} characters.` };
-      if (schema.allowlist && !schema.allowlist.includes(s))
-        return { valid: false, error: `${schemaKey}: invalid value.` };
-      if (schema.pattern && !schema.pattern.test(s))
-        return { valid: false, error: schema.patternMsg || `${schemaKey} format is invalid.` };
-    }
-
-    return { valid: true, error: null };
-  },
-
-  /**
-   * Validate multiple fields at once.
-   * @param {Object} data — { schemaKey: value, ... }
-   * @returns { valid: bool, errors: string[] }
-   */
-  fields(data) {
-    const errors = [];
-    for (const [key, val] of Object.entries(data)) {
-      const result = this.field(key, val);
-      if (!result.valid) errors.push(result.error);
-    }
-    return { valid: errors.length === 0, errors };
-  },
-
-  /**
-   * Strip unexpected keys from an object before writing to storage.
-   * Prevents prototype pollution and over-posting attacks.
-   * @param {Object} obj — incoming data
-   * @param {string[]} allowedKeys — whitelist
-   */
-  stripUnknownFields(obj, allowedKeys) {
-    if (typeof obj !== 'object' || obj === null) return {};
-    return allowedKeys.reduce((acc, key) => {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) acc[key] = obj[key];
-      return acc;
-    }, {});
-  }
-};
-
-
-// ── DEV HELPER: auto-clear rate limit lockouts on localhost ──────────
-// Prevents getting locked out during local development.
-// Has no effect in production (non-localhost).
-(function(){
-  if(location.hostname==='localhost'||location.hostname==='127.0.0.1'){
-    ['_rl_login','_rl_signup','_rl_googleAuth'].forEach(k=>localStorage.removeItem(k));
-  }
-})();
-
-function clearRateLimits(){
-  // Clears client-side rate limit counters — use if genuinely locked out
-  ['_rl_login','_rl_signup','_rl_googleAuth','_rl_createPalace','_rl_joinPalace'].forEach(k=>localStorage.removeItem(k));
-  setErr('');
-  document.getElementById('rl-reset-wrap').style.display='none';
-  showToast('Rate limits cleared. Try again.','s');
-}
 function doAuth(){
   setErr('');
   const email=document.getElementById('a-email').value.trim();
   const pw=document.getElementById('a-pw').value;
-
-  // SECURITY: Schema-based validation before any network call
-  const vEmail=Validator.field('email',email);
-  if(!vEmail.valid)return setErr(vEmail.error);
-  const vPw=Validator.field('password',pw);
-  if(!vPw.valid)return setErr(vPw.error);
-
-  // SECURITY: Rate limit login/signup attempts (client-side guard)
-  // Firebase Auth also rate-limits server-side (auth/too-many-requests)
-  const rlAction=authMode==='signup'?'signup':'login';
-  const rl=RateLimit.check(rlAction);
-  if(!rl.allowed)return setErr(rl.message);
-  const FB=window._FB;
-  if(!FB){ _doAuthLocal(email,pw); return; }
-  setBtnLoading(true);
-  if(authMode==='signup'){
-    const name=document.getElementById('a-name').value.trim()||email.split('@')[0];
-    const sport=document.getElementById('a-sport').value;
-    const weight=parseFloat(document.getElementById('a-wt').value)||75;
-
-    // SECURITY: Validate all signup fields against schema
-    const vSignup=Validator.fields({displayName:name,weight,sport,role:selectedRole});
-    if(!vSignup.valid)return(setBtnLoading(false),setErr(vSignup.errors[0]));
-
-    FB.createUserWithEmailAndPassword(FB.auth,email,pw)
-      .then(cred=>{
-        const uid=cred.user.uid;
-        return FB.updateProfile(cred.user,{displayName:name}).then(()=>{
-          const d=DB.fresh();d.email=email;d.name=name;d.sport=sport;d.weight=weight;d.role=selectedRole;
-          DB.save(uid,d);
-          return FB.set(FB.ref(FB.db_rt,'users/'+uid+'/profile'),
-            {email,name,sport,weight,role:selectedRole,createdAt:Date.now()});
-        }).then(()=>{setBtnLoading(false);RateLimit.reset('signup');RateLimit.reset('login');loginUser({uid,name,email,weight,sport,role:selectedRole});});
-      })
-      .catch(e=>{setBtnLoading(false);setErr(fbErrMsg(e.code));});
-  } else {
-    FB.signInWithEmailAndPassword(FB.auth,email,pw)
-      .then(cred=>{
-        const uid=cred.user.uid;
-        FB.get(FB.ref(FB.db_rt,'users/'+uid+'/profile')).then(snap=>{
-          setBtnLoading(false);
-          if(snap.exists()){
-            const p=snap.val();
-            let d=DB.load(uid)||DB.fresh();
-            d.name=p.name||cred.user.displayName||email.split('@')[0];
-            d.email=email;d.weight=p.weight||75;d.sport=p.sport;d.role=p.role||'athlete';
-            DB.save(uid,d);
-            loginUser({uid,name:d.name,email,weight:d.weight,sport:d.sport,role:d.role});
-          } else {
-            const d=DB.load(uid)||DB.fresh();
-            if(!d.email){d.email=email;d.name=cred.user.displayName||email.split('@')[0];DB.save(uid,d);}
-            loginUser({uid,name:d.name,email,weight:d.weight||75,sport:d.sport,role:d.role||'athlete'});
-          }
-        }).catch(()=>{setBtnLoading(false);_doAuthLocal(email,pw);});
-      })
-      .catch(e=>{setBtnLoading(false);setErr(fbErrMsg(e.code));});
-  }
-}
-function _doAuthLocal(email,pw){
+  if(!email)return setErr('Please enter your email.');
+  if(!pw)return setErr('Please enter your password.');
   const uid=btoa(email);
   if(authMode==='signup'){
     const name=document.getElementById('a-name').value.trim()||email.split('@')[0];
@@ -2188,89 +1575,24 @@ function _doAuthLocal(email,pw){
     const weight=parseFloat(document.getElementById('a-wt').value)||75;
     const existing=DB.load(uid);
     if(existing.email)return setErr('Account already exists. Please sign in.');
-    const d=DB.fresh();d.email=email;d.name=name;d.sport=sport;d.weight=weight;d.role=selectedRole;
-    DB.save(uid,d);loginUser({uid,name,email,weight,sport,role:selectedRole});
+    const d=DB.fresh(); d.email=email; d.name=name; d.sport=sport; d.weight=weight; d.role=selectedRole;
+    DB.save(uid,d);
+    loginUser({uid,name,email,weight,sport,role:selectedRole});
   } else {
     const d=DB.load(uid);
     if(!d.email)return setErr('No account found. Please sign up first.');
     loginUser({uid,name:d.name,email,weight:d.weight||75,sport:d.sport,role:d.role||'athlete'});
   }
 }
-function fbErrMsg(code){
-  const m={
-    'auth/email-already-in-use':'Email already registered. Sign in instead.',
-    'auth/wrong-password':'Incorrect password.',
-    'auth/user-not-found':'No account found. Sign up first.',
-    'auth/invalid-email':'Invalid email address.',
-    'auth/weak-password':'Password too weak — use 6+ characters.',
-    'auth/too-many-requests':'Too many attempts. Try again later.',
-    'auth/invalid-credential':'Invalid email or password.',
-    'auth/popup-blocked':'Popup was blocked. Allow popups for this site.',
-    'auth/popup-closed-by-user':'Sign-in cancelled.'
-  };
-  return m[code]||'Error: '+code;
-}
-function setBtnLoading(on){
-  const btn=document.getElementById('auth-btn');
-  if(btn){btn.disabled=on;btn.textContent=on?'LOADING…':(authMode==='signup'?'JOIN THE PALACE':'ENTER THE PALACE');}
-}
 
 // ═══════════════════════ GOOGLE PICKER ══════════════════════════════
 function openGP(){
-  const FB=window._FB;
-  if(!FB){
-    // Firebase not loaded yet — fallback to fake picker
-    const accts=DB.accts();
-    // SECURITY: Sanitize name/email before innerHTML — prevents stored XSS from tampered localStorage
+  const accts=DB.accts();
   document.getElementById('gp-list').innerHTML=accts.length
-      ?accts.map((a,i)=>`<div class="gp-acct" onclick="selGAcct(${i})"><div class="gp-av">${Sanitizer.escape(a.name[0].toUpperCase())}</div><div><div class="gp-an">${Sanitizer.escape(a.name)}</div><div class="gp-ae">${Sanitizer.escape(a.email)}</div></div></div>`).join('')
-      :'<div style="padding:14px 24px;font-size:13px;color:#5f6368">No saved accounts. Add one below.</div>';
-    document.getElementById('gp-form').classList.remove('open');
-    document.getElementById('gp-overlay').classList.add('open');
-    return;
-  }
-  // Real Firebase Google sign-in — opens actual Google account chooser
-  // SECURITY: Rate limit Google sign-in attempts
-  const rlG=RateLimit.check('googleAuth');
-  if(!rlG.allowed){setErr(rlG.message);return;}
-  FB.signInWithPopup(FB.auth, FB.gProvider)
-    .then(result => {
-      const user = result.user;
-      const uid = user.uid;
-      const name = user.displayName || user.email.split('@')[0];
-      const email = user.email;
-      // Save to local accounts list for display
-      const accts = DB.accts();
-      if (!accts.find(a => a.email === email)) { accts.push({name, email}); DB.saveAccts(accts); }
-      // Pull profile from Firebase RTDB, or create fresh
-      FB.get(FB.ref(FB.db_rt, 'users/' + uid + '/profile')).then(snap => {
-        if (snap.exists()) {
-          const p = snap.val();
-          let d = DB.load(uid) || DB.fresh();
-          d.name = p.name || name; d.email = email;
-          d.weight = p.weight || 75; d.sport = p.sport; d.role = p.role || 'athlete';
-          DB.save(uid, d);
-          loginUser({uid, name: d.name, email, weight: d.weight, sport: d.sport, role: d.role});
-        } else {
-          const d = DB.fresh();
-          d.email = email; d.name = name; d.weight = 75; d.sport = 'Weightlifting'; d.role = 'athlete';
-          DB.save(uid, d);
-          FB.set(FB.ref(FB.db_rt, 'users/' + uid + '/profile'),
-            {email, name, sport: 'Weightlifting', weight: 75, role: 'athlete', createdAt: Date.now()});
-          loginUser({uid, name, email, weight: 75, sport: 'Weightlifting', role: 'athlete'});
-        }
-      }).catch(() => {
-        // RTDB failed — use local only
-        let d = DB.load(uid) || DB.fresh();
-        d.email = email; d.name = name;
-        DB.save(uid, d);
-        loginUser({uid, name, email, weight: d.weight || 75, sport: d.sport, role: d.role || 'athlete'});
-      });
-    })
-    .catch(e => {
-      if (e.code !== 'auth/popup-closed-by-user')
-        showToast('Google sign-in failed: ' + fbErrMsg(e.code), 'd');
-    });
+    ?accts.map((a,i)=>`<div class="gp-acct" onclick="selGAcct(${i})"><div class="gp-av">${a.name[0].toUpperCase()}</div><div><div class="gp-an">${a.name}</div><div class="gp-ae">${a.email}</div></div></div>`).join('')
+    :'<div style="padding:14px 24px;font-size:13px;color:#5f6368;font-family:Barlow,sans-serif">No saved accounts. Add one below.</div>';
+  document.getElementById('gp-form').classList.remove('open');
+  document.getElementById('gp-overlay').classList.add('open');
 }
 function closeGP(){
   document.getElementById('gp-overlay').classList.remove('open');
@@ -2282,11 +1604,7 @@ function toggleGPForm(){document.getElementById('gp-form').classList.toggle('ope
 function addGAccount(){
   const email=document.getElementById('gp-email').value.trim();
   const name=document.getElementById('gp-name').value.trim()||email.split('@')[0];
-  // SECURITY: Validate before writing to localStorage
-  const vE=Validator.field('email',email);
-  if(!vE.valid)return alert(vE.error);
-  const vN=Validator.field('displayName',name);
-  if(!vN.valid)return alert(vN.error);
+  if(!email||!email.includes('@'))return alert('Please enter a valid email.');
   const accts=DB.accts();
   const idx=accts.findIndex(a=>a.email===email);
   if(idx>=0){selGAcct(idx);return;}
@@ -2329,14 +1647,13 @@ function loginUser(user){
 }
 function signOut(){
   if(timerOn)stopTimer();
-  const FB=window._FB;
-  if(FB&&FB.auth.currentUser) FB.fbSignOut(FB.auth).catch(()=>{});
   U=null;db=null;
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('app').style.display='none';
   document.getElementById('a-email').value='';
   document.getElementById('a-pw').value='';
 }
+
 
 // ═══════════════════════ ENCOURAGEMENT ════════════════════════════════
 function renderEncouragement(){
@@ -2380,6 +1697,7 @@ function initApp(){
   renderDash(); renderTracksHistory(); renderRecovery(); buildInjGrids(); updCalHint();
   renderPalaceHub(); renderPalaceState(); renderKineticAlerts();
   if(db.role==='coach') renderLegion();
+  initDeviceSync();
 }
 
 // ═══════════════════════ DASHBOARD ═══════════════════════════════════
@@ -2429,10 +1747,9 @@ function buildPRList(){
     el.innerHTML=`<div class="es" style="padding:28px 12px"><span class="es-icon" style="font-size:26px">🏅</span><p class="es-title" style="font-size:12px">No Records Yet</p><p class="es-sub" style="font-size:13px">Add volume when logging. Your first PR is waiting.</p></div>`;
     return;
   }
-  // SECURITY: Sanitize PR names from localStorage
   el.innerHTML=Object.entries(prs).slice(0,4).map(([n,v])=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border)">
-      <div><div style="font-family:'Space Mono',monospace;font-size:15px">${Sanitizer.escape(n)}</div><div style="font-size:12px;color:var(--text3)">${Sanitizer.escape(v.date||'')}</div></div>
+      <div><div style="font-family:'Space Mono',monospace;font-size:15px">${n}</div><div style="font-size:12px;color:var(--text3)">${v.date}</div></div>
       <div style="font-family:'Syncopate',sans-serif;font-size:28px;color:var(--accent)">${v.val}<span style="font-size:14px">kg</span></div>
     </div>`).join('');
 }
@@ -2442,10 +1759,9 @@ function buildRecentW(){
     el.innerHTML=`<div class="es"><div class="es-ring"><span class="es-icon" style="font-size:28px;margin:0">🏋️</span></div><p class="es-title">Start Your First Workout</p><p class="es-sub">Every legend has a day one. Yours starts now.</p><span class="es-cta" onclick="goSec('tracks')">→ Open Tracks</span></div>`;
     return;
   }
-  // SECURITY: Sanitize workout data from localStorage
   el.innerHTML=[...db.workouts].reverse().slice(0,5).map(w=>`
     <div class="w-item">
-      <div><div class="w-name">${Sanitizer.escape(w.type||'')} — ${Sanitizer.escape(w.muscle||'')}</div><div class="w-meta">${Sanitizer.escape(w.dateLabel||'')} · ${fmtDur(w.duration)} · ${w.calories} kcal${w.volume?' · '+w.volume+'kg':''}</div></div>
+      <div><div class="w-name">${w.type} — ${w.muscle}</div><div class="w-meta">${w.dateLabel} · ${fmtDur(w.duration)} · ${w.calories} kcal${w.volume?' · '+w.volume+'kg':''}</div></div>
       <div class="w-tag ${w.type.includes('Cardio')||w.type==='HIIT'||w.type==='Cycling'||w.type==='Swimming'?'tc':'ts'}">${w.type.split(' ')[0].toUpperCase()}</div>
     </div>`).join('');
 }
@@ -2486,18 +1802,9 @@ function updCalHint(){if(timerSecs>0)document.getElementById('cal-est').textCont
 function logWorkout(){
   if(timerOn){showToast('Stop the timer first!','w');return;}
   if(timerSecs===0){showToast('Record a session first using the timer!','w');return;}
-
-  // SECURITY: Rate limiting
-  const rlW=RateLimit.check('logWorkout');
-  if(!rlW.allowed)return showToast(rlW.message,'w');
-
   const type=document.getElementById('l-type').value;
   const muscle=document.getElementById('l-muscle').value;
   const volume=parseInt(document.getElementById('l-vol').value)||0;
-
-  // SECURITY: Validate volume field
-  const vVol=Validator.field('workoutVolume',volume||0);
-  if(!vVol.valid)return showToast(vVol.error,'w');
   const calories=calcCal(timerSecs);
   const now=new Date();
   const entry={id:Date.now(),date:now.toISOString().split('T')[0],dateLabel:now.toLocaleDateString('en-US',{month:'short',day:'numeric'}),type:TYPE_LABEL[type],muscle,volume,calories,duration:timerSecs};
@@ -2530,12 +1837,11 @@ function renderTracksHistory(){
     el.innerHTML=`<div class="es"><div class="es-ring"><span class="es-icon" style="font-size:28px;margin:0">📋</span></div><p class="es-title">No Sessions Yet</p><p class="es-sub">Hit the timer above. One session builds the habit.</p></div>`;
     return;
   }
-  // SECURITY: Sanitize localStorage data before HTML interpolation
   const rows=[...db.workouts].reverse().map(w=>`
     <tr>
-      <td>${Sanitizer.escape(w.dateLabel||'')}</td>
-      <td><span class="w-tag ${w.type&&(w.type.includes('Cardio')||w.type==='HIIT'||w.type==='Cycling'||w.type==='Swimming')?'tc':'ts'}" style="font-size:11px">${Sanitizer.escape(w.type||'')}</span></td>
-      <td>${Sanitizer.escape(w.muscle||'')}</td>
+      <td>${w.dateLabel}</td>
+      <td><span class="w-tag ${w.type.includes('Cardio')||w.type==='HIIT'||w.type==='Cycling'||w.type==='Swimming'?'tc':'ts'}" style="font-size:11px">${w.type}</span></td>
+      <td>${w.muscle}</td>
       <td>${fmtDur(w.duration)}</td>
       <td>${w.volume?w.volume+'kg':'—'}</td>
       <td style="color:var(--warning)">${w.calories} kcal</td>
@@ -2545,18 +1851,13 @@ function renderTracksHistory(){
 
 // ═══════════════════════ RECOVERY ════════════════════════════════════
 function logRecovery(){
-  // SECURITY: Rate limiting
-  const rlR=RateLimit.check('logRecovery');
-  if(!rlR.allowed)return showToast(rlR.message,'w');
-
   const sleep=parseFloat(document.getElementById('r-sleep').value);
   const sore=parseInt(document.getElementById('r-sore').value);
   const energy=parseInt(document.getElementById('r-energy').value);
   const hydration=parseFloat(document.getElementById('r-hydration').value)||2;
-
-  // SECURITY: Schema-based validation
-  const vRec=Validator.fields({sleepHours:sleep,sorenessLevel:sore,energyLevel:energy,hydration});
-  if(!vRec.valid)return showToast(vRec.errors[0],'w');
+  if(isNaN(sleep))return showToast('Enter sleep hours','w');
+  if(isNaN(sore))return showToast('Enter soreness (1–10)','w');
+  if(isNaN(energy))return showToast('Enter energy level (1–10)','w');
   let score=50+(sleep-6)*8-sore*4+(energy-5)*5+(hydration-2)*4;
   score=Math.min(100,Math.max(15,Math.round(score)));
   const today=new Date().toISOString().split('T')[0];
@@ -2611,7 +1912,8 @@ function goSec(sec){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('section-'+sec).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.s===sec));
-  document.querySelectorAll('.m-nav-item').forEach(n=>n.classList.toggle('active',n.dataset.ms===sec));
+  document.querySelectorAll('.m-nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.m-nav-item').forEach(n=>{if(n.textContent.toLowerCase().includes(sec.slice(0,4)))n.classList.add('active');});
   const last=db?.recoveryLogs?.slice(-1)[0];
   if(sec==='tracks'&&last&&last.score<55)showToast('⚠️ Recovery is low — consider resting today','w');
 }
@@ -3040,23 +2342,8 @@ function eText(){window.location.href='sms:112?body=EMERGENCY: I am an athlete w
 // ══════════════════════════════════════════════════════════════════════
 // ████  FEATURE 1 — PALACE HUB (Multi-Tenant Architecture)  ████
 // ══════════════════════════════════════════════════════════════════════
-function genPalaceId(){
-  // SECURITY: Use crypto.getRandomValues for unpredictable IDs
-  // Math.random() is NOT cryptographically secure — predictable invite codes
-  // could allow an attacker to guess codes and join private palaces
-  const arr=new Uint8Array(3);
-  crypto.getRandomValues(arr);
-  const hex=Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();
-  return 'IRON-'+hex.slice(0,4);
-}
-function genInviteCode(){
-  // SECURITY: crypto.getRandomValues instead of Math.random
-  const arr=new Uint8Array(4);
-  crypto.getRandomValues(arr);
-  // Map to alphanumeric: A-Z0-9
-  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // removed ambiguous chars O,0,I,1
-  return Array.from(arr).map(b=>chars[b%chars.length]).join('');
-}
+function genPalaceId(){return 'IRON-'+Math.random().toString(36).toUpperCase().slice(2,6);}
+function genInviteCode(){return Math.random().toString(36).toUpperCase().slice(2,8);}
 
 function renderPalaceHub(){
   const isCoach=db.role==='coach';
@@ -3093,14 +2380,7 @@ function findMyPalace(){
 
 function createPalace(){
   const name=document.getElementById('ph-palace-name').value.trim();
-
-  // SECURITY: Rate limiting — prevent rapid palace spam
-  const rlC=RateLimit.check('createPalace');
-  if(!rlC.allowed)return showToast(rlC.message,'w');
-
-  // SECURITY: Validate palace name schema
-  const vPal=Validator.field('palateName',name);
-  if(!vPal.valid)return showToast(vPal.error,'w');
+  if(!name)return showToast('Enter a palace name.','w');
   const id=genPalaceId();
   const inviteCode=genInviteCode();
   const palace={id,name,inviteCode,coachUid:U.uid,coachName:U.name,members:[],createdAt:Date.now()};
@@ -3112,14 +2392,7 @@ function createPalace(){
 
 function joinPalace(){
   const code=(document.getElementById('ph-invite').value||'').trim().toUpperCase();
-
-  // SECURITY: Rate limiting — prevent invite code brute-force
-  const rlJ=RateLimit.check('joinPalace');
-  if(!rlJ.allowed)return showToast(rlJ.message,'w');
-
-  // SECURITY: Validate invite code format
-  const vCode=Validator.field('inviteCode',code);
-  if(!vCode.valid)return showToast(vCode.error,'w');
+  if(!code)return showToast('Enter an invite code.','w');
   const pal=DB.allPalaces().find(p=>p.inviteCode===code);
   if(!pal)return showToast('Invalid invite code. Ask your coach.','d');
   if(db.palaceId===pal.id)return showToast('Already in this palace.','w');
@@ -3152,8 +2425,7 @@ function renderPalaceMembers(palace){
     const mdb=DB.load(m.uid);
     const rs=calcReadinessScore(mdb);
     const clr=rs>=70?'var(--success)':rs>=50?'var(--warning)':'var(--danger)';
-    // SECURITY: Sanitize user-controlled fields before innerHTML
-    return '<div class="palace-member-row"><div class="palace-member-av">'+Sanitizer.escape(m.name[0].toUpperCase())+'</div><div style="flex:1"><div class="palace-member-name">'+Sanitizer.escape(m.name)+'</div><div class="palace-member-meta">'+Sanitizer.escape(m.sport||'—')+' · Joined '+new Date(m.joinedAt).toLocaleDateString()+'</div></div><div style="font-family:\'Syncopate\',sans-serif;font-size:20px;color:'+clr+'">'+rs+'</div><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-family:\'Space Mono\',monospace;margin-left:6px">READY</div><div class="'+(mdb.palaceId?'connected-badge':'pending-badge')+'" style="margin-left:12px">'+(mdb.palaceId?'LIVE':'PENDING')+'</div></div>';
+    return '<div class="palace-member-row"><div class="palace-member-av">'+m.name[0].toUpperCase()+'</div><div style="flex:1"><div class="palace-member-name">'+m.name+'</div><div class="palace-member-meta">'+(m.sport||'—')+' · Joined '+new Date(m.joinedAt).toLocaleDateString()+'</div></div><div style="font-family:\'Syncopate\',sans-serif;font-size:20px;color:'+clr+'">'+rs+'</div><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-family:\'Space Mono\',monospace;margin-left:6px">READY</div><div class="'+(mdb.palaceId?'connected-badge':'pending-badge')+'" style="margin-left:12px">'+(mdb.palaceId?'LIVE':'PENDING')+'</div></div>';
   }).join('');
 }
 
@@ -3228,8 +2500,7 @@ function renderLegion(){
       +'<circle class="sr-bg" cx="28" cy="28" r="24"/>'
       +'<circle class="sr-prog" cx="28" cy="28" r="24" stroke="'+clr+'" stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset+'"/>'
       +'</svg><div class="sr-center"><div class="sr-score" style="color:'+clr+'">'+rs+'</div></div></div>'
-      // SECURITY: Sanitize name in Legion HTML
-      +'<div class="athlete-info"><div class="athlete-name">'+Sanitizer.escape(m.name.toUpperCase())+'</div>'
+      +'<div class="athlete-info"><div class="athlete-name">'+m.name.toUpperCase()+'</div>'
       +'<div class="athlete-why">'+( why.length?why.map(p=>'<span class="why-pill '+p.cls+'">'+p.text+'</span>').join(''):'<span class="why-pill">All systems nominal</span>' )+'</div></div>'
       +(kFlag?'<div class="kinetic-icon">🚨</div>':'<div class="kinetic-icon" style="opacity:.15">⚡</div>')
       +'</div>'
@@ -3265,49 +2536,224 @@ function buildAthleteDetail(mdb,m,kFlag){
 // ████  FEATURE 3 — DEVICE SYNC (Silent Tracker)  ████
 // ══════════════════════════════════════════════════════════════════════
 const DEVICE_NAMES={healthkit:'Apple HealthKit',googlefit:'Google Fit',whoop:'Whoop 4.0'};
+
+// ── OAuth config — paste your real Client IDs here ──────────────────
+const OAUTH_CFG={
+  googlefit:{
+    clientId:'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+    scopes:'https://www.googleapis.com/auth/fitness.heart_rate.read https://www.googleapis.com/auth/fitness.sleep.read https://www.googleapis.com/auth/fitness.activity.read',
+    authUrl:'https://accounts.google.com/o/oauth2/v2/auth'
+  },
+  whoop:{
+    clientId:'YOUR_WHOOP_CLIENT_ID',
+    scopes:'read:recovery read:sleep read:workout read:body_measurement',
+    authUrl:'https://api.prod.whoop.com/oauth/oauth2/auth'
+  }
+};
+
 function syncDevice(id){
-  // SECURITY: Validate device id against allowlist — prevents DOM clobbering attack
-  // via crafted 'id' that could escape the 'sd-' prefix into arbitrary element IDs
-  const ALLOWED_DEVICES=['healthkit','googlefit','whoop'];
-  if(!ALLOWED_DEVICES.includes(id))return showToast('Invalid device.','w');
+  const ALLOWED=['healthkit','googlefit','whoop'];
+  if(!ALLOWED.includes(id))return showToast('Invalid device.','w');
   const card=document.getElementById('sd-'+id);
-  const status=document.getElementById('ss-'+id);
-  if(!card||!status)return;
-  if(card.classList.contains('connected')){showToast(DEVICE_NAMES[id]+' already synced.','s');return;}
-  card.classList.add('syncing');
-  status.textContent='Syncing…';
-  showToast('📡 Fetching from '+DEVICE_NAMES[id]+'…');
-  setTimeout(function(){
-    card.classList.remove('syncing');
-    card.classList.add('connected');
-    const hrv=Math.round(38+Math.random()*55);
-    const rhr=Math.round(48+Math.random()*32);
-    const sleepCycles=Math.round(3+Math.random()*3);
-    const bio={source:id,hrv:hrv,rhr:rhr,sleepCycles:sleepCycles,fetchedAt:Date.now()};
+  if(!card)return;
+  if(card.classList.contains('connected')){_showSyncModal(id,'already');return;}
+  _showSyncModal(id,'connect');
+}
+
+function _showSyncModal(id,state){
+  const name=DEVICE_NAMES[id];
+  let body='';
+  if(id==='healthkit'){
+    body=`<div style="text-align:center;padding:8px 0 16px">
+      <div style="font-size:44px;margin-bottom:10px">🍎</div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--danger);background:rgba(255,0,85,.06);border:1px solid rgba(255,0,85,.2);padding:10px 14px;margin-bottom:14px">⚠️ BROWSER RESTRICTION — Apple blocks HealthKit from all web browsers</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8;text-align:left;margin-bottom:18px">Apple HealthKit is only accessible from native iOS/macOS apps. Use the <strong style="color:var(--text)">Health Export</strong> app on iOS to export your data, then enter key metrics manually below.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="form-group"><div class="form-label">HRV (ms)</div><input class="form-input" type="number" id="hk-hrv" placeholder="65" style="padding:10px"></div>
+        <div class="form-group"><div class="form-label">Resting HR</div><input class="form-input" type="number" id="hk-rhr" placeholder="58" style="padding:10px"></div>
+        <div class="form-group"><div class="form-label">Sleep (hrs)</div><input class="form-input" type="number" id="hk-sleep" placeholder="7.5" step="0.5" style="padding:10px"></div>
+      </div>
+      <button class="btn-primary" style="font-size:11px;letter-spacing:3px" onclick="_saveManualBio('healthkit')">SAVE HEALTH DATA</button>
+    </div>`;
+  } else if(state==='already'){
+    const bio=(db.biometrics||[]).find(b=>b.source===id)||{};
+    const ago=bio.fetchedAt?Math.round((Date.now()-bio.fetchedAt)/60000):null;
+    body=`<div style="text-align:center;padding:8px 0 16px">
+      <div style="font-size:44px;margin-bottom:10px">${id==='googlefit'?'🏃':'💍'}</div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--success);margin-bottom:6px">✓ CONNECTED</div>
+      <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:18px">${ago!==null?'Last synced '+ago+' min ago':'Synced'}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px">
+        <div class="metric-card"><div class="metric-v ca">${bio.hrv||'—'}</div><div class="metric-l">HRV ms</div></div>
+        <div class="metric-card"><div class="metric-v cw">${bio.rhr||'—'}</div><div class="metric-l">RHR bpm</div></div>
+        <div class="metric-card"><div class="metric-v cs">${bio.sleepHrs||bio.sleepCycles||'—'}</div><div class="metric-l">${id==='whoop'?'Recovery %':'Sleep hrs'}</div></div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-accent" style="flex:1;font-size:11px;letter-spacing:2px" onclick="_reSyncDevice('${id}')">↺ RE-SYNC</button>
+        <button class="btn-ghost" style="flex:1;font-size:11px;letter-spacing:2px;padding:12px" onclick="_disconnectDevice('${id}')">DISCONNECT</button>
+      </div>
+    </div>`;
+  } else {
+    const cfg=OAUTH_CFG[id];
+    const notConfigured=cfg&&cfg.clientId.startsWith('YOUR_');
+    const icon=id==='googlefit'?'🏃':'💍';
+    const setupSteps=id==='googlefit'
+      ?`1. Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent)">console.cloud.google.com</a><br>2. Create project → Enable <strong>Fitness API</strong><br>3. OAuth Consent → Credentials → Web Client ID<br>4. Add your domain to Authorised Origins<br>5. Paste into <code style="color:var(--accent);background:var(--surface3);padding:2px 6px">OAUTH_CFG.googlefit.clientId</code>`
+      :`1. Go to <a href="https://developer.whoop.com" target="_blank" style="color:var(--accent)">developer.whoop.com</a><br>2. Create an application<br>3. Set redirect URI to this page URL<br>4. Paste Client ID into <code style="color:var(--accent);background:var(--surface3);padding:2px 6px">OAUTH_CFG.whoop.clientId</code><br>5. Deploy <code style="color:var(--accent);background:var(--surface3);padding:2px 6px">/api/oauth/exchange</code> for token swap`;
+    const manualPrefix=id==='googlefit'?'gf':'wp';
+    const manualLabel=id==='whoop'?'Recovery %':'Sleep (hrs)';
+    const manualPlaceholder=id==='whoop'?'75':'7.5';
+    const connectBtn=id==='googlefit'
+      ?`<button class="btn-primary" style="font-size:11px;letter-spacing:3px;display:flex;align-items:center;justify-content:center;gap:10px" onclick="_startOAuth('googlefit')"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>CONNECT WITH GOOGLE</button>`
+      :`<button class="btn-primary" style="font-size:11px;letter-spacing:3px" onclick="_startOAuth('whoop')">💍 CONNECT WHOOP</button>`;
+    body=`<div style="padding:8px 0 16px">
+      <div style="text-align:center;margin-bottom:16px"><div style="font-size:44px;margin-bottom:8px">${icon}</div><div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--accent)">${name.toUpperCase()}</div></div>
+      ${notConfigured?`<div style="background:rgba(255,183,0,.06);border:1px solid rgba(255,183,0,.2);border-left:3px solid var(--warning);padding:14px 18px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:2"><strong style="color:var(--warning);font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px">SETUP REQUIRED</strong><br><br>${setupSteps}</div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text3);margin-bottom:10px">OR ENTER MANUALLY</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="form-group"><div class="form-label">HRV (ms)</div><input class="form-input" type="number" id="${manualPrefix}-hrv" placeholder="65" style="padding:10px"></div>
+        <div class="form-group"><div class="form-label">Resting HR</div><input class="form-input" type="number" id="${manualPrefix}-rhr" placeholder="58" style="padding:10px"></div>
+        <div class="form-group"><div class="form-label">${manualLabel}</div><input class="form-input" type="number" id="${manualPrefix}-sleep" placeholder="${manualPlaceholder}" style="padding:10px"></div>
+      </div>
+      <button class="btn-primary" style="font-size:11px;letter-spacing:3px" onclick="_saveManualBioGeneric('${id}','${manualPrefix}')">SAVE MANUALLY</button>`
+      :`<div style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:16px">${id==='googlefit'?'Connect your Google Fit account to automatically pull HRV, resting heart rate, and sleep. You will be redirected to Google to authorise — no password is shared.':'Connect your Whoop account to pull recovery score, HRV, resting heart rate, and sleep directly from the Whoop API.'}</div>
+      <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);padding:12px 16px;margin-bottom:16px;font-family:'Space Mono',monospace;font-size:10px;color:var(--text3);line-height:1.8">PERMISSIONS:<br>· ${id==='googlefit'?'Heart rate & HRV, Sleep, Activity (all read only)':'Recovery score, HRV & RHR, Sleep & strain (all read only)'}</div>
+      ${connectBtn}`}
+    </div>`;
+  }
+  document.getElementById('m-title').textContent=name.toUpperCase();
+  document.getElementById('m-body').innerHTML=body;
+  document.getElementById('modal-ov').classList.add('open');
+}
+
+function _startOAuth(id){
+  const cfg=OAUTH_CFG[id];
+  const redirectUri=window.location.origin+window.location.pathname;
+  const state=btoa(JSON.stringify({uid:U.uid,device:id,ts:Date.now()}));
+  localStorage.setItem('_oauth_pending_'+id,state);
+  const params=new URLSearchParams({client_id:cfg.clientId,redirect_uri:redirectUri,response_type:'code',scope:cfg.scopes,state,access_type:'offline',prompt:'consent select_account'});
+  closeModal();
+  window.location.href=cfg.authUrl+'?'+params.toString();
+}
+
+function _checkOAuthCallback(){
+  const params=new URLSearchParams(window.location.search);
+  const code=params.get('code'),state=params.get('state'),error=params.get('error');
+  if(!code&&!error)return;
+  window.history.replaceState({},'',window.location.pathname);
+  if(error){showToast('OAuth cancelled: '+error,'w');return;}
+  let stateObj={};try{stateObj=JSON.parse(atob(state||''));}catch{}
+  const device=stateObj.device;
+  if(!device){showToast('Unknown OAuth state','d');return;}
+  showToast('Exchanging auth code for '+DEVICE_NAMES[device]+'…');
+  fetch('/api/oauth/exchange',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,device,redirectUri:window.location.origin+window.location.pathname})})
+  .then(r=>r.json())
+  .then(data=>{
+    if(data.error){showToast('Auth failed: '+data.error,'d');return;}
+    localStorage.setItem('_oauth_token_'+device,JSON.stringify({access_token:data.access_token,refresh_token:data.refresh_token,expires_at:Date.now()+(data.expires_in||3600)*1000}));
+    _fetchDeviceData(device,data.access_token);
+  })
+  .catch(()=>{showToast('Backend not configured — enter data manually.','w');_showSyncModal(device,'connect');});
+}
+
+function _fetchDeviceData(device,token){
+  const card=document.getElementById('sd-'+device),status=document.getElementById('ss-'+device);
+  if(card)card.classList.add('syncing');
+  if(status)status.textContent='Fetching…';
+  const now=Date.now(),yesterday=now-86400000;
+  let p;
+  if(device==='googlefit'){
+    p=Promise.all([
+      fetch('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({aggregateBy:[{dataTypeName:'com.google.heart_rate.bpm'}],bucketByTime:{durationMillis:86400000},startTimeMillis:yesterday,endTimeMillis:now})}).then(r=>r.json()),
+      fetch('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({aggregateBy:[{dataTypeName:'com.google.sleep.segment'}],bucketByTime:{durationMillis:86400000},startTimeMillis:yesterday,endTimeMillis:now})}).then(r=>r.json())
+    ]).then(([hrData,sleepData])=>{
+      const pts=hrData?.bucket?.[0]?.dataset?.[0]?.point||[];
+      const rhr=pts.length?Math.round(Math.min(...pts.map(p=>p.value?.[0]?.fpVal||999))):null;
+      const sleepMs=(sleepData?.bucket?.[0]?.dataset?.[0]?.point||[]).reduce((s,p)=>{const d=(p.endTimeNanos-p.startTimeNanos)/1e6;return s+(isNaN(d)?0:d);},0);
+      return{rhr,sleepHrs:sleepMs?(sleepMs/3600000).toFixed(1):null,hrv:null,source:'googlefit'};
+    });
+  } else {
+    p=Promise.all([
+      fetch('https://api.prod.whoop.com/developer/v1/recovery?limit=1',{headers:{'Authorization':'Bearer '+token}}).then(r=>r.json()),
+      fetch('https://api.prod.whoop.com/developer/v1/sleep?limit=1',{headers:{'Authorization':'Bearer '+token}}).then(r=>r.json())
+    ]).then(([rec,sleep])=>{
+      const sc=rec?.records?.[0]?.score||{},sl=sleep?.records?.[0]?.score||{};
+      return{hrv:sc.hrv_rmssd_on_waking?Math.round(sc.hrv_rmssd_on_waking):null,rhr:sc.resting_heart_rate?Math.round(sc.resting_heart_rate):null,sleepHrs:sl.total_in_bed_time_milli?(sl.total_in_bed_time_milli/3600000).toFixed(1):null,recoveryPct:sc.recovery_score||null,source:'whoop'};
+    });
+  }
+  p.then(bio=>{
+    bio.fetchedAt=Date.now();
     if(!db.biometrics)db.biometrics=[];
-    db.biometrics=db.biometrics.filter(function(b){return b.source!==id;});
+    db.biometrics=db.biometrics.filter(b=>b.source!==device);
     db.biometrics.push(bio);
     DB.save(U.uid,db);
-    status.textContent='✓ Live';
-    status.className='sync-status ok';
-    const allBio=db.biometrics;
-    const avgHrv=Math.round(allBio.reduce(function(s,b){return s+(b.hrv||0);},0)/allBio.length);
-    const avgRhr=Math.round(allBio.reduce(function(s,b){return s+(b.rhr||0);},0)/allBio.length);
-    const avgCyc=(allBio.reduce(function(s,b){return s+(b.sleepCycles||0);},0)/allBio.length).toFixed(1);
-    const row=document.getElementById('sync-metrics-row');
-    if(row)row.style.display='block';
-    document.getElementById('sm-hrv').textContent=avgHrv;
-    document.getElementById('sm-hrv-src').textContent='ms · '+DEVICE_NAMES[id];
-    document.getElementById('sm-rhr').textContent=avgRhr;
-    document.getElementById('sm-rhr-src').textContent='bpm · live';
-    document.getElementById('sm-sleep').textContent=avgCyc;
-    document.getElementById('sm-sleep-src').textContent='cycles synced';
-    document.getElementById('sync-last-time').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    showToast('✅ '+DEVICE_NAMES[id]+' synced — HRV:'+hrv+' RHR:'+rhr,'s');
-    renderKineticAlerts();
-    if(db.role==='coach')renderLegion();
-  },2200);
+    if(card){card.classList.remove('syncing');card.classList.add('connected');}
+    if(status){status.textContent='✓ Live';status.className='sync-status ok';}
+    _updateSyncMetrics();
+    showToast('✅ '+DEVICE_NAMES[device]+' connected'+(bio.hrv?' — HRV:'+bio.hrv:'')+(bio.rhr?' RHR:'+bio.rhr:''),'s');
+    renderKineticAlerts();if(db.role==='coach')renderLegion();
+  }).catch(()=>{
+    if(card)card.classList.remove('syncing');
+    if(status){status.textContent='Error';status.className='sync-status';}
+    showToast('Fetch failed — token may be expired. Reconnect.','d');
+  });
 }
+
+function _saveManualBio(source){
+  _commitBio({source,hrv:parseInt(document.getElementById('hk-hrv')?.value)||null,rhr:parseInt(document.getElementById('hk-rhr')?.value)||null,sleepHrs:parseFloat(document.getElementById('hk-sleep')?.value)||null,fetchedAt:Date.now(),manual:true});
+}
+function _saveManualBioGeneric(source,prefix){
+  _commitBio({source,hrv:parseInt(document.getElementById(prefix+'-hrv')?.value)||null,rhr:parseInt(document.getElementById(prefix+'-rhr')?.value)||null,sleepHrs:parseFloat(document.getElementById(prefix+'-sleep')?.value)||null,fetchedAt:Date.now(),manual:true});
+}
+function _commitBio(bio){
+  if(!db.biometrics)db.biometrics=[];
+  db.biometrics=db.biometrics.filter(b=>b.source!==bio.source);
+  db.biometrics.push(bio);
+  DB.save(U.uid,db);
+  const card=document.getElementById('sd-'+bio.source),status=document.getElementById('ss-'+bio.source);
+  if(card){card.classList.remove('syncing');card.classList.add('connected');}
+  if(status){status.textContent=bio.manual?'✓ Manual':'✓ Live';status.className='sync-status ok';}
+  _updateSyncMetrics();closeModal();
+  showToast('✅ '+DEVICE_NAMES[bio.source]+' data saved','s');
+  renderKineticAlerts();
+}
+function _updateSyncMetrics(){
+  const allBio=db.biometrics||[];if(!allBio.length)return;
+  const row=document.getElementById('sync-metrics-row');if(row)row.style.display='block';
+  const wH=allBio.filter(b=>b.hrv),wR=allBio.filter(b=>b.rhr),wS=allBio.filter(b=>b.sleepHrs||b.sleepCycles);
+  document.getElementById('sm-hrv').textContent=wH.length?Math.round(wH.reduce((s,b)=>s+b.hrv,0)/wH.length):'—';
+  document.getElementById('sm-hrv-src').textContent='ms avg';
+  document.getElementById('sm-rhr').textContent=wR.length?Math.round(wR.reduce((s,b)=>s+b.rhr,0)/wR.length):'—';
+  document.getElementById('sm-rhr-src').textContent='bpm live';
+  const ls=wS.length?wS[wS.length-1]:{};
+  document.getElementById('sm-sleep').textContent=ls.sleepHrs||ls.sleepCycles||'—';
+  document.getElementById('sm-sleep-src').textContent='hours';
+  document.getElementById('sync-last-time').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+function _reSyncDevice(id){
+  const t=localStorage.getItem('_oauth_token_'+id);
+  if(t){closeModal();_fetchDeviceData(id,JSON.parse(t).access_token);}
+  else{closeModal();_showSyncModal(id,'connect');}
+}
+function _disconnectDevice(id){
+  localStorage.removeItem('_oauth_token_'+id);
+  if(!db.biometrics)db.biometrics=[];
+  db.biometrics=db.biometrics.filter(b=>b.source!==id);
+  DB.save(U.uid,db);
+  const card=document.getElementById('sd-'+id),status=document.getElementById('ss-'+id);
+  if(card)card.classList.remove('connected');
+  if(status){status.textContent='Tap to sync';status.className='sync-status';}
+  closeModal();showToast(DEVICE_NAMES[id]+' disconnected','w');
+}
+function initDeviceSync(){
+  _checkOAuthCallback();
+  (db.biometrics||[]).forEach(bio=>{
+    const card=document.getElementById('sd-'+bio.source),status=document.getElementById('ss-'+bio.source);
+    if(card)card.classList.add('connected');
+    if(status){status.textContent=bio.manual?'✓ Manual':'✓ Live';status.className='sync-status ok';}
+  });
+  if((db.biometrics||[]).length)_updateSyncMetrics();
+}
+
 
 // ══════════════════════════════════════════════════════════════════════
 // ████  FEATURE 4 — PALACE STATE (Subjective Spatial Mapping)  ████
@@ -3329,20 +2775,7 @@ function setSelectedPainPart(part){
 }
 function logPainEntry(){
   if(!psSelectedPart)return showToast('Tap a region on the 3D model first.','w');
-
-  // SECURITY: Rate limiting
-  var rlP=RateLimit.check('logPain');
-  if(!rlP.allowed)return showToast(rlP.message,'w');
-
   var intensity=parseInt(document.getElementById('ps-intensity').value)||5;
-
-  // SECURITY: Validate intensity and type
-  var vPain=Validator.fields({painIntensity:intensity,painType:psSelectedType});
-  if(!vPain.valid)return showToast(vPain.errors[0],'w');
-
-  // SECURITY: Validate the selected body part is a known string, not injected
-  var knownParts=['head','neck','shoulder','chest','core','lowerback','elbow','wrist','hip','knee','shin','ankle','foot'];
-  if(!knownParts.includes(psSelectedPart))return showToast('Invalid body region.','w');
   var today=new Date().toISOString().split('T')[0];
   var entry={part:psSelectedPart,intensity:intensity,type:psSelectedType,date:today,ts:Date.now()};
   if(!db.painLogs)db.painLogs=[];
@@ -3360,26 +2793,17 @@ function renderPSToday(){
   var today=new Date().toISOString().split('T')[0];
   var logs=(db.painLogs||[]).filter(function(p){return p.date===today;});
   if(!logs.length){el.innerHTML=`<div class="es" style="padding:24px 12px"><span class="es-icon" style="font-size:24px;animation-duration:4s">✨</span><p class="es-title" style="font-size:12px">Palace Clear</p><p class="es-sub" style="font-size:13px">No pain logged today. Body feels good.</p></div>`;return;}
-  // SECURITY: Sanitize pain log data from localStorage before innerHTML
-  // p.type is restricted to class name — use allowlist check before CSS class injection
   el.innerHTML=logs.map(function(p){
-    var safeType=['sharp','dull'].includes(p.type)?p.type:'dull';
-    var safePart=Sanitizer.escape(p.part||'unknown');
-    var safeInt=Math.min(10,Math.max(1,parseInt(p.intensity)||5));
-    var safeTs=Number.isInteger(Number(p.ts))?Number(p.ts):0;
-    var clr=safeInt>=7?'var(--danger)':safeInt>=5?'var(--warning)':'var(--success)';
-    return '<div class="pain-entry"><div class="pain-entry-part">'+safePart.toUpperCase()+'</div>'
-      +'<div class="pain-entry-type '+safeType+'">'+(safeType==='sharp'?'⚡ SHARP':'🌀 DULL')+'</div>'
-      +'<div class="pain-entry-int" style="color:'+clr+'">'+safeInt+'</div>'
-      +'<div class="pain-entry-date">'+new Date(safeTs).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</div>'
-      +'<div style="cursor:pointer;color:var(--text3);padding:0 4px;font-size:16px" onclick="deletePainEntry('+safeTs+')">✕</div></div>';
+    var clr=p.intensity>=7?'var(--danger)':p.intensity>=5?'var(--warning)':'var(--success)';
+    return '<div class="pain-entry"><div class="pain-entry-part">'+p.part.toUpperCase()+'</div>'
+      +'<div class="pain-entry-type '+p.type+'">'+(p.type==='sharp'?'⚡ SHARP':'🌀 DULL')+'</div>'
+      +'<div class="pain-entry-int" style="color:'+clr+'">'+p.intensity+'</div>'
+      +'<div class="pain-entry-date">'+new Date(p.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</div>'
+      +'<div style="cursor:pointer;color:var(--text3);padding:0 4px;font-size:16px" onclick="deletePainEntry('+p.ts+')">✕</div></div>';
   }).join('');
 }
 function deletePainEntry(ts){
-  // SECURITY: Ensure ts is a safe integer — prevents injection via crafted onclick attr
-  var safeTs=Number(ts);
-  if(!Number.isInteger(safeTs)||safeTs<=0)return;
-  db.painLogs=(db.painLogs||[]).filter(function(p){return p.ts!==safeTs;});
+  db.painLogs=(db.painLogs||[]).filter(function(p){return p.ts!==ts;});
   DB.save(U.uid,db);renderPalaceState();renderKineticAlerts();
 }
 function renderPSHistory(){
@@ -3394,14 +2818,11 @@ function renderPSHistory(){
     return '<div style="background:var(--surface);border:1px solid var(--border);padding:16px 20px;margin-bottom:10px">'
       +'<div style="font-family:\'Space Mono\',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent3);margin-bottom:12px">'+d+'</div>'
       +entries.map(function(p){
-        // SECURITY: Sanitize stored pain log data — p.type injected directly into CSS class
-        var pType=['sharp','dull'].includes(p.type)?p.type:'dull';
-        var pInt=Math.min(10,Math.max(1,parseInt(p.intensity)||5));
-        var clr=pInt>=7?'var(--danger)':pInt>=5?'var(--warning)':'var(--success)';
+        var clr=p.intensity>=7?'var(--danger)':p.intensity>=5?'var(--warning)':'var(--success)';
         return '<div class="pain-entry">'
-          +'<div class="pain-entry-part">'+Sanitizer.escape(p.part||'unknown').toUpperCase()+'</div>'
-          +'<div class="pain-entry-type '+pType+'">'+(pType==='sharp'?'⚡ SHARP':'🌀 DULL')+'</div>'
-          +'<div class="pain-entry-int" style="color:'+clr+'">'+pInt+'</div></div>';
+          +'<div class="pain-entry-part">'+p.part.toUpperCase()+'</div>'
+          +'<div class="pain-entry-type '+p.type+'">'+(p.type==='sharp'?'⚡ SHARP':'🌀 DULL')+'</div>'
+          +'<div class="pain-entry-int" style="color:'+clr+'">'+p.intensity+'</div></div>';
       }).join('')+'</div>';
   }).join('');
 }
@@ -3437,8 +2858,7 @@ function renderKineticAlerts(){
   var zone=document.getElementById('kinetic-alerts-zone');if(!zone)return;
   var alerts=[];
   var selfFlag=checkKineticPattern(db);
-  // SECURITY: sanitize selfFlag before it enters the alert HTML template
-  if(selfFlag)alerts.push({title:'KINETIC ALERT — INJURY RISK',detail:'Pattern detected: '+Sanitizer.escape(selfFlag)+'. Consistent distress signals.',action:'Reduce training load by 40% and consult a physiotherapist.',id:'self'});
+  if(selfFlag)alerts.push({title:'KINETIC ALERT — INJURY RISK',detail:'Pattern detected: '+selfFlag+'. Consistent distress signals.',action:'Reduce training load by 40% and consult a physiotherapist.',id:'self'});
   if(db.role==='coach'){
     var palace=findMyPalace();
     if(palace&&palace.members){
@@ -3464,8 +2884,6 @@ function renderKineticAlerts(){
   }).join('');
 }
 function dismissKineticAlert(id){
-  // SECURITY: Validate alert ID format — must be 'self' or 'member_<uid>'
-  if(typeof id!=='string'||id.length>128||!/^(self|member_[a-zA-Z0-9_-]+)$/.test(id))return;
   if(!db.kineticAlerts)db.kineticAlerts=[];
   var existing=db.kineticAlerts.find(function(a){return a.id===id;});
   if(existing)existing.dismissed=true;else db.kineticAlerts.push({id:id,dismissed:true});
@@ -3570,54 +2988,6 @@ function dismissKineticAlert(id){
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(tryInitPS,600);});}
   else{setTimeout(tryInitPS,600);}
 })();
-
-
-// ═══════════════════════ PROFILE ═══════════════════════════════════════
-function openProfile(){
-  if(!U)return;
-  document.getElementById('pm-av').textContent=U.name[0].toUpperCase();
-  document.getElementById('pm-name').value=U.name||'';
-  document.getElementById('pm-email').textContent=U.email||'—';
-  document.getElementById('pm-role').textContent=(db.role||'athlete').charAt(0).toUpperCase()+(db.role||'athlete').slice(1);
-  // Set sport dropdown
-  const sportEl=document.getElementById('pm-sport');
-  if(sportEl){
-    const currentSport=U.sport||db.sport||'Weightlifting';
-    Array.from(sportEl.options).forEach(o=>o.selected=o.value===currentSport);
-  }
-  // Set weight
-  const wtEl=document.getElementById('pm-weight');
-  if(wtEl) wtEl.value=U.weight||db.weight||75;
-  document.getElementById('profile-modal-ov').classList.add('open');
-  setTimeout(()=>document.getElementById('pm-name').focus(),120);
-}
-function closeProfile(){
-  document.getElementById('profile-modal-ov').classList.remove('open');
-}
-function saveProfile(){
-  const newName=document.getElementById('pm-name').value.trim();
-
-  // SECURITY: Rate limiting
-  const rlSP=RateLimit.check('saveProfile');
-  if(!rlSP.allowed)return showToast(rlSP.message,'w');
-
-  // SECURITY: Schema validation
-  const vName=Validator.field('displayName',newName);
-  if(!vName.valid)return showToast(vName.error,'w');
-  const newSport=document.getElementById('pm-sport')?.value||U.sport||'Weightlifting';
-  const newWeight=parseFloat(document.getElementById('pm-weight')?.value)||U.weight||75;
-  // Update U object
-  U.name=newName; U.sport=newSport; U.weight=newWeight;
-  // Update db
-  db.name=newName; db.sport=newSport; db.weight=newWeight;
-  DB.save(U.uid,db);
-  // Update all display elements
-  document.getElementById('u-av').textContent=newName[0].toUpperCase();
-  document.getElementById('d-name').textContent=newName.split(' ')[0].toUpperCase();
-  document.getElementById('pm-av').textContent=newName[0].toUpperCase();
-  showToast('Profile updated! 👤','s');
-  closeProfile();
-}
 
 // ═══════════════════════ TOAST ════════════════════════════════════════
 function showToast(msg,type=''){
