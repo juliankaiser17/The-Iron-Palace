@@ -2986,92 +2986,91 @@ function eText(){window.location.href='sms:112?body=EMERGENCY: I am an athlete w
     requestAnimationFrame(draw);
   }
 
-  // Mouse/touch interaction
-  C.addEventListener('mousedown',e=>{isDrag=true;autoRot=false;lastX=e.offsetX;lastY=e.offsetY;document.getElementById('btn-auto').classList.remove('active');});
-  // Helper to get correct coordinates regardless of device
-  function getEventXY(e) {
+  // --- NEW UNIFIED INTERACTION LOGIC ---
+  let startX, startY, isDragging = false;
+
+  function getLocalCoords(e) {
     const rect = C.getBoundingClientRect();
-    const t = e.touches ? e.touches[0] : e;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     return {
-      x: t.clientX - rect.left,
-      y: t.clientY - rect.top
+      x: clientX - rect.left,
+      y: clientY - rect.top,
+      rawX: clientX,
+      rawY: clientY
     };
   }
 
-  C.addEventListener('mousedown', e => {
-    isDrag = true; autoRot = false;
-    const pos = getEventXY(e);
-    lastX = e.clientX; lastY = e.clientY; 
-    startX = pos.x; startY = pos.y; // Track start of "click"
+  function handleDown(e) {
+    const pos = getLocalCoords(e);
+    startX = pos.rawX;
+    startY = pos.rawY;
+    lastX = pos.rawX;
+    lastY = pos.rawY;
+    isDragging = true;
+    autoRot = false;
     document.getElementById('btn-auto').classList.remove('active');
-  });
+  }
 
-  window.addEventListener('mouseup', e => {
-    if (isDrag) {
-      const pos = getEventXY(e);
-      // If we didn't move the mouse/finger much, treat it as a click
-      if (Math.abs(pos.x - startX) < 5 && Math.abs(pos.y - startY) < 5) {
-        let best = null, bestD = 9999;
-        SEGS.forEach(seg => {
-          const p = proj(seg.cx, seg.cy, seg.cz);
-          const d = Math.hypot(p.x - pos.x, p.y - pos.y);
-          if (d < Math.max(seg.w, seg.h) * p.s * 2.5 && d < bestD) {
-            bestD = d; best = seg;
-          }
-        });
-        if (best) { selPart3d = best.part; selPart(best.part); }
+  function handleMove(e) {
+    if (!isDragging) return;
+    const pos = getLocalCoords(e);
+    const deltaX = pos.rawX - lastX;
+    const deltaY = pos.rawY - lastY;
+    
+    rotY += deltaX * 0.012;
+    rotX += deltaY * 0.008;
+    
+    lastX = pos.rawX;
+    lastY = pos.rawY;
+    
+    if (e.cancelable) e.preventDefault(); 
+  }
+
+  function handleUp(e) {
+    if (!isDragging) return;
+    isDragging = false;
+
+    // Check if this was a TAP (finger didn't move more than 10 pixels)
+    const endPos = getLocalCoords(e.changedTouches ? e.changedTouches[0] : e);
+    const dist = Math.hypot(endPos.rawX - startX, endPos.rawY - startY);
+
+    if (dist < 10) { 
+      // It's a selection tap!
+      let best = null, bestD = 9999;
+      const mouseX = endPos.x;
+      const mouseY = endPos.y;
+
+      SEGS.forEach(seg => {
+        const p = proj(seg.cx, seg.cy, seg.cz);
+        const d = Math.hypot(p.x - mouseX, p.y - mouseY);
+        // Hit detection radius (2.5x multiplier for easier mobile tapping)
+        if (d < Math.max(seg.w, seg.h) * p.s * 2.8 && d < bestD) {
+          bestD = d;
+          best = seg;
+        }
+      });
+
+      if (best) {
+        selPart3d = best.part;
+        selPart(best.part);
       }
     }
-    isDrag = false;
-  });
+  }
 
-  // Apply the same logic to Touch
-  C.addEventListener('touchstart', e => {
-    isDrag = true; autoRot = false;
-    const pos = getEventXY(e);
-    lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
-    startX = pos.x; startY = pos.y;
-    document.getElementById('btn-auto').classList.remove('active');
-  }, { passive: false });
+  C.addEventListener('mousedown', handleDown);
+  window.addEventListener('mousemove', handleMove);
+  window.addEventListener('mouseup', handleUp);
 
-  C.addEventListener('touchend', e => {
-    // touchend events don't have touches[0], we use the start coords
-    if (isDrag) {
-       // hit detection happens in the distance check above
-       // Trigger the same logic as mouseup
-       const mouseEvent = new MouseEvent('mouseup');
-       window.dispatchEvent(mouseEvent);
-    }
-    isDrag = false;
-  });
+  C.addEventListener('touchstart', handleDown, { passive: false });
+  C.addEventListener('touchmove', handleMove, { passive: false });
+  C.addEventListener('touchend', handleUp, { passive: false });
 
-  window.addEventListener('mousemove',e=>{
-    if(isDrag){rotY+=(e.clientX-lastX)*0.012;rotX+=(e.clientY-lastY)*0.008;lastX=e.clientX;lastY=e.clientY;}
-    // Hover detection on canvas
-    if(C===document.elementFromPoint(e.clientX,e.clientY)){
-      const rect=C.getBoundingClientRect();
-      const mx=e.clientX-rect.left,my=e.clientY-rect.top;
-      let best=null,bestD=9999;
-      SEGS.forEach(seg=>{
-        const p=proj(seg.cx,seg.cy,seg.cz);
-        const d=Math.hypot(p.x-mx,p.y-my);
-        if(d<Math.max(seg.w,seg.h)*p.s*2.5&&d<bestD){bestD=d;best=seg;}
-      });
-      hoverPart=best?best.part:null;
-      C.style.cursor=hoverPart?'pointer':isDrag?'grabbing':'grab';
-    }
-  });
-
-  // Touch
-  C.addEventListener('touchstart',e=>{e.preventDefault();isDrag=true;autoRot=false;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;document.getElementById('btn-auto').classList.remove('active');},{passive:false});
-  C.addEventListener('touchmove',e=>{e.preventDefault();if(!isDrag)return;rotY+=(e.touches[0].clientX-lastX)*0.012;rotX+=(e.touches[0].clientY-lastY)*0.008;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;},{passive:false});
-  C.addEventListener('touchend',()=>{isDrag=false;});
-
-  window.toggleAuto=function(){
-    autoRot=!autoRot;
-    document.getElementById('btn-auto').classList.toggle('active',autoRot);
+  window.toggleAuto = function() {
+    autoRot = !autoRot;
+    document.getElementById('btn-auto').classList.toggle('active', autoRot);
   };
-  window.resetView=function(){rotY=0.3;rotX=-0.06;selPart3d=null;};
+  window.resetView = function() { rotY = 0.3; rotX = -0.06; selPart3d = null; };
 
   // Override selPart to also set 3d selection
   const origSelPart=window.selPart;
@@ -3582,51 +3581,57 @@ function dismissKineticAlert(id){
       if(autoRot)rotY+=0.008;
       requestAnimationFrame(draw);
     }
-    function getPSXY(e) {
+    let psStartX, psStartY, psIsDragging = false;
+
+    function getPSCoords(e) {
       const rect = C.getBoundingClientRect();
-      const t = e.touches ? e.touches[0] : e;
-      return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+      const clientX = e.touches ? (e.touches[0] ? e.touches[0].clientX : e.changedTouches[0].clientX) : e.clientX;
+      const clientY = e.touches ? (e.touches[0] ? e.touches[0].clientY : e.changedTouches[0].clientY) : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top, rawX: clientX, rawY: clientY };
     }
 
-    C.addEventListener('mousedown', function(e){
-      isDrag=true; autoRot=false;
-      const pos = getPSXY(e);
-      lastX=e.clientX; lastY=e.clientY;
-      startX = pos.x; startY = pos.y;
-      var b=document.getElementById('btn-auto-ps'); if(b)b.classList.remove('active');
-    });
+    function psDown(e) {
+      const pos = getPSCoords(e);
+      psStartX = pos.rawX; psStartY = pos.rawY;
+      lastX = pos.rawX; lastY = pos.rawY;
+      psIsDragging = true; autoRot = false;
+      var b = document.getElementById('btn-auto-ps'); if (b) b.classList.remove('active');
+    }
 
-    window.addEventListener('mouseup', function(e){
-      if(isDrag){
-        const pos = getPSXY(e);
-        if(Math.abs(pos.x - startX) < 5 && Math.abs(pos.y - startY) < 5){
-          var best=null, bestD=9999;
-          SEGS.forEach(function(seg){
-            var p=proj(seg.cx,seg.cy,seg.cz);
-            var d=Math.hypot(p.x-pos.x, p.y-pos.y);
-            if(d<Math.max(seg.w,seg.h)*p.s*2.5 && d<bestD){bestD=d;best=seg;}
-          });
-          if(best){selPart=best.part; setSelectedPainPart(best.part);}
-        }
-        isDrag=false;
+    function psMove(e) {
+      if (!psIsDragging) return;
+      const pos = getPSCoords(e);
+      rotY += (pos.rawX - lastX) * 0.012;
+      rotX += (pos.rawY - lastY) * 0.008;
+      lastX = pos.rawX; lastY = pos.rawY;
+      if (e.cancelable) e.preventDefault();
+    }
+
+    function psUp(e) {
+      if (!psIsDragging) return;
+      psIsDragging = false;
+      const pos = getPSCoords(e);
+      const dist = Math.hypot(pos.rawX - psStartX, pos.rawY - psStartY);
+
+      if (dist < 10) {
+        let best = null, bestD = 9999;
+        SEGS.forEach(function(seg) {
+          const p = proj(seg.cx, seg.cy, seg.cz);
+          const d = Math.hypot(p.x - pos.x, p.y - pos.y);
+          if (d < Math.max(seg.w, seg.h) * p.s * 3.0 && d < bestD) {
+            bestD = d; best = seg;
+          }
+        });
+        if (best) { selPart = best.part; setSelectedPainPart(best.part); }
       }
-    });
+    }
 
-    C.addEventListener('touchstart', function(e){
-      e.preventDefault(); isDrag=true; autoRot=false;
-      const pos = getPSXY(e);
-      lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
-      startX = pos.x; startY = pos.y;
-      var b=document.getElementById('btn-auto-ps'); if(b)b.classList.remove('active');
-    },{passive:false});
-
-    C.addEventListener('touchend', function(e){
-      if(isDrag){
-         const mouseEvent = new MouseEvent('mouseup');
-         window.dispatchEvent(mouseEvent);
-      }
-      isDrag=false;
-    });
+    C.addEventListener('mousedown', psDown);
+    window.addEventListener('mousemove', psMove);
+    window.addEventListener('mouseup', psUp);
+    C.addEventListener('touchstart', psDown, { passive: false });
+    C.addEventListener('touchmove', psMove, { passive: false });
+    C.addEventListener('touchend', psUp, { passive: false });
     window.toggleAutoPS=function(){autoRot=!autoRot;var b=document.getElementById('btn-auto-ps');if(b)b.classList.toggle('active',autoRot);};
     window.resetViewPS=function(){rotY=0.3;rotX=-0.06;selPart=null;setSelectedPainPart(null);};
     draw();
