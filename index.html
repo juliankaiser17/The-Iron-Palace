@@ -461,7 +461,7 @@
   .pain-part-display{font-family:'Syncopate',sans-serif;font-size:20px;letter-spacing:2px;color:var(--accent3);margin-bottom:16px;min-height:28px;}
   .slider-group{margin-bottom:18px;}
   .slider-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:'Space Mono',monospace;display:flex;justify-content:space-between;}
-  .intensity-slider{width:100%;-webkit-appearance:none;height:4px;background:linear-gradient(90deg,var(--success),var(--warning),var(--danger));outline:none;border-radius:0;}
+  .intensity-slider{width:100%;-webkit-appearance:none;appearance:none;height:4px;background:linear-gradient(90deg,var(--success),var(--warning),var(--danger));outline:none;border-radius:0;}
   .intensity-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--accent);cursor:pointer;border:2px solid #000;}
   .type-toggle{display:flex;gap:0;}
   .type-btn{flex:1;padding:12px;text-align:center;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);background:var(--surface);border:1px solid var(--border);transition:all .2s;}
@@ -1212,6 +1212,17 @@
     #h-date{display:none;}
   }
 
+  /* Custom HUD Cursor for 3D Models */
+  canvas#body3d, canvas#body3d-ps {
+    /* High-tech cyan reticle cursor */
+    cursor: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 2V6M12 18V22M2 12H6M18 12H22' stroke='%2300f2ff' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='12' r='2' fill='%2300f2ff'/%3E%3C/svg%3E") 12 12, crosshair !important;
+  }
+
+  /* Change cursor when actively dragging/rotating */
+  canvas#body3d:active, canvas#body3d-ps:active {
+    cursor: grabbing !important;
+  }
+
 </style>
 </head>
 <body>
@@ -1500,7 +1511,7 @@
         <div class="diagram-grid">
           <div class="svg-wrap" style="padding:10px">
             <div class="svg-title">ANATOMICAL MODEL — DRAG TO ROTATE</div>
-            <canvas id="body3d" width="268" height="360" style="width:268px;height:360px;display:block;margin:0 auto;cursor:grab;"></canvas>
+            <canvas id="body3d" width="268" height="360" style="width:268px;height:360px;display:block;margin:0 auto;"></canvas>
             <div style="display:flex;justify-content:center;gap:6px;margin-top:8px;flex-wrap:wrap">
               <button class="ctrl-btn active" id="btn-auto" onclick="toggleAuto()">AUTO ROTATE</button>
               <button class="ctrl-btn" onclick="resetView()">RESET</button>
@@ -1548,7 +1559,7 @@
           <div>
             <div class="pain-canvas-wrap">
               <div class="pain-canvas-label">3D BODY — TAP TO SELECT REGION</div>
-              <canvas id="body3d-ps" width="268" height="340" style="width:268px;height:340px;display:block;margin:0 auto;cursor:grab;"></canvas>
+              <canvas id="body3d-ps" width="268" height="340" style="width:268px;height:340px;display:block;margin:0 auto;"></canvas>
               <div style="display:flex;justify-content:center;gap:6px;margin-top:8px;flex-wrap:wrap">
                 <button class="ctrl-btn active" id="btn-auto-ps" onclick="toggleAutoPS()">AUTO ROTATE</button>
                 <button class="ctrl-btn" onclick="resetViewPS()">RESET</button>
