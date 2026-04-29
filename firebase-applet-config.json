@@ -1,0 +1,80 @@
+export interface AnatomySegment {
+  id: string;
+  part: string;
+  cx: number;
+  cy: number;
+  cz: number;
+  w: number;
+  h: number;
+  d: number;
+  type: 'e' | 'b'; // ellipsoid or box
+  ct: 'c' | 'r' | 's'; // common, rare, serious
+}
+
+export const ANATOMY_SEGMENTS: AnatomySegment[] = [
+  { id: 'head', part: 'head', cx: 0, cy: -120, cz: 0, w: 22, h: 26, d: 20, type: 'e', ct: 's' },
+  { id: 'neck', part: 'neck', cx: 0, cy: -97, cz: 0, w: 9, h: 10, d: 9, type: 'e', ct: 's' },
+  { id: 'lsh_trap', part: 'shoulder', cx: -20, cy: -88, cz: 0, w: 14, h: 8, d: 10, type: 'e', ct: 'c' },
+  { id: 'rsh_trap', part: 'shoulder', cx: 20, cy: -88, cz: 0, w: 14, h: 8, d: 10, type: 'e', ct: 'c' },
+  { id: 'chest_l', part: 'chest', cx: -11, cy: -75, cz: 4, w: 16, h: 20, d: 12, type: 'e', ct: 'r' },
+  { id: 'chest_r', part: 'chest', cx: 11, cy: -75, cz: 4, w: 16, h: 20, d: 12, type: 'e', ct: 'r' },
+  { id: 'abs1', part: 'core', cx: -7, cy: -52, cz: 5, w: 8, h: 8, d: 7, type: 'b', ct: 'c' },
+  { id: 'abs2', part: 'core', cx: 7, cy: -52, cz: 5, w: 8, h: 8, d: 7, type: 'b', ct: 'c' },
+  { id: 'abs3', part: 'core', cx: -7, cy: -42, cz: 5, w: 8, h: 8, d: 7, type: 'b', ct: 'c' },
+  { id: 'abs4', part: 'core', cx: 7, cy: -42, cz: 5, w: 8, h: 8, d: 7, type: 'b', ct: 'c' },
+  { id: 'abs5', part: 'core', cx: -7, cy: -32, cz: 4, w: 8, h: 8, d: 7, type: 'b', ct: 'c' },
+  { id: 'abs6', part: 'core', cx: 7, cy: -32, cz: 4, w: 8, h: 8, d: 7, type: 'b', ct: 'c' },
+  { id: 'lback', part: 'lowerback', cx: 0, cy: -36, cz: -8, w: 22, h: 18, d: 8, type: 'e', ct: 's' },
+  { id: 'obl_l', part: 'core', cx: -20, cy: -42, cz: 2, w: 8, h: 20, d: 7, type: 'e', ct: 'c' },
+  { id: 'obl_r', part: 'core', cx: 20, cy: -42, cz: 2, w: 8, h: 20, d: 7, type: 'e', ct: 'c' },
+  { id: 'hip_l', part: 'hip', cx: -16, cy: -14, cz: -2, w: 16, h: 14, d: 14, type: 'e', ct: 'r' },
+  { id: 'hip_r', part: 'hip', cx: 16, cy: -14, cz: -2, w: 16, h: 14, d: 14, type: 'e', ct: 'r' },
+  { id: 'lua', part: 'elbow', cx: -36, cy: -72, cz: 0, w: 9, h: 26, d: 9, type: 'e', ct: 'c' },
+  { id: 'rua', part: 'elbow', cx: 36, cy: -72, cz: 0, w: 9, h: 26, d: 9, type: 'e', ct: 'c' },
+  { id: 'lelbow', part: 'elbow', cx: -38, cy: -57, cz: 0, w: 7, h: 7, d: 7, type: 'e', ct: 'c' },
+  { id: 'relbow', part: 'elbow', cx: 38, cy: -57, cz: 0, w: 7, h: 7, d: 7, type: 'e', ct: 'c' },
+  { id: 'lfa', part: 'wrist', cx: -40, cy: -38, cz: 0, w: 7, h: 22, d: 7, type: 'e', ct: 'c' },
+  { id: 'rfa', part: 'wrist', cx: 40, cy: -38, cz: 0, w: 7, h: 22, d: 7, type: 'e', ct: 'c' },
+  { id: 'lhand', part: 'wrist', cx: -42, cy: -20, cz: 0, w: 7, h: 10, d: 4, type: 'e', ct: 'c' },
+  { id: 'rhand', part: 'wrist', cx: 42, cy: -20, cz: 0, w: 7, h: 10, d: 4, type: 'e', ct: 'c' },
+  { id: 'lquad', part: 'knee', cx: -14, cy: 20, cz: 2, w: 13, h: 36, d: 13, type: 'e', ct: 'c' },
+  { id: 'rquad', part: 'knee', cx: 14, cy: 20, cz: 2, w: 13, h: 36, d: 13, type: 'e', ct: 'c' },
+  { id: 'lknee', part: 'knee', cx: -14, cy: 42, cz: 4, w: 11, h: 9, d: 11, type: 'e', ct: 's' },
+  { id: 'rknee', part: 'knee', cx: 14, cy: 42, cz: 4, w: 11, h: 9, d: 11, type: 'e', ct: 's' },
+  { id: 'lham', part: 'knee', cx: -14, cy: 20, cz: -8, w: 11, h: 30, d: 8, type: 'e', ct: 'c' },
+  { id: 'rham', part: 'knee', cx: 14, cy: 20, cz: -8, w: 11, h: 30, d: 8, type: 'e', ct: 'c' },
+  { id: 'lshin', part: 'shin', cx: -14, cy: 66, cz: 3, w: 8, h: 28, d: 8, type: 'e', ct: 'c' },
+  { id: 'rshin', part: 'shin', cx: 14, cy: 66, cz: 3, w: 8, h: 28, d: 8, type: 'e', ct: 'c' },
+  { id: 'lcalf', part: 'shin', cx: -14, cy: 62, cz: -6, w: 9, h: 24, d: 9, type: 'e', ct: 'c' },
+  { id: 'rcalf', part: 'shin', cx: 14, cy: 62, cz: -6, w: 9, h: 24, d: 9, type: 'e', ct: 'c' },
+  { id: 'lankle', part: 'ankle', cx: -14, cy: 88, cz: 0, w: 7, h: 7, d: 7, type: 'e', ct: 'c' },
+  { id: 'rankle', part: 'ankle', cx: 14, cy: 88, cz: 0, w: 7, h: 7, d: 7, type: 'e', ct: 'c' },
+  { id: 'lfoot', part: 'foot', cx: -14, cy: 97, cz: 4, w: 7, h: 7, d: 13, type: 'e', ct: 'c' },
+  { id: 'rfoot', part: 'foot', cx: 14, cy: 97, cz: 4, w: 7, h: 7, d: 13, type: 'e', ct: 'c' },
+  { id: 'ldelt', part: 'shoulder', cx: -30, cy: -83, cz: 0, w: 10, h: 12, d: 10, type: 'e', ct: 'c' },
+  { id: 'rdelt', part: 'shoulder', cx: 30, cy: -83, cz: 0, w: 10, h: 12, d: 10, type: 'e', ct: 'c' },
+];
+
+export const BONES = [
+  [{ cx: 0, cy: -120, cz: 0 }, { cx: 0, cy: -97, cz: 0 }],
+  [{ cx: 0, cy: -97, cz: 0 }, { cx: 0, cy: -75, cz: 0 }],
+  [{ cx: 0, cy: -75, cz: 0 }, { cx: -20, cy: -88, cz: 0 }],
+  [{ cx: 0, cy: -75, cz: 0 }, { cx: 20, cy: -88, cz: 0 }],
+  [{ cx: -20, cy: -88, cz: 0 }, { cx: -36, cy: -72, cz: 0 }],
+  [{ cx: 20, cy: -88, cz: 0 }, { cx: 36, cy: -72, cz: 0 }],
+  [{ cx: -36, cy: -72, cz: 0 }, { cx: -40, cy: -38, cz: 0 }],
+  [{ cx: 36, cy: -72, cz: 0 }, { cx: 40, cy: -38, cz: 0 }],
+  [{ cx: -40, cy: -38, cz: 0 }, { cx: -42, cy: -20, cz: 0 }],
+  [{ cx: 40, cy: -38, cz: 0 }, { cx: 42, cy: -20, cz: 0 }],
+  [{ cx: 0, cy: -14, cz: 0 }, { cx: -14, cy: 20, cz: 0 }],
+  [{ cx: 0, cy: -14, cz: 0 }, { cx: 14, cy: 20, cz: 0 }],
+  [{ cx: -14, cy: 20, cz: 0 }, { cx: -14, cy: 42, cz: 0 }],
+  [{ cx: 14, cy: 20, cz: 0 }, { cx: 14, cy: 42, cz: 0 }],
+  [{ cx: -14, cy: 42, cz: 0 }, { cx: -14, cy: 66, cz: 0 }],
+  [{ cx: 14, cy: 42, cz: 0 }, { cx: 14, cy: 66, cz: 0 }],
+  [{ cx: -14, cy: 66, cz: 0 }, { cx: -14, cy: 88, cz: 0 }],
+  [{ cx: 14, cy: 66, cz: 0 }, { cx: 14, cy: 88, cz: 0 }],
+  [{ cx: -14, cy: 88, cz: 0 }, { cx: -14, cy: 97, cz: 4 }],
+  [{ cx: 14, cy: 88, cz: 0 }, { cx: 14, cy: 97, cz: 4 }],
+  [{ cx: 0, cy: -75, cz: 0 }, { cx: 0, cy: -14, cz: 0 }],
+];

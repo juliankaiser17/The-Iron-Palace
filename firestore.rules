@@ -1,0 +1,83 @@
+export type UserRole = 'athlete' | 'coach';
+
+export interface Workout {
+  id: number;
+  date: string;
+  dateLabel: string;
+  type: string;
+  muscle: string;
+  volume: number;
+  calories: number;
+  duration: number;
+}
+
+export interface RecoveryLog {
+  date: string;
+  sleep: number;
+  soreness: number;
+  energy: number;
+  hydration: number;
+  mood: string;
+  score: number;
+}
+
+export interface PainLog {
+  ts: number;
+  date: string;
+  part: string;
+  intensity: number;
+  type: 'sharp' | 'dull';
+}
+
+export interface Biometric {
+  source: string;
+  hrv: number;
+  rhr: number;
+  sleepCycles: number;
+  fetchedAt: number;
+}
+
+export interface KineticAlert {
+  id: string;
+  title: string;
+  detail: string;
+  action: string;
+  dismissed: boolean;
+}
+
+export interface Palace {
+  id: string;
+  name: string;
+  inviteCode: string;
+  coachUid: string;
+  coachName: string;
+  members: PalaceMember[];
+  createdAt: number;
+}
+
+export interface PalaceMember {
+  uid: string;
+  name: string;
+  email: string;
+  sport: string;
+  joinedAt: number;
+}
+
+export interface UserProfile {
+  uid: string;
+  name: string;
+  email: string;
+  sport: string;
+  weight: number;
+  role: UserRole;
+  palaceId: string | null;
+}
+
+export interface AppState {
+  workouts: Workout[];
+  recoveryLogs: RecoveryLog[];
+  prs: Record<string, { val: number; date: string }>;
+  painLogs: PainLog[];
+  biometrics: Biometric[];
+  kineticAlerts: KineticAlert[];
+}

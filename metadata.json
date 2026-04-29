@@ -1,0 +1,248 @@
+import React, { useState, useEffect } from 'react';
+import { UserProfile, Palace, PalaceMember } from '../../types';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  query, 
+  where, 
+  getDocs, 
+  updateDoc, 
+  arrayUnion 
+} from 'firebase/firestore';
+import { db } from '../../lib/firebase';
+import { motion } from 'motion/react';
+import { Castle, UserPlus, Users, Shield, Copy, Check, Terminal } from 'lucide-react';
+import { cn } from '../../lib/utils';
+
+interface PalaceHubProps {
+  profile: UserProfile | null;
+}
+
+export const PalaceHub: React.FC<PalaceHubProps> = ({ profile }) => {
+  const [palace, setPalace] = useState<Palace | null>(null);
+  const [inviteCode, setInviteCode] = useState('');
+  const [newPalaceName, setNewPalaceName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    fetchPalace();
+  }, [profile]);
+
+  const fetchPalace = async () => {
+    if (!profile) return;
+    setLoading(true);
+    try {
+      if (profile.role === 'coach') {
+        const q = query(collection(db, 'palaces'), where('coachUid', '==', profile.uid));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          setPalace({ id: snap.docs[0].id, ...snap.docs[0].data() } as Palace);
+        }
+      } else if (profile.palaceId) {
+        const docSnap = await getDoc(doc(db, 'palaces', profile.palaceId));
+        if (docSnap.exists()) {
+          setPalace({ id: docSnap.id, ...docSnap.data() } as Palace);
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createPalace = async () => {
+    if (!profile || !newPalaceName) return;
+    const id = `palace_${Math.random().toString(36).substr(2, 9)}`;
+    const code = Math.random().toString(36).substr(2, 6).toUpperCase();
+    const palaceData = {
+      id,
+      name: newPalaceName,
+      inviteCode: code,
+      coachUid: profile.uid,
+      coachName: profile.name,
+      members: [],
+      createdAt: Date.now()
+    };
+    await setDoc(doc(db, 'palaces', id), palaceData);
+    await updateDoc(doc(db, 'users', profile.uid), { palaceId: id });
+    await fetchPalace();
+  };
+
+  const joinPalace = async () => {
+    if (!profile || !inviteCode) return;
+    const q = query(collection(db, 'palaces'), where('inviteCode', '==', inviteCode.toUpperCase()));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const p = snap.docs[0];
+      const member: PalaceMember = {
+        uid: profile.uid,
+        name: profile.name,
+        email: profile.email,
+        sport: profile.sport,
+        joinedAt: Date.now()
+      };
+      await updateDoc(doc(db, 'palaces', p.id), {
+        members: arrayUnion(member)
+      });
+      await updateDoc(doc(db, 'users', profile.uid), { palaceId: p.id });
+      await fetchPalace();
+    }
+  };
+
+  const copyCode = () => {
+    if (palace) {
+      navigator.clipboard.writeText(palace.inviteCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  if (loading) return null;
+
+  return (
+    <div className="space-y-10 pb-20">
+      <div>
+        <h1 className="font-display text-4xl tracking-tight uppercase">PALACE HUB</h1>
+        <p className="font-mono text-[10px] tracking-[0.3em] text-zinc-500 uppercase mt-1">Legion Network Management</p>
+      </div>
+
+      {palace ? (
+        <div className="space-y-12">
+          {/* Active Palace Card */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-10 border border-accent/20 bg-gradient-to-br from-accent/5 to-transparent rounded-sm relative overflow-hidden"
+          >
+             <div className="absolute right-[-2%] bottom-[-10%] opacity-5 group-hover:opacity-10 transition-opacity">
+                <Castle size={300} strokeWidth={0.5} />
+             </div>
+             
+             <div className="relative z-10 flex flex-col md:flex-row justify-between gap-8">
+                <div className="space-y-4">
+                  <div className="font-mono text-[10px] tracking-[0.4em] text-accent uppercase">Network Active</div>
+                  <h2 className="font-display text-5xl tracking-tighter uppercase">{palace.name}</h2>
+                  <div className="flex gap-4">
+                    <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-sm font-mono text-[10px] uppercase text-zinc-400">
+                      ID: {palace.id}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-black/60 backdrop-blur-xl border border-white/10 p-6 rounded-sm min-w-[240px]">
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-zinc-500 mb-4">Transmission Key</div>
+                  <div className="flex items-center justify-between gap-4 p-4 bg-white/5 rounded-sm border border-white/5 group">
+                    <span className="font-display text-2xl tracking-[0.3em] text-accent group-hover:text-white transition-colors">{palace.inviteCode}</span>
+                    <button 
+                      onClick={copyCode}
+                      className="p-2 text-zinc-500 hover:text-accent transition-colors"
+                    >
+                      {copied ? <Check size={18} /> : <Copy size={18} />}
+                    </button>
+                  </div>
+                  <p className="font-mono text-[8px] uppercase tracking-widest text-zinc-600 mt-4 leading-relaxed">Share this key with athletes to include them in the legion protocol.</p>
+                </div>
+             </div>
+          </motion.div>
+
+          {/* Members List */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+               <Users size={16} className="text-zinc-500" />
+               <h3 className="font-mono text-[10px] uppercase tracking-[0.4em] text-zinc-500">Connected Entities ({palace.members.length})</h3>
+               <div className="h-px flex-1 bg-white/5" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {palace.members.length === 0 ? (
+                <div className="col-span-full py-12 border border-dashed border-white/5 rounded-sm flex flex-col items-center text-zinc-600">
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-center">No athletes currently transmitting data to this sector.</span>
+                </div>
+              ) : (
+                palace.members.map((m, i) => (
+                  <motion.div 
+                    key={m.uid}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="p-5 bg-white/5 border border-white/5 rounded-sm flex items-center gap-4 group hover:border-accent/30 transition-all"
+                  >
+                    <div className="w-10 h-10 bg-accent/10 border border-accent/20 flex items-center justify-center text-accent font-display text-xs">
+                      {m.name[0]}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-mono text-[11px] uppercase tracking-wider text-white truncate group-hover:text-accent transition-colors">{m.name}</div>
+                      <div className="font-mono text-[9px] uppercase tracking-widest text-zinc-500 mt-0.5">{m.sport} · Active</div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      ) : profile?.role === 'coach' ? (
+        <div className="max-w-xl mx-auto space-y-12 py-10 text-center">
+           <Shield size={48} className="mx-auto text-accent/20 mb-6" />
+           <div className="space-y-4">
+             <h2 className="font-display text-3xl tracking-tight">ESTABLISH COMMAND</h2>
+             <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-500 leading-relaxed max-w-sm mx-auto">
+               You currently lack an operational palace sector. Forge a name to begin athlete integration.
+             </p>
+           </div>
+           
+           <div className="space-y-6">
+             <input 
+               type="text"
+               value={newPalaceName}
+               onChange={(e) => setNewPalaceName(e.target.value)}
+               placeholder="Palace Designation (e.g. Iron Legion Prime)"
+               className="w-full bg-black border-b border-white/10 focus:border-accent outline-none px-4 py-4 text-center font-display tracking-widest"
+             />
+             <button 
+               onClick={createPalace}
+               className="w-full py-4 bg-accent text-black font-display text-[10px] tracking-[0.4em] uppercase font-bold hover:bg-white transition-all shadow-[0_20px_60px_rgba(0,242,255,0.1)]"
+             >
+               Forge Palace
+             </button>
+           </div>
+        </div>
+      ) : (
+        <div className="max-w-xl mx-auto space-y-12 py-10 text-center">
+           <UserPlus size={48} className="mx-auto text-accent/20 mb-6" />
+           <div className="space-y-4">
+             <h2 className="font-display text-3xl tracking-tight">JOIN OPERATIONAL SECTOR</h2>
+             <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-500 leading-relaxed max-w-sm mx-auto">
+               Enter a coach's transmission key to link your biometrics and operational data.
+             </p>
+           </div>
+           
+           <div className="space-y-6">
+             <div className="flex bg-black border border-white/10 rounded-sm overflow-hidden p-1">
+               <input 
+                 type="text"
+                 value={inviteCode}
+                 onChange={(e) => setInviteCode(e.target.value)}
+                 placeholder="KEY (e.g. 7X8K9L)"
+                 className="flex-1 bg-transparent outline-none px-6 py-4 text-center font-display tracking-[0.4em] text-accent"
+                 maxLength={10}
+               />
+               <button 
+                 onClick={joinPalace}
+                 className="px-10 bg-accent text-black font-display text-[10px] tracking-[0.3em] uppercase font-bold hover:bg-white transition-all"
+               >
+                 Connect
+               </button>
+             </div>
+             
+             <div className="flex items-center gap-3 justify-center text-zinc-600">
+               <Terminal size={12} />
+               <span className="font-mono text-[9px] uppercase tracking-[0.2em]">Ready for handshake protocol...</span>
+             </div>
+           </div>
+        </div>
+      )}
+    </div>
+  );
+};
