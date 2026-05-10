@@ -4,8 +4,51 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- SECURITY: Content Security Policy
+     NOTE: CSP via meta tag is NOT used here because Firebase Auth's signInWithPopup
+     needs ~8 Google/Firebase domains that are hard to enumerate inline, and a
+     meta-tag CSP fires too late to protect inline scripts anyway.
 
-<title>PREHAB</title>
+     INSTEAD — set CSP as an HTTP response header in vercel.json:
+
+     {
+       "headers": [
+         {
+           "source": "/(.*)",
+           "headers": [
+             {
+               "key": "Content-Security-Policy",
+               "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.firebase.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; img-src 'self' data: https:; frame-src https://accounts.google.com https://theironpalace-ffb85.firebaseapp.com; frame-ancestors 'none';"
+             },
+             {
+               "key": "X-Frame-Options",
+               "value": "DENY"
+             },
+             {
+               "key": "X-Content-Type-Options",
+               "value": "nosniff"
+             },
+             {
+               "key": "Referrer-Policy",
+               "value": "strict-origin-when-cross-origin"
+             },
+             {
+               "key": "Permissions-Policy",
+               "value": "camera=(), microphone=(), geolocation=()"
+             }
+           ]
+         }
+       ]
+     }
+
+     Save this as vercel.json in your repo root. These 5 headers together:
+     - CSP: blocks XSS script injection
+     - X-Frame-Options: prevents clickjacking
+     - X-Content-Type-Options: prevents MIME sniffing attacks
+     - Referrer-Policy: limits data leakage in referrer headers
+     - Permissions-Policy: locks down sensor APIs you don't use
+-->
+<title>RECOVO</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;700&family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="images/title.png">
 <!-- Firebase SDKs -->
@@ -159,7 +202,7 @@
 
   /* DASHBOARD */
   .welcome-banner{background:linear-gradient(135deg,var(--surface),#1a1a0a);border:1px solid var(--border);border-left:4px solid var(--accent);padding:28px 32px;margin-bottom:28px;position:relative;overflow:hidden;}
-  .welcome-banner::after{content:'PREHAB';position:absolute;right:-20px;top:50%;transform:translateY(-50%);font-family:'Syncopate',sans-serif;font-size:80px;color:rgba(255,255,255,0.022);letter-spacing:4px;white-space:nowrap;}
+  .welcome-banner::after{content:'RECOVO';position:absolute;right:-20px;top:50%;transform:translateY(-50%);font-family:'Syncopate',sans-serif;font-size:80px;color:rgba(255,255,255,0.022);letter-spacing:4px;white-space:nowrap;}
   .welcome-name{font-family:'Syncopate',sans-serif;font-size:31px;font-weight:400;letter-spacing:3px;}
   .welcome-date{font-size:13px;color:var(--text3);letter-spacing:1px;}
   .streak-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.165);padding:6px 14px;margin-top:12px;font-family:'Space Mono',monospace;font-size:13px;letter-spacing:2px;color:var(--accent);}
@@ -1880,11 +1923,11 @@
 
 <!-- AUTH -->
 <div id="auth-screen">
-  <div class="auth-bg">PREHAB
+  <div class="auth-bg">RECOVO
     
   </div>
   <div class="auth-card">
-    <div class="auth-logo" style="font-family:'Montserrat',sans-serif;font-size:38px;font-weight:800;letter-spacing:0.2em;color:#fff;text-shadow:0 0 60px rgba(255,255,255,.3)">PREHAB</div>
+    <div class="auth-logo" style="font-family:'Montserrat',sans-serif;font-size:38px;font-weight:800;letter-spacing:0.2em;color:#fff;text-shadow:0 0 60px rgba(255,255,255,.3)">RECOVO</div>
     <div class="auth-sub">Elite Athlete Performance System</div>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchTab('signin')">Sign In</button>
@@ -1898,7 +1941,15 @@
       </button>
       <div class="divider">or</div>
       <div class="form-group"><div class="form-label">Email</div><input class="form-input" type="email" id="a-email" placeholder="athlete@example.com"></div>
-      <div class="form-group"><div class="form-label">Password</div><input class="form-input" type="password" id="a-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAuth()"></div>
+      <div class="form-group">
+        <div class="form-label">Password</div>
+        <div style="position:relative;">
+          <input class="form-input" type="password" id="a-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAuth()" style="padding-right:44px;">
+          <button type="button" onclick="togglePwVisibility('a-pw','eye-a-pw')" id="eye-a-pw-btn" aria-label="Toggle password visibility" style="position:absolute;right:0;top:0;bottom:0;width:44px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text3);transition:color .15s;" onmouseover="this.style.color='var(--text1)'" onmouseout="this.style.color='var(--text3)'">
+            <svg id="eye-a-pw" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
       <div id="f-name" style="display:none" class="form-group"><div class="form-label">Full Name</div><input class="form-input" type="text" id="a-name" placeholder="Your Name"></div>
       <div id="f-sport" style="display:none" class="form-group"><div class="form-label">Primary Sport</div><select class="form-input" id="a-sport"><option>Weightlifting</option><option>CrossFit</option><option>Powerlifting</option><option>Bodybuilding</option><option>Running</option><option>Cycling</option><option>Swimming</option><option>MMA / Boxing</option><option>Yoga</option><option>Other</option></select></div>
       <div id="f-wt" style="display:none" class="form-group"><div class="form-label">Body Weight (kg)</div><input class="form-input" type="number" id="a-wt" placeholder="75"></div>
@@ -1931,7 +1982,7 @@
       Sign in with Google
     </div>
     <div class="gp-t1">Choose an account</div>
-    <div class="gp-t2">to continue to PREHAB</div>
+    <div class="gp-t2">to continue to RECOVO</div>
     <div class="gp-list" id="gp-list"></div>
     <div class="gp-add-row" onclick="toggleGPForm()"><div class="gp-add-ic">＋</div><span>Use another account</span></div>
     <div class="gp-form" id="gp-form">
@@ -1948,7 +1999,7 @@
 <!-- APP -->
 <div id="app">
   <header class="app-header">
-    <div class="app-logo">PREHAB</div>
+    <div class="app-logo">RECOVO</div>
     <div class="header-r">
       <span style="font-size:11px;color:var(--text3);letter-spacing:2px;font-family:'Space Mono',monospace" id="h-date"></span>
       <div class="u-avatar" id="u-av" onclick="openProfile()" title="Edit Profile">A</div>
@@ -2277,7 +2328,7 @@
               <h3>🏃 JOIN A PALACE</h3>
               <div class="form-group" style="margin-bottom:16px">
                 <div class="form-label">Invite Code</div>
-                <input class="form-input" type="text" id="ph-invite" placeholder="e.g. PREHAB-7X9K" style="text-transform:uppercase;letter-spacing:4px">
+                <input class="form-input" type="text" id="ph-invite" placeholder="e.g. RECOVO-7X9K" style="text-transform:uppercase;letter-spacing:4px">
               </div>
               <button class="btn-accent" onclick="joinPalace()">JOIN PALACE</button>
             </div>
@@ -2297,7 +2348,7 @@
                 <h3>⚔️ FORGE YOUR PALACE</h3>
                 <div class="form-group" style="margin-bottom:16px">
                   <div class="form-label">Palace Name</div>
-                  <input class="form-input" type="text" id="ph-palace-name" placeholder="e.g. PreHab Legion Alpha">
+                  <input class="form-input" type="text" id="ph-palace-name" placeholder="e.g. Recovo Legion Alpha">
                 </div>
                 <button class="btn-accent" onclick="createPalace()">FORGE PALACE</button>
               </div>
@@ -2557,10 +2608,31 @@ function _unlockDailyStatus() {
       </div>
       <!-- Submit -->
       <button onclick="completeGoogleOnboarding()" style="width:100%;background:#0EA5E9;color:#fff;border:none;border-radius:6px;padding:14px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0;transition:background .15s;" onmouseover="this.style.background='#38BDF8'" onmouseout="this.style.background='#0EA5E9'">
-        Enter PREHAB →
+        Enter RECOVO →
       </button>
     </div>
   </div>
 </div>
+<!-- EYE TOGGLE FOR PASSWORD FIELDS -->
+<script>
+function togglePwVisibility(inputId, iconId) {
+  var input = document.getElementById(inputId);
+  var icon  = document.getElementById(iconId);
+  if (!input || !icon) return;
+  var isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  if (isHidden) {
+    icon.innerHTML =
+      '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>' +
+      '<path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>' +
+      '<line x1="1" y1="1" x2="23" y2="23"/>';
+  } else {
+    icon.innerHTML =
+      '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>' +
+      '<circle cx="12" cy="12" r="3"/>';
+  }
+  input.focus();
+}
+</script>
 </body>
 </html>
