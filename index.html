@@ -81,6 +81,19 @@
   window._FB = { auth, db_rt, ref, set, get, update,
     createUserWithEmailAndPassword, signInWithEmailAndPassword,
     fbSignOut, GoogleAuthProvider, signInWithPopup, gProvider, updateProfile };
+
+  // Auth state listener
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // User is signed in
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+    } else {
+      // User is signed out
+      document.getElementById('auth-screen').style.display = 'flex';
+      document.getElementById('app').style.display = 'none';
+    }
+  });
 </script>
 
 <style>
