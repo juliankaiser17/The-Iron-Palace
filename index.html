@@ -2275,6 +2275,190 @@
 .btn-primary:hover { background: #1a1a1a; }
 .btn-primary::after { display: none; }
 
+/* ══ RECOVO UI REDESIGN ══ */
+
+/* Main layout */
+body { background: #D4D4C8 !important; }
+
+/* ── SIDEBAR ── */
+#sidebar, .sidebar, [id*="sidebar"], nav.sidebar {
+  background: #1C1C1C !important;
+  border-right: none !important;
+}
+.nav-item, .sidebar-item, [class*="nav-item"] {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  color: #F5C300 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 14px 24px !important;
+}
+.nav-item:hover, .sidebar-item:hover {
+  background: rgba(245,195,0,0.08) !important;
+  color: #fff !important;
+}
+.nav-item.active, .sidebar-item.active {
+  background: transparent !important;
+  color: #F5C300 !important;
+}
+/* Sidebar logo / brand at bottom */
+.sidebar-logo, [class*="sidebar-brand"] {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  font-style: italic !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px !important;
+  color: #1C1C1C !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+}
+
+/* ── MAIN CONTENT AREA ── */
+#main, .main, .main-content, [id*="main-content"] {
+  background: #D4D4C8 !important;
+}
+
+/* ── WELCOME HEADER ── */
+.dashboard-header, .welcome-header, [class*="welcome-banner"],
+#section-dashboard > div:first-child {
+  background: #F5C300 !important;
+  border-radius: 28px !important;
+  padding: 28px 36px !important;
+  margin-bottom: 16px !important;
+  border: none !important;
+}
+.welcome-name, .dashboard-title, [class*="welcome-title"],
+.dashboard-header h1, .dashboard-header h2 {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: clamp(32px, 4vw, 56px) !important;
+  font-weight: 900 !important;
+  font-style: italic !important;
+  text-transform: uppercase !important;
+  color: #000 !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1 !important;
+}
+/* Streak badge */
+.streak-badge, [class*="streak"] {
+  background: #1C1C1C !important;
+  color: #fff !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  border-radius: 50px !important;
+  padding: 8px 18px !important;
+  border: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-top: 12px !important;
+}
+
+/* ── INFO BANNER (welcome message) ── */
+.info-banner, .welcome-msg, [class*="welcome-msg"],
+[class*="first-session"] {
+  background: #1C1C1C !important;
+  border-radius: 14px !important;
+  padding: 16px 24px !important;
+  border: none !important;
+  text-align: center !important;
+  color: #F5C300 !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+}
+
+/* ── STAT CARDS ── */
+.stat-card, .metric-card, [class*="stat-card"],
+.dashboard-stats > div {
+  background: #1C1C1C !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 8px !important;
+  padding: 20px !important;
+  box-shadow: none !important;
+}
+.stat-label, .metric-label, [class*="stat-label"] {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.15em !important;
+  text-transform: uppercase !important;
+  color: #fff !important;
+}
+.stat-value, .metric-value, [class*="stat-value"] {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 28px !important;
+  font-weight: 900 !important;
+  color: #0EA5C8 !important;
+}
+.stat-sub, .metric-sub, [class*="stat-sub"] {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: rgba(255,255,255,0.35) !important;
+}
+
+/* ── CHART AREA ── */
+.chart-container, [class*="chart-wrap"], [class*="chart-card"] {
+  background: #C8C8BC !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+}
+.chart-label, [class*="chart-label"] {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: #555 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+}
+
+/* ── PERSONAL RECORDS & RECENT WORKOUTS CARDS ── */
+.pr-card, .records-card, .workouts-card,
+[class*="personal-record"], [class*="recent-workout"] {
+  background: #C8C8BC !important;
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+.section-title, .card-title, [class*="section-title"] {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.15em !important;
+  text-transform: uppercase !important;
+  color: #1C1C1C !important;
+}
+
+/* ── ALL BUTTONS in main content ── */
+.btn, button:not(.lp-join-btn):not(.jm-option):not(.jm-close):not(.auth-tab):not(.btn-google) {
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  border-radius: 8px !important;
+}
+
+/* Avatar / user icon top right */
+.user-avatar, .avatar, [class*="user-avatar"] {
+  background: #888 !important;
+  border-radius: 50% !important;
+  color: #fff !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 900 !important;
+}
 </style>
 </head>
 <body>
@@ -2348,7 +2532,7 @@
     </div>
     <div class="auth-form">
       <div id="auth-err" class="auth-err"></div>
-      <button class="btn-google" onclick="openGP()">
+      <button class="btn-google" onclick="signInGoogle()">
         <span class="g-continue">Continue</span>
         <span>&nbsp;</span>
         <span class="g-with">with</span>
