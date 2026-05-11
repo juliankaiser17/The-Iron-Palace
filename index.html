@@ -81,38 +81,6 @@
   window._FB = { auth, db_rt, ref, set, get, update,
     createUserWithEmailAndPassword, signInWithEmailAndPassword,
     fbSignOut, GoogleAuthProvider, signInWithPopup, gProvider, updateProfile };
-
-  // Global Google sign-in handler for the auth button
-  window.signInGoogle = function() {
-    if (typeof setErr === 'function') setErr('');
-    signInWithPopup(auth, gProvider)
-      .then(function(result) {
-        // Firebase auth state listener will handle UI state changes.
-        console.log('Google sign-in successful:', result.user && result.user.email);
-      })
-      .catch(function(error) {
-        var message = error && error.message ? error.message : 'Google sign-in failed. Please try again.';
-        if (typeof setErr === 'function') {
-          setErr(message);
-        } else {
-          console.error('Google sign-in error:', error);
-          alert(message);
-        }
-      });
-  };
-
-  // Auth state listener
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      // User is signed in
-      document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-    } else {
-      // User is signed out
-      document.getElementById('auth-screen').style.display = 'flex';
-      document.getElementById('app').style.display = 'none';
-    }
-  });
 </script>
 
 <style>
