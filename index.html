@@ -2459,6 +2459,535 @@ body { background: #D4D4C8 !important; }
   font-family: 'Montserrat', sans-serif !important;
   font-weight: 900 !important;
 }
+
+/* ═══════════════════════════════════════════════════════
+   RECOVO DASHBOARD REDESIGN — Exact match to design spec
+═══════════════════════════════════════════════════════ */
+
+/* Override global body/main background */
+body { background: #D0D0C4 !important; }
+.main-content { background: #D0D0C4 !important; }
+.app-layout { background: #D0D0C4 !important; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: #1A1A1A !important;
+  border-right: none !important;
+  width: 220px !important;
+}
+.nav-item {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #F5C300 !important;
+  background: transparent !important;
+  border-left: none !important;
+  border-radius: 0 !important;
+  padding: 14px 20px !important;
+  margin-bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.nav-item:hover {
+  background: rgba(245,195,0,0.08) !important;
+  color: #fff !important;
+  border-left: none !important;
+}
+.nav-item.active {
+  background: rgba(245,195,0,0.06) !important;
+  color: #F5C300 !important;
+  border-left: none !important;
+}
+.rv-nav-icon { font-size: 16px; flex-shrink: 0; }
+.rv-nav-sup { display: none !important; }
+
+/* Sidebar brand at bottom */
+.rv-sidebar-brand {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  font-style: italic !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+  text-decoration-thickness: 2px !important;
+  color: #D0D0C4 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  margin-top: 16px !important;
+  text-align: center !important;
+}
+.sb-foot {
+  padding: 20px !important;
+  margin-top: auto !important;
+}
+.btn-so {
+  width: 100% !important;
+  margin-top: 12px !important;
+  padding: 10px !important;
+  border: 1px solid rgba(245,195,0,0.2) !important;
+  color: rgba(245,195,0,0.5) !important;
+  background: transparent !important;
+  border-radius: 6px !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+  transition: all .2s !important;
+}
+.btn-so:hover {
+  border-color: rgba(244,63,94,0.5) !important;
+  color: #ef4444 !important;
+}
+
+/* ── APP HEADER ── */
+.app-header {
+  background: #D0D0C4 !important;
+  border-bottom: 1px solid rgba(0,0,0,0.1) !important;
+  backdrop-filter: none !important;
+}
+.app-header::after { display: none !important; }
+.app-logo {
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 900 !important;
+  font-style: italic !important;
+  letter-spacing: 0.1em !important;
+  color: #1A1A1A !important;
+  background: none !important;
+  -webkit-text-fill-color: #1A1A1A !important;
+}
+.u-avatar {
+  background: #888 !important;
+  border-radius: 50% !important;
+  color: #fff !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 14px !important;
+  width: 36px !important;
+  height: 36px !important;
+}
+
+/* ── WELCOME BANNER ── */
+.rv-welcome-banner {
+  background: #F5C300;
+  border-radius: 24px;
+  padding: 28px 36px 24px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.rv-welcome-name {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(36px, 4vw, 60px);
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  color: #000;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  margin-bottom: 14px;
+}
+.rv-streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1A1A1A;
+  color: #fff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 50px;
+  padding: 8px 18px;
+}
+
+/* ── INFO BAR ── */
+.rv-info-bar {
+  background: #1A1A1A;
+  border-radius: 14px;
+  padding: 16px 24px;
+  margin-bottom: 16px;
+  color: #F5C300;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* ── STAT CARDS ROW ── */
+.rv-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin-bottom: 16px;
+  background: #1A1A1A;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.rv-stat-card {
+  padding: 20px 18px;
+  border-right: 1px solid rgba(255,255,255,0.08);
+}
+.rv-stat-card:last-child { border-right: none; }
+.rv-stat-mid { border-right: 1px solid rgba(255,255,255,0.08); }
+.rv-stat-last { border-right: none; }
+.rv-stat-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 8px;
+}
+.rv-stat-value {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 36px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.rv-cyan { color: #0EA5C8 !important; }
+.rv-orange { color: #F59E0B !important; }
+.rv-dash { color: #F5C300 !important; }
+.rv-stat-unit {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+
+/* ── BOTTOM GRID ── */
+.rv-bottom-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 0;
+}
+
+/* ── CHART BOX ── */
+.rv-chart-box {
+  background: #1A1A1A;
+  border-radius: 12px;
+  padding: 20px 20px 14px;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.rv-chart-box .bar-chart {
+  height: 180px !important;
+  flex: 1;
+}
+.rv-chart-box .bar {
+  background: #1A1A1A !important;
+  opacity: 1 !important;
+  border-radius: 3px 3px 0 0 !important;
+  box-shadow: none !important;
+  background: rgba(255,255,255,0.2) !important;
+}
+.rv-chart-box .bar.today {
+  background: rgba(255,255,255,0.6) !important;
+}
+.rv-chart-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.rv-chart-box .bar-day {
+  color: rgba(255,255,255,0.5) !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* ── RIGHT COLUMN (PR + Recent stacked) ── */
+.rv-right-col {
+  display: flex;
+  flex-direction: column;
+}
+.rv-section-header {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #555;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rv-dash-line { opacity: 0.5; }
+.rv-side-card {
+  background: #C0C0B4;
+  border-radius: 10px;
+  padding: 16px;
+  min-height: 100px;
+}
+.rv-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 10px;
+  text-align: center;
+  gap: 6px;
+}
+.rv-empty-icon { font-size: 28px; margin-bottom: 4px; }
+.rv-empty-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #1A1A1A;
+}
+.rv-empty-sub {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.4);
+  line-height: 1.5;
+  max-width: 220px;
+}
+.rv-open-tracks {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #F5C300;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: opacity .15s;
+}
+.rv-open-tracks:hover { opacity: 0.75; }
+
+/* ── RECOVO WATERMARK ── */
+.rv-watermark {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  font-style: italic;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
+  color: #1A1A1A;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: right;
+  margin-top: 20px;
+  padding-right: 4px;
+}
+
+/* ── SECTION TITLE BAR (for other sections) ── */
+.rv-section-title-bar {
+  background: #F5C300;
+  border-radius: 20px;
+  padding: 22px 28px 18px;
+  margin-bottom: 20px;
+}
+.rv-section-title-text {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(28px, 3.5vw, 48px);
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  color: #000;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.rv-section-icon { font-style: normal; }
+.rv-section-sub {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.45);
+  margin-top: 4px;
+}
+
+/* ── Override old section-title for consistency ── */
+.section-title {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: clamp(28px, 3.5vw, 48px) !important;
+  font-weight: 900 !important;
+  font-style: italic !important;
+  text-transform: uppercase !important;
+  color: #1A1A1A !important;
+  background: none !important;
+  -webkit-text-fill-color: #1A1A1A !important;
+  letter-spacing: -0.01em !important;
+}
+.section-sub {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: rgba(26,26,26,0.45) !important;
+}
+
+/* ── CARDS (updated for other sections) ── */
+.card {
+  background: #C0C0B4 !important;
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+.card-label {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.15em !important;
+  color: rgba(0,0,0,0.5) !important;
+}
+.card-label::before { display: none !important; }
+.card-value {
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 900 !important;
+  color: #1A1A1A !important;
+  text-shadow: none !important;
+}
+.ca { color: #0EA5C8 !important; }
+.cw { color: #F59E0B !important; }
+.cs { color: #10B981 !important; }
+.card-unit {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: rgba(0,0,0,0.35) !important;
+}
+
+/* ── LOG FORM ── */
+.log-form {
+  background: #C0C0B4 !important;
+  border: none !important;
+  border-radius: 10px !important;
+}
+.log-title {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+  color: #1A1A1A !important;
+}
+.form-input {
+  background: #D0D0C4 !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+  border-radius: 8px !important;
+  color: #1A1A1A !important;
+}
+.form-input:focus {
+  border-color: #F5C300 !important;
+  box-shadow: 0 0 0 2px rgba(245,195,0,0.2) !important;
+}
+.form-label {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+  color: rgba(0,0,0,0.55) !important;
+}
+
+/* ── TIMER BLOCK ── */
+.timer-block {
+  background: #1A1A1A !important;
+  border: none !important;
+  border-radius: 12px !important;
+}
+.timer-disp {
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 900 !important;
+  color: #F5C300 !important;
+  background: none !important;
+  -webkit-text-fill-color: #F5C300 !important;
+}
+.timer-sub { color: rgba(255,255,255,0.4) !important; }
+
+/* ── RECOVERY CHART BOX ── */
+.chart-box {
+  background: #1A1A1A !important;
+  border: none !important;
+  border-radius: 12px !important;
+}
+.chart-lbl {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
+  color: rgba(255,255,255,0.4) !important;
+}
+.bar {
+  background: rgba(255,255,255,0.2) !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+}
+.bar.today {
+  background: #F5C300 !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+}
+.bar.rest { background: rgba(255,255,255,0.07) !important; opacity: 1 !important; }
+.bar-day {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  color: rgba(255,255,255,0.45) !important;
+  letter-spacing: 0 !important;
+}
+
+/* ── PRIMARY BUTTON ── */
+.btn-primary {
+  background: #000 !important;
+  color: #F5C300 !important;
+  border-radius: 50px !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.15em !important;
+  text-transform: uppercase !important;
+  border: none !important;
+}
+.btn-primary:hover { background: #1A1A1A !important; }
+.btn-primary::after { display: none !important; }
+
+/* ── MOBILE RESPONSIVE ── */
+@media(max-width: 768px) {
+  .rv-stats-row { grid-template-columns: repeat(2,1fr) !important; }
+  .rv-bottom-grid { grid-template-columns: 1fr !important; }
+  .rv-welcome-name { font-size: 32px !important; }
+  .rv-stat-card { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.08); }
+}
+@media(max-width: 480px) {
+  .rv-stats-row { grid-template-columns: 1fr 1fr !important; }
+}
 </style>
 </head>
 <body>
@@ -2609,53 +3138,83 @@ body { background: #D4D4C8 !important; }
   <div class="app-layout">
     <aside class="sidebar">
       <nav>
-        <div class="nav-item active" data-s="dashboard" onclick="goSec('dashboard')"><span style="font-size:18px;width:20px;text-align:center">⚡</span>Dashboard</div>
-        <div class="nav-item" data-s="tracks" onclick="goSec('tracks')"><span style="font-size:18px;width:20px;text-align:center">📊</span>Tracks</div>
-        <div class="nav-item" data-s="recovery" onclick="goSec('recovery')"><span style="font-size:18px;width:20px;text-align:center">💠</span>Recovery</div>
-        <div class="nav-item" data-s="injuries" onclick="goSec('injuries')"><span style="font-size:18px;width:20px;text-align:center">🩺</span>Injuries</div>
-        <div class="nav-item" data-s="palace-state" onclick="checkDailyStatusAccess()" id="nav-palace-state"><span style="font-size:18px;width:20px;text-align:center">🧬</span>Daily Status <span id="daily-status-lock-icon" style="font-size:13px;margin-left:2px;opacity:.6">🔒</span></div>
-        <div class="nav-item" data-s="legion" onclick="goSec('legion')" id="nav-legion" style="display:none"><span style="font-size:18px;width:20px;text-align:center">⚔️</span>Legion<span id="alert-badge-nav" style="display:none" class="alert-badge">0</span></div>
-        <div class="nav-item" data-s="palace-hub" onclick="goSec('palace-hub')" id="nav-palace-hub"><span style="font-size:18px;width:20px;text-align:center">🏛️</span><span id="nav-palace-hub-label">Join a Legion</span></div>
+        <div class="nav-item active" data-s="dashboard" onclick="goSec('dashboard')"><span class="rv-nav-icon">⚡</span>DASHBOARD <span class="rv-nav-sup">⚡</span></div>
+        <div class="nav-item" data-s="tracks" onclick="goSec('tracks')"><span class="rv-nav-icon">📊</span>TRACKS <span class="rv-nav-sup">📊</span></div>
+        <div class="nav-item" data-s="recovery" onclick="goSec('recovery')"><span class="rv-nav-icon">↩</span>RECOVERY <span class="rv-nav-sup">↩</span></div>
+        <div class="nav-item" data-s="injuries" onclick="goSec('injuries')"><span class="rv-nav-icon">🩺</span>INJURIES <span class="rv-nav-sup">🩺</span></div>
+        <div class="nav-item" data-s="palace-state" onclick="checkDailyStatusAccess()" id="nav-palace-state"><span class="rv-nav-icon">🗓️</span>DAILY STATUS <span class="rv-nav-sup">🗓️</span> <span id="daily-status-lock-icon" style="font-size:13px;margin-left:2px">🔒</span></div>
+        <div class="nav-item" data-s="legion" onclick="goSec('legion')" id="nav-legion" style="display:none"><span class="rv-nav-icon">⚔️</span>LEGION<span id="alert-badge-nav" style="display:none" class="alert-badge">0</span></div>
+        <div class="nav-item" data-s="palace-hub" onclick="goSec('palace-hub')" id="nav-palace-hub"><span class="rv-nav-icon">≫</span><span id="nav-palace-hub-label">JOIN A LEGION</span> <span class="rv-nav-sup">≫</span></div>
       </nav>
       <div class="sb-foot">
-        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;font-family:'Space Mono',monospace">Weekly Goal</div>
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:'Space Mono',monospace">Weekly Goal</div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-family:'Space Mono',monospace;letter-spacing:1px" id="wk-txt">0 of 5 sessions</div>
         <div class="progress-bar"><div class="progress-fill" id="wk-bar" style="width:0%"></div></div>
         <button class="btn-so" onclick="signOut()">Sign Out</button>
+        <div class="rv-sidebar-brand">RECOVO</div>
       </div>
     </aside>
     <main class="main-content">
 
       <!-- DASHBOARD -->
       <section class="section active" id="section-dashboard">
-        <div class="welcome-banner">
-          <div class="welcome-date" id="d-date"></div>
-          <div class="welcome-name">WELCOME BACK, <span id="d-name" style="opacity:.6">ATHLETE</span></div>
-          <div class="streak-badge">🔥 <span id="d-streak">0</span> DAY STREAK</div>
+        <!-- Hidden element preserved for JS compatibility -->
+        <span id="d-date" style="display:none"></span>
+        <!-- Welcome Banner (yellow) -->
+        <div class="rv-welcome-banner">
+          <div class="rv-welcome-name">WELCOME BACK, <span id="d-name">ATHLETE</span></div>
+          <div class="rv-streak-badge"><span id="d-streak">0</span> DAY STREAK 🔥</div>
         </div>
+        <!-- Info Bar -->
+        <div class="rv-info-bar" id="rv-info-bar">WELCOME TO THE RECOVO. LOG YOUR FIRST SESSION TO BEGIN YOUR JOURNEY.</div>
         <!-- KINETIC ALERTS ZONE -->
         <div id="kinetic-alerts-zone"></div>
         <div id="enc-bar-wrap"></div>
-        <div class="g4">
-          <div class="card"><div class="card-label">Total Volume</div><div class="card-value ca" id="d-vol">0</div><div class="card-unit">kg lifted all time</div></div>
-          <div class="card"><div class="card-label">Calories Burned</div><div class="card-value cw" id="d-cal">0</div><div class="card-unit">kcal all time</div></div>
-          <div class="card"><div class="card-label">Recovery Score</div><div class="card-value cs" id="d-rec">—</div><div class="card-unit">log to see score</div></div>
-          <div class="card"><div class="card-label">Total Sessions</div><div class="card-value" id="d-sess">0</div><div class="card-unit">logged workouts</div></div>
+        <!-- Stat Cards -->
+        <div class="rv-stats-row">
+          <div class="rv-stat-card"><div class="rv-stat-label">TOTAL VOLUME</div><div class="rv-stat-value rv-cyan" id="d-vol">0</div><div class="rv-stat-unit">KG LIFTED ALL TIME</div></div>
+          <div class="rv-stat-card"><div class="rv-stat-label">CALORIES BURNED</div><div class="rv-stat-value rv-orange" id="d-cal">0</div><div class="rv-stat-unit">KCAL ALL TIME</div></div>
+          <div class="rv-stat-card rv-stat-mid"><div class="rv-stat-label">RECOVERY SCORE</div><div class="rv-stat-value rv-dash" id="d-rec">—</div><div class="rv-stat-unit">LOG TO SEE SCORE</div></div>
+          <div class="rv-stat-card rv-stat-last"><div class="rv-stat-label">TOTAL SESSIONS</div><div class="rv-stat-value" id="d-sess">0</div><div class="rv-stat-unit">LOGGED WORKOUTS</div></div>
         </div>
-        <div class="g2">
-          <div class="chart-box"><div class="chart-lbl">Last 7 Days — Volume (kg)</div><div class="bar-chart" id="wk-chart"></div></div>
-          <div class="card" style="margin-bottom:0"><div class="card-label">Personal Records</div><div id="pr-list" style="margin-top:12px"></div></div>
+        <!-- Bottom grid: chart left, PR + Recent right -->
+        <div class="rv-bottom-grid">
+          <!-- Bar Chart -->
+          <div class="rv-chart-box">
+            <div class="bar-chart" id="wk-chart"></div>
+            <div class="rv-chart-label">LAST 7 DAYS — VOLUME (KG)</div>
+          </div>
+          <!-- Right column: PR + Recent stacked -->
+          <div class="rv-right-col">
+            <div class="rv-section-header"><span class="rv-dash-line">—</span>PERSONAL RECORDS</div>
+            <div class="rv-side-card" id="pr-list">
+              <div class="rv-empty-state">
+                <div class="rv-empty-icon">🥇</div>
+                <div class="rv-empty-title">NO RECORDS YET</div>
+                <div class="rv-empty-sub">ADD VOLUME WHEN LOGGING. YOUR FIRST PR IS WAITING.</div>
+              </div>
+            </div>
+            <div class="rv-section-header" style="margin-top:16px"><span class="rv-dash-line">—</span>RECENT WORKOUTS</div>
+            <div class="rv-side-card" id="recent-w">
+              <div class="rv-empty-state">
+                <div class="rv-empty-icon">🏋️</div>
+                <div class="rv-empty-title">START YOUR FIRST WORKOUT</div>
+                <div class="rv-empty-sub">EVERY LEGEND HAS A DAY ONE. YOURS STARTS NOW.</div>
+                <div class="rv-open-tracks" onclick="goSec('tracks')">→ OPEN TRACKS</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div style="margin-top:24px">
-          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:16px;display:flex;align-items:center;gap:8px"><span style="opacity:.5">─</span> Recent Workouts</div>
-          <div id="recent-w"></div>
-        </div>
+        <!-- RECOVO watermark -->
+        <div class="rv-watermark">RECOVO</div>
       </section>
 
       <!-- TRACKS -->
       <section class="section" id="section-tracks">
-        <div class="section-title">TRACKS</div>
-        <div class="section-sub">Record & Monitor Your Workouts</div>
+        <div class="rv-section-title-bar">
+          <div class="rv-section-title-text">TRACKS <span class="rv-section-icon">📊</span></div>
+          <div class="rv-section-sub">RECORD &amp; MONITOR YOUR WORKOUTS</div>
+        </div>
         <div class="timer-block">
           <div>
             <div class="timer-disp" id="t-disp">00:00:00</div>
@@ -2701,8 +3260,10 @@ body { background: #D4D4C8 !important; }
 
       <!-- RECOVERY -->
       <section class="section" id="section-recovery">
-        <div class="section-title">RECOVERY</div>
-        <div class="section-sub">Monitor & Optimize Your Rest</div>
+        <div class="rv-section-title-bar">
+          <div class="rv-section-title-text">RECOVERY <span class="rv-section-icon">↩</span></div>
+          <div class="rv-section-sub">MONITOR &amp; OPTIMIZE YOUR REST</div>
+        </div>
 
         <!-- FEATURE 3: DEVICE SYNC -->
         <div class="sync-block">
@@ -2798,8 +3359,10 @@ body { background: #D4D4C8 !important; }
 
       <!-- INJURIES -->
       <section class="section" id="section-injuries">
-        <div class="section-title">INJURIES</div>
-        <div class="section-sub">Prevention, Education & Emergency Response</div>
+        <div class="rv-section-title-bar">
+          <div class="rv-section-title-text">INJURIES <span class="rv-section-icon">🩺</span></div>
+          <div class="rv-section-sub">PREVENTION, EDUCATION &amp; EMERGENCY RESPONSE</div>
+        </div>
         <div style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:12px">🚨 EMERGENCY SERVICES</div>
         <div class="emg-buttons">
           <button class="btn-ecall" onclick="eCall()">📞 CALL 112 — EMERGENCY</button>
@@ -2852,8 +3415,10 @@ body { background: #D4D4C8 !important; }
 
       <!-- ████████ FEATURE 4: PALACE STATE ████████ -->
       <section class="section" id="section-palace-state">
-        <div class="section-title">DAILY STATUS</div>
-        <div class="section-sub">Subjective Spatial Mapping — Log What Sensors Miss</div>
+        <div class="rv-section-title-bar">
+          <div class="rv-section-title-text">DAILY STATUS <span class="rv-section-icon">🗓️</span></div>
+          <div class="rv-section-sub">SUBJECTIVE SPATIAL MAPPING — LOG WHAT SENSORS MISS</div>
+        </div>
         <div class="ps-grid">
           <div>
             <div class="pain-canvas-wrap">
@@ -2921,8 +3486,10 @@ body { background: #D4D4C8 !important; }
 
       <!-- ████████ FEATURE 1: PALACE HUB ████████ -->
       <section class="section" id="section-palace-hub">
-        <div class="section-title">JOIN A LEGION</div>
-        <div class="section-sub">Create or Join a Legion to Unlock Your Full Potential</div>
+        <div class="rv-section-title-bar">
+          <div class="rv-section-title-text">JOIN A LEGION <span class="rv-section-icon">≫</span></div>
+          <div class="rv-section-sub">CREATE OR JOIN A LEGION TO UNLOCK YOUR FULL POTENTIAL</div>
+        </div>
         <div id="ph-athlete-view" style="display:none">
           <div class="g2">
             <div class="palace-setup-card">
