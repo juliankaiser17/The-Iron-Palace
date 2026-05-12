@@ -3061,7 +3061,7 @@ body { background: #D0D0C4 !important; }
     </div>
     <div class="auth-form">
       <div id="auth-err" class="auth-err"></div>
-      <button class="btn-google" onclick="signInGoogle()">
+      <button class="btn-google" onclick="openGP()">
         <span class="g-continue">Continue</span>
         <span>&nbsp;</span>
         <span class="g-with">with</span>
@@ -3487,8 +3487,8 @@ body { background: #D0D0C4 !important; }
       <!-- ████████ FEATURE 1: PALACE HUB ████████ -->
       <section class="section" id="section-palace-hub">
         <div class="rv-section-title-bar">
-          <div class="rv-section-title-text">JOIN A LEGION <span class="rv-section-icon">≫</span></div>
-          <div class="rv-section-sub">CREATE OR JOIN A LEGION TO UNLOCK YOUR FULL POTENTIAL</div>
+          <div class="rv-section-title-text" id="palace-hub-title">JOIN A LEGION <span class="rv-section-icon">≫</span></div>
+          <div class="rv-section-sub" id="palace-hub-sub">CREATE OR JOIN A LEGION TO UNLOCK YOUR FULL POTENTIAL</div>
         </div>
         <div id="ph-athlete-view" style="display:none">
           <div class="g2">
@@ -3498,7 +3498,7 @@ body { background: #D0D0C4 !important; }
                 <div class="form-label">Invite Code</div>
                 <input class="form-input" type="text" id="ph-invite" placeholder="e.g. RECOVO-7X9K" style="text-transform:uppercase;letter-spacing:4px">
               </div>
-              <button class="btn-accent" onclick="joinPalace()">JOIN PALACE</button>
+              <button class="btn-accent" onclick="joinPalace()">JOIN A LEGION</button>
             </div>
             <div id="ph-joined-card" class="palace-setup-card" style="display:none">
               <h3>⚡ CONNECTED PALACE</h3>
@@ -3566,7 +3566,7 @@ body { background: #D0D0C4 !important; }
       <div class="m-nav-item" data-ms="recovery" onclick="goSec('recovery')"><div class="m-nav-icon">💠</div>Recovery</div>
       <div class="m-nav-item" data-ms="injuries" onclick="goSec('injuries')"><div class="m-nav-icon">🩺</div>Injuries</div>
       <div class="m-nav-item" data-ms="palace-state" onclick="checkDailyStatusAccess()"><div class="m-nav-icon">🧬</div>Status 🔒</div>
-      <div class="m-nav-item" data-ms="palace-hub" onclick="goSec('palace-hub')" id="m-nav-palace-hub"><div class="m-nav-icon">🏛️</div><span id="m-nav-palace-hub-label">Legion</span></div>
+      <div class="m-nav-item" data-ms="palace-hub" onclick="goSec('palace-hub')" id="m-nav-palace-hub"><div class="m-nav-icon">🏛️</div><span id="m-nav-palace-hub-label">Join</span></div>
     </div>
   </nav>
 </div>
@@ -3822,6 +3822,47 @@ function downloadAPK() {
 document.getElementById('join-modal').addEventListener('click', function(e) {
   if (e.target === this) closeJoinModal();
 });
+
+// ── PATCH: Unlock Daily Status after joinPalace / createPalace ──────────────
+// These wrap the obfuscated originals to fire _unlockDailyStatus on success.
+(function() {
+  // Patch joinPalace: athlete joins → palaceId is set on db → unlock status
+  var _origJoin = window.joinPalace;
+  window.joinPalace = function() {
+    _origJoin.apply(this, arguments);
+    if (window.db && window.db.palaceId) {
+      if (typeof _unlockDailyStatus === 'function') _unlockDailyStatus();
+    }
+  };
+
+  // Patch createPalace: coach forges → a palace now exists for them → unlock status
+  var _origCreate = window.createPalace;
+  window.createPalace = function() {
+    _origCreate.apply(this, arguments);
+    // If a palace now exists for this coach, unlock Daily Status
+    if (typeof findMyPalace === 'function' && findMyPalace()) {
+      if (typeof _unlockDailyStatus === 'function') _unlockDailyStatus();
+    }
+  };
+
+  // Hide the LEGION sidebar nav item for athletes; update section title for coaches
+  var _origLogin = window.loginUser;
+  window.loginUser = function(userObj) {
+    _origLogin.apply(this, arguments);
+    var role = (userObj && userObj.role) || (window.db && window.db.role) || 'athlete';
+    var legionNav = document.getElementById('nav-legion');
+    var secTitle  = document.getElementById('palace-hub-title');
+    var secSub    = document.getElementById('palace-hub-sub');
+    if (role === 'coach') {
+      // Coaches: update section title to Forge wording
+      if (secTitle) secTitle.innerHTML = 'FORGE A LEGION <span class="rv-section-icon">⚔️</span>';
+      if (secSub)   secSub.textContent = 'CREATE YOUR LEGION AND MANAGE YOUR ATHLETES IN REAL-TIME';
+    } else {
+      // Athletes: force-hide the LEGION nav item
+      if (legionNav) legionNav.style.display = 'none';
+    }
+  };
+})();
 </script>
 </body>
 </html>
