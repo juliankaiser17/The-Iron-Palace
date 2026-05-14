@@ -99,10 +99,15 @@
     --f-mono:'JetBrains Mono',monospace;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
+  *:focus{outline:none;}
+  *:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  html{scroll-behavior:smooth;}
   body{
     background:var(--bg);color:var(--text);
     font-family:var(--f-body);
     min-height:100vh;overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
     background-image:
       linear-gradient(rgba(255,255,255,0.006) 1px,transparent 1px),
       linear-gradient(90deg,rgba(255,255,255,0.006) 1px,transparent 1px);
@@ -117,6 +122,7 @@
   .auth-card{background:rgba(8,8,8,.96);border:1px solid var(--border2);width:min(420px,92vw);padding:48px 40px;position:relative;z-index:2;animation:slideUp .6s cubic-bezier(.16,1,.3,1) both;box-shadow:0 0 60px rgba(0,0,0,.8),inset 0 0 0 1px rgba(255,255,255,0.022);}
   .auth-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
   @keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+  @keyframes authEntry{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
   .auth-logo{font-family:'Montserrat',sans-serif;font-size:30px;letter-spacing:0.18em;color:#fff;margin-bottom:4px;font-weight:800;}
   .auth-sub{font-family:var(--f-mono);font-size:10px;letter-spacing:0.05em;color:var(--text3);text-transform:uppercase;margin-bottom:36px;}
   .auth-tabs{display:flex;margin-bottom:32px;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
@@ -181,9 +187,9 @@
   .main-content{flex:1;overflow-y:auto;padding:28px;overscroll-behavior:none;}
 
   /* SECTIONS */
-  .section{display:none;animation:fadeIn .5s cubic-bezier(0.4,0,0.2,1);}
+  .section{display:none;animation:fadeIn .4s cubic-bezier(0.16,1,0.3,1);}
   .section.active{display:block;}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
   .section-title{font-family:'Syncopate',sans-serif;font-size:47px;font-weight:400;letter-spacing:4px;line-height:1;}
   .section-sub{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-top:4px;margin-bottom:32px;}
 
@@ -206,8 +212,8 @@
   .welcome-name{font-family:'Syncopate',sans-serif;font-size:31px;font-weight:400;letter-spacing:3px;}
   .welcome-date{font-size:13px;color:var(--text3);letter-spacing:1px;}
   .streak-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.165);padding:6px 14px;margin-top:12px;font-family:'Space Mono',monospace;font-size:13px;letter-spacing:2px;color:var(--accent);}
-  .progress-bar{height:6px;background:var(--surface3);}
-  .progress-fill{height:100%;background:var(--accent);transition:width 1s ease;}
+  .progress-bar{height:6px;background:var(--surface3);border-radius:3px;}
+  .progress-fill{height:100%;background:var(--accent);transition:width 1.2s cubic-bezier(0.4,0,0.2,1);border-radius:3px;}
   .chart-box{background:var(--surface);border:1px solid var(--border);padding:24px;margin-bottom:24px;}
   .chart-lbl{font-family:'Space Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:20px;}
   .bar-chart{display:flex;align-items:flex-end;gap:8px;height:120px;}
@@ -318,8 +324,8 @@
 
   /* TOAST */
   .toast-wrap{position:fixed;top:80px;right:24px;z-index:3000;display:flex;flex-direction:column;gap:10px;}
-  .toast{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:14px 20px;min-width:280px;animation:slideIn .3s ease;font-family:'Space Mono',monospace;font-size:14px;letter-spacing:1px;}
-  @keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+  .toast{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:14px 20px;min-width:280px;animation:slideIn .35s cubic-bezier(0.16,1,0.3,1);font-family:'Space Mono',monospace;font-size:14px;letter-spacing:1px;}
+  @keyframes slideIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
   .toast.w{border-left-color:var(--warning);}
   .toast.d{border-left-color:var(--danger);}
   .toast.s{border-left-color:var(--success);}
@@ -503,7 +509,7 @@
       radial-gradient(circle at 90% 80%, rgba(0,242,255,0.06) 0%, transparent 40%),
       linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px) !important;
-    background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px !important;
+    background-size: auto, auto, 40px 40px, 40px 40px !important;
   }
 
   /* Grain texture */
@@ -538,10 +544,7 @@
     box-shadow:0 40px 100px rgba(0,0,0,0.85), 0 0 0 1px rgba(0,242,255,0.05), inset 0 1px 0 rgba(255,255,255,0.06) !important;
     animation: authEntry 1s cubic-bezier(0.16,1,0.3,1) both !important;
   }
-  @keyframes authEntry {
-    from { opacity:0; transform:scale(0.95) translateY(20px); filter:blur(10px); }
-    to   { opacity:1; transform:scale(1) translateY(0);       filter:blur(0); }
-  }
+  
   .auth-card::before {
     background:linear-gradient(90deg, transparent, var(--accent), transparent) !important;
     height:1px !important;
@@ -1311,10 +1314,6 @@
     box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 32px 80px rgba(0,0,0,0.8) !important;
     animation: authEntry .6s cubic-bezier(0.16,1,0.3,1) both !important;
   }
-  @keyframes authEntry {
-    from { opacity:0; transform:translateY(16px); }
-    to   { opacity:1; transform:translateY(0); }
-  }
   .auth-card::before {
     background: linear-gradient(90deg, transparent, rgba(14,165,233,0.6), transparent) !important;
     height: 1px !important;
@@ -1918,46 +1917,6 @@
   .auth-err { background: rgba(244,63,94,0.07) !important; border: 1px solid rgba(244,63,94,0.2) !important; color: var(--danger) !important; border-radius: var(--radius-sm) !important; font-family: var(--f-body) !important; font-size: 13px !important; }
 
   /* ── LANDING PAGE ── */
-#landing-page{position:fixed;inset:0;z-index:99999;background:#000;overflow-y:auto;}
-.lp-hero{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 24px;overflow:hidden;}
-.lp-bg{position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1400&q=80');background-size:cover;background-position:center 30%;filter:brightness(0.45);z-index:0;}
-.lp-bar{position:absolute;bottom:0;left:0;right:0;height:6px;background:#F5C300;z-index:10;}
-.lp-logo{position:absolute;top:28px;left:32px;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:800;letter-spacing:0.18em;color:#F5C300;text-transform:uppercase;z-index:5;}
-.lp-content{position:relative;z-index:5;max-width:800px;display:flex;flex-direction:column;align-items:center;gap:24px;}
-.lp-eyebrow{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:#F5C300;background:rgba(245,195,0,0.12);border:1px solid rgba(245,195,0,0.3);padding:6px 16px;}
-.lp-title{font-family:'Montserrat',sans-serif;font-size:clamp(64px,12vw,130px);font-weight:900;line-height:0.92;letter-spacing:-0.02em;text-transform:uppercase;font-style:italic;color:#fff;}
-.lp-title span{color:#F5C300;}
-.lp-sub{font-size:clamp(14px,2vw,18px);color:rgba(255,255,255,0.75);max-width:480px;line-height:1.6;}
-.lp-join-btn{font-family:'Montserrat',sans-serif;font-size:13px;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;background:#F5C300;color:#000;border:none;padding:18px 56px;cursor:pointer;transition:transform .15s,background .15s;}
-.lp-join-btn:hover{background:#FFD700;transform:scale(1.03);}
-.lp-early{font-size:13px;color:rgba(255,255,255,0.55);display:flex;align-items:center;gap:8px;}
-.lp-badge{background:rgba(245,195,0,0.15);border:1px solid rgba(245,195,0,0.35);color:#F5C300;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:3px 10px;}
-.lp-stats{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);z-index:5;display:flex;gap:48px;align-items:center;}
-.lp-stat{text-align:center;}
-.lp-stat-num{font-family:'Montserrat',sans-serif;font-size:28px;font-weight:900;color:#F5C300;line-height:1;}
-.lp-stat-label{font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:0.1em;text-transform:uppercase;margin-top:4px;}
-.lp-divider{width:1px;height:40px;background:rgba(255,255,255,0.15);}
-
-/* ── JOIN MODAL ── */
-#join-modal{display:none;position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;}
-#join-modal.open{display:flex;}
-.jm-card{background:#111;border:1px solid rgba(255,255,255,0.12);border-radius:12px;width:min(440px,100%);overflow:hidden;animation:jmPop .25s cubic-bezier(.16,1,.3,1) both;}
-@keyframes jmPop{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}
-.jm-header{padding:28px 28px 20px;border-bottom:1px solid rgba(255,255,255,0.07);}
-.jm-title{font-family:'Montserrat',sans-serif;font-size:20px;font-weight:900;letter-spacing:-0.01em;color:#fff;font-style:italic;text-transform:uppercase;}
-.jm-title span{color:#F5C300;}
-.jm-sub{font-size:13px;color:rgba(255,255,255,0.45);margin-top:6px;}
-.jm-body{padding:24px 28px;display:flex;flex-direction:column;gap:12px;}
-.jm-option{display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:18px 20px;cursor:pointer;transition:border-color .15s,background .15s;text-align:left;width:100%;}
-.jm-option:hover{border-color:rgba(245,195,0,0.5);background:rgba(245,195,0,0.06);}
-.jm-option-icon{font-size:28px;flex-shrink:0;}
-.jm-option-title{font-family:'Montserrat',sans-serif;font-size:14px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:0.04em;}
-.jm-option-desc{font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px;}
-.jm-option-badge{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;background:rgba(245,195,0,0.15);color:#F5C300;border:1px solid rgba(245,195,0,0.3);padding:3px 8px;border-radius:4px;flex-shrink:0;}
-.jm-option-badge.coming{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.35);border-color:rgba(255,255,255,0.1);}
-.jm-close{display:block;text-align:center;padding:14px;font-size:12px;color:rgba(255,255,255,0.3);cursor:pointer;border-top:1px solid rgba(255,255,255,0.06);}
-.jm-close:hover{color:rgba(255,255,255,0.6);}
-
 /* ── AUTH SCREEN REDESIGN ── */
 #auth-screen {
   background: #0D2B28 !important;
@@ -2988,64 +2947,444 @@ body { background: #D0D0C4 !important; }
 @media(max-width: 480px) {
   .rv-stats-row { grid-template-columns: 1fr 1fr !important; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   APK FEEL + COMPACT ICON SIDEBAR + 60FPS OPTIMIZATIONS
+══════════════════════════════════════════════════════════════ */
+
+/* ── GPU-COMPOSITED SCROLLING & COMPOSITING HINTS ── */
+* { -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
+.main-content {
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: none !important;
+  will-change: scroll-position;
+  contain: layout style;
+  transform: translateZ(0);
+}
+.section { contain: layout style paint; }
+.section.active { transform: translateZ(0); }
+.card, .palace-setup-card, .sync-block, .athlete-row,
+.overview-card, .log-form, .w-item, .sug-item,
+.metric-card, .pain-log-panel, .kinetic-alert-bar {
+  will-change: transform;
+  transform: translateZ(0);
+}
+/* Promote sticky header to its own GPU layer */
+.app-header {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+/* Throttle expensive animations to compositor-friendly props only */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px) translateZ(0); }
+  to   { opacity: 1; transform: translateY(0)   translateZ(0); }
+}
+.section { animation-duration: 200ms !important; }
+
+/* ── COMPACT ICON SIDEBAR (desktop) ── */
+.sidebar {
+  width: 72px !important;
+  padding: 12px 0 !important;
+  overflow: visible !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+/* Each nav item becomes a centered icon pill */
+.nav-item {
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 10px 6px !important;
+  width: 60px !important;
+  border-radius: 10px !important;
+  border-left: none !important;
+  margin: 2px 6px !important;
+  position: relative !important;
+  transition: background .15s, transform .15s !important;
+}
+.nav-item:hover  { transform: scale(1.08) translateZ(0) !important; }
+.nav-item.active { background: rgba(245,195,0,0.14) !important; transform: none !important; }
+/* Hide full text label, show icon large + micro label */
+.nav-item .rv-nav-icon { font-size: 20px !important; opacity: 1 !important; flex-shrink: 0 !important; }
+.nav-item .rv-nav-sup  { display: none !important; }
+/* Inject micro-text via data attr (fallback: clip text after icon) */
+.nav-item > span:not(.rv-nav-icon):not(.rv-nav-sup):not(.alert-badge):not(#daily-status-lock-icon):not(#nav-palace-hub-label):not(#alert-badge-nav) {
+  font-size: 8px !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 58px !important;
+  text-align: center !important;
+}
+#nav-palace-hub-label {
+  font-size: 8px !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  max-width: 58px !important;
+  text-align: center !important;
+}
+/* Sidebar footer: compact */
+.sb-foot { padding: 8px !important; }
+.btn-so {
+  font-size: 9px !important;
+  padding: 8px 4px !important;
+  letter-spacing: 0 !important;
+}
+/* Sidebar brand: show as tiny logo */
+.rv-sidebar-brand {
+  font-size: 10px !important;
+  text-align: center !important;
+  padding: 0 4px !important;
+}
+
+/* ── MAIN CONTENT: shift left to account for narrower sidebar ── */
+/* Already handled by flexbox; just ensure no overflow */
+.app-layout { overflow: hidden !important; }
+
+/* ── APK STATUS-BAR CHROME (top thin bar, Android feel) ── */
+.app-header {
+  height: 56px !important;
+  padding: 0 16px !important;
+  /* Subtle safe-area support */
+  padding-top: env(safe-area-inset-top, 0) !important;
+}
+.app-logo { font-size: 16px !important; }
+
+/* ── APK-STYLE SECTION ENTRY (slide up, like Android fragment) ── */
+@keyframes apkEnter {
+  from { opacity: 0; transform: translateY(12px) translateZ(0); }
+  to   { opacity: 1; transform: translateY(0)    translateZ(0); }
+}
+.section.active {
+  display: block;
+  animation: apkEnter 180ms cubic-bezier(.25,.46,.45,.94) both !important;
+}
+
+/* ── MOBILE: FULL APK BOTTOM NAV (Material 3 style) ── */
+@media(max-width: 768px) {
+  .m-nav {
+    height: 64px !important;
+    padding-bottom: env(safe-area-inset-bottom, 8px) !important;
+    padding-top: 0 !important;
+  }
+  .m-nav-inner {
+    display: flex !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    height: 100% !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    gap: 0 !important;
+  }
+  .m-nav-item {
+    flex: 1 !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    padding: 6px 4px !important;
+    border-radius: 12px !important;
+    min-height: 52px !important;
+    transition: background .12s, transform .12s !important;
+  }
+  .m-nav-item:active { transform: scale(0.92) !important; }
+  .m-nav-item.active {
+    background: rgba(245,195,0,0.12) !important;
+  }
+  .m-nav-icon { font-size: 22px !important; line-height: 1 !important; }
+  .m-nav-item span:last-child {
+    font-size: 9px !important;
+    letter-spacing: 0 !important;
+    font-weight: 600 !important;
+  }
+  .main-content {
+    padding-bottom: 80px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    padding-top: 16px !important;
+  }
+  /* APK ripple on buttons */
+  button, .nav-item, .m-nav-item {
+    -webkit-tap-highlight-color: rgba(245,195,0,0.15) !important;
+  }
+}
+
+/* ── SECTION TITLE: smaller on desktop to reduce stacking ── */
+.rv-section-title-bar { padding: 18px 22px 14px !important; margin-bottom: 16px !important; }
+.rv-section-title-text { font-size: clamp(22px, 3vw, 38px) !important; }
+
+/* ── KILL ANIMATION JANK: use opacity/transform only ── */
+.toast { transition: opacity .25s, transform .25s !important; }
+.modal { animation: apkEnter 200ms ease both !important; }
+.gp-card { animation: apkEnter 150ms ease both !important; }
+
+/* ── FORCE 60FPS: prevent layout recalc in hot paths ── */
+.progress-fill { will-change: width; transform: translateZ(0); }
+.ring-prog      { will-change: stroke-dashoffset; }
+.sr-prog        { will-change: stroke-dashoffset; }
+canvas#body3d, canvas#body3d-ps {
+  will-change: transform;
+  image-rendering: pixelated;
+  transform: translateZ(0);
+  contain: strict;
+}
+/* Scroll container gets GPU layer */
+.main-content { isolation: isolate; }
+
+/* ── TOUCH-FRIENDLY MIN TAP TARGETS ── */
+.nav-item, .m-nav-item, .btn-primary, .btn-accent,
+.btn-ghost, .btn-so, .btn-record, .inj-tab, .auth-tab,
+.ctrl-btn, .btn-copy, .btn-sync { min-height: 44px !important; }
+
+/* ══════════════════════════════════════════════════════════════
+   STRAVA-SCALE TYPOGRAPHY — compact, data-dense, native feel
+══════════════════════════════════════════════════════════════ */
+
+/* ── Global body / prose ── */
+body, input, select, textarea, button {
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+/* ── Auth screen ── */
+.auth-logo          { font-size: 22px !important; }
+.auth-sub           { font-size: 10px !important; }
+.auth-tab           { font-size: 12px !important; padding: 10px !important; }
+.form-label         { font-size: 10px !important; letter-spacing: 0.05em !important; }
+.form-input         { font-size: 13px !important; padding: 10px 12px !important; }
+.btn-primary        { font-size: 12px !important; padding: 12px !important; }
+.btn-google         { font-size: 11px !important; padding: 11px !important; }
+
+/* ── App header ── */
+.app-logo           { font-size: 13px !important; }
+.u-avatar           { width: 28px !important; height: 28px !important; font-size: 11px !important; }
+#h-date             { font-size: 10px !important; }
+
+/* ── Sidebar nav ── */
+.nav-item .rv-nav-icon { font-size: 16px !important; }
+.nav-item > span:not(.rv-nav-icon):not(.rv-nav-sup):not(.alert-badge):not(#daily-status-lock-icon):not(#nav-palace-hub-label):not(#alert-badge-nav) {
+  font-size: 7px !important;
+}
+#nav-palace-hub-label  { font-size: 7px !important; }
+#daily-status-lock-icon { font-size: 10px !important; }
+.btn-so             { font-size: 8px !important; padding: 6px !important; }
+
+/* ── Mobile bottom nav ── */
+.m-nav-icon         { font-size: 18px !important; }
+.m-nav-item span    { font-size: 8px !important; }
+
+/* ── Section title bar ── */
+.rv-section-title-text  { font-size: clamp(14px, 2.2vw, 20px) !important; }
+.rv-section-sub         { font-size: 9px !important; letter-spacing: 0.08em !important; }
+.rv-section-title-bar   { padding: 12px 16px 10px !important; margin-bottom: 12px !important; }
+
+/* ── Dashboard: welcome banner ── */
+.rv-welcome-name, .welcome-name { font-size: clamp(18px, 3vw, 24px) !important; }
+.rv-streak-badge, .streak-badge { font-size: 10px !important; padding: 5px 12px !important; }
+.rv-info-bar        { font-size: 9px !important; padding: 10px 14px !important; }
+
+/* ── Stat cards row ── */
+.rv-stat-label      { font-size: 8px !important; letter-spacing: 0.1em !important; }
+.rv-stat-value      { font-size: 22px !important; }
+.rv-stat-unit       { font-size: 8px !important; }
+.rv-stat-card       { padding: 14px 12px !important; }
+
+/* ── Generic cards ── */
+.card-label         { font-size: 8px !important; letter-spacing: 0.08em !important; }
+.card-value         { font-size: 24px !important; }
+.card-unit          { font-size: 9px !important; }
+.card               { padding: 14px !important; }
+
+/* ── Chart / bar ── */
+.rv-chart-label, .chart-lbl { font-size: 8px !important; }
+.bar-day            { font-size: 8px !important; }
+
+/* ── Section header helpers ── */
+.rv-section-header  { font-size: 9px !important; }
+.rv-empty-title     { font-size: 10px !important; }
+.rv-empty-sub       { font-size: 11px !important; }
+.rv-open-tracks     { font-size: 10px !important; }
+.rv-watermark       { font-size: 14px !important; }
+.rv-welcome-banner  { padding: 18px 20px 14px !important; }
+
+/* ── Workout items ── */
+.w-name             { font-size: 12px !important; }
+.w-meta             { font-size: 10px !important; }
+.w-tag              { font-size: 8px !important; padding: 2px 6px !important; }
+
+/* ── Log form ── */
+.log-title          { font-size: 10px !important; letter-spacing: 0.08em !important; }
+.log-table th       { font-size: 9px !important; padding: 8px 10px !important; }
+.log-table td       { font-size: 11px !important; padding: 10px 10px !important; }
+
+/* ── Timer ── */
+.timer-disp         { font-size: 36px !important; }
+.timer-sub          { font-size: 10px !important; }
+.cal-live           { font-size: 10px !important; }
+.btn-record         { font-size: 11px !important; padding: 12px 20px !important; }
+
+/* ── Recovery ring ── */
+.ring-pct           { font-size: 28px !important; }
+.ring-lbl           { font-size: 9px !important; }
+.metric-v           { font-size: 20px !important; }
+.metric-l           { font-size: 9px !important; }
+.ring-wrap          { padding: 16px 0 !important; }
+
+/* ── Recovery suggestions ── */
+.sug-name           { font-size: 11px !important; }
+.sug-time           { font-size: 10px !important; }
+.sug-dur            { font-size: 10px !important; }
+.rec-insight        { padding: 14px 16px !important; }
+.insight-t          { font-size: 11px !important; }
+.insight-b          { font-size: 11px !important; }
+.warn-t             { font-size: 18px !important; }
+.warn-b             { font-size: 12px !important; }
+.btn-warn           { font-size: 10px !important; padding: 8px 16px !important; }
+
+/* ── Injury section ── */
+.inj-tab            { font-size: 10px !important; padding: 10px !important; }
+.inj-card-name      { font-size: 11px !important; }
+.inj-card-area      { font-size: 10px !important; }
+.inj-badge          { font-size: 8px !important; }
+.inj-title          { font-size: 16px !important; }
+.is-label           { font-size: 9px !important; }
+.is-text            { font-size: 11px !important; }
+.sym-tag            { font-size: 9px !important; padding: 2px 7px !important; }
+.svg-title          { font-size: 9px !important; }
+.info-placeholder   { min-height: 180px !important; }
+
+/* ── Emergency buttons ── */
+.btn-ecall, .btn-etext { font-size: 12px !important; padding: 14px !important; letter-spacing: 0.12em !important; }
+.emg-buttons        { margin-bottom: 16px !important; }
+
+/* ── Pain map / daily status ── */
+.pain-log-title     { font-size: 9px !important; }
+.pain-part-display  { font-size: 13px !important; }
+.slider-label       { font-size: 9px !important; }
+.type-btn           { font-size: 9px !important; padding: 9px !important; }
+.pain-entry-part    { font-size: 10px !important; }
+.pain-entry-type    { font-size: 9px !important; padding: 2px 7px !important; }
+.pain-entry-int     { font-size: 13px !important; }
+.pain-entry-date    { font-size: 9px !important; }
+.pain-canvas-label  { font-size: 8px !important; }
+.no-pain-today      { font-size: 9px !important; padding: 10px 14px !important; }
+
+/* ── Palace / Legion ── */
+.palace-hero        { padding: 18px 20px !important; }
+.palace-id-display  { font-size: 18px !important; letter-spacing: 4px !important; }
+.palace-invite      { font-size: 13px !important; }
+.palace-setup-card  { padding: 18px !important; }
+.palace-setup-card h3 { font-size: 9px !important; letter-spacing: 0.15em !important; margin-bottom: 12px !important; }
+.btn-accent         { font-size: 10px !important; padding: 10px 18px !important; }
+.btn-ghost          { font-size: 9px !important; padding: 10px 16px !important; }
+.btn-copy           { font-size: 9px !important; padding: 6px 10px !important; }
+.palace-member-name { font-size: 11px !important; }
+.palace-member-meta { font-size: 10px !important; }
+.palace-member-av   { width: 28px !important; height: 28px !important; font-size: 11px !important; }
+.connected-badge, .pending-badge { font-size: 8px !important; padding: 3px 8px !important; }
+
+/* ── Legion readiness dashboard ── */
+.overview-num       { font-size: 28px !important; }
+.overview-lbl       { font-size: 8px !important; }
+.overview-card      { padding: 14px !important; }
+.athlete-name       { font-size: 11px !important; }
+.why-pill           { font-size: 9px !important; padding: 2px 7px !important; }
+.sr-score           { font-size: 11px !important; }
+.detail-val         { font-size: 14px !important; }
+.detail-lbl         { font-size: 8px !important; }
+.status-ring-wrap   { width: 44px !important; height: 44px !important; }
+.status-ring-svg    { width: 44px !important; height: 44px !important; }
+.load-rec-badge     { font-size: 9px !important; padding: 6px 10px !important; }
+
+/* ── Device sync ── */
+.sync-title         { font-size: 9px !important; }
+.sync-name          { font-size: 9px !important; }
+.sync-status        { font-size: 9px !important; }
+.sync-metric-val    { font-size: 18px !important; }
+.sync-metric-lbl    { font-size: 8px !important; }
+.sync-metric-src    { font-size: 8px !important; }
+.sync-device        { padding: 12px 8px !important; }
+.sync-icon          { font-size: 20px !important; }
+
+/* ── Kinetic alerts ── */
+.ka-title           { font-size: 10px !important; letter-spacing: 0.12em !important; }
+.ka-detail          { font-size: 10px !important; }
+.ka-action          { font-size: 9px !important; }
+.ka-dismiss         { font-size: 9px !important; padding: 6px 10px !important; }
+.alert-badge        { font-size: 9px !important; min-width: 14px !important; height: 14px !important; }
+
+/* ── Modal ── */
+.modal-title        { font-size: 14px !important; letter-spacing: 0.1em !important; }
+.modal-body         { padding: 18px !important; }
+.modal-head         { padding: 16px 20px !important; }
+
+/* ── Toast ── */
+.toast              { font-size: 11px !important; padding: 10px 14px !important; min-width: 200px !important; }
+
+/* ── Encouragement bar ── */
+.enc-text           { font-size: 12px !important; }
+.enc-icon           { font-size: 16px !important; }
+.enc-bar            { padding: 10px 14px !important; margin-bottom: 12px !important; }
+
+/* ── Empty states ── */
+.es-icon            { font-size: 28px !important; }
+.es-title           { font-size: 11px !important; letter-spacing: 0.1em !important; }
+.es-sub             { font-size: 10px !important; }
+.es-cta             { font-size: 9px !important; }
+.es-ring            { width: 52px !important; height: 52px !important; }
+.empty-icon         { font-size: 32px !important; }
+
+/* ── Role cards ── */
+.role-icon          { font-size: 28px !important; }
+.role-title         { font-size: 11px !important; letter-spacing: 0.1em !important; }
+.role-desc          { font-size: 10px !important; }
+.role-card          { padding: 18px 12px !important; }
+
+/* ── Profile modal ── */
+.profile-modal-title { font-size: 12px !important; letter-spacing: 0.15em !important; }
+.profile-lbl        { font-size: 9px !important; }
+.profile-val        { font-size: 11px !important; }
+.profile-avatar-big { width: 48px !important; height: 48px !important; font-size: 20px !important; margin-bottom: 16px !important; }
+.profile-save-btn   { font-size: 10px !important; padding: 11px !important; }
+.profile-signout    { font-size: 10px !important; padding: 10px !important; }
+
+/* ── Ctrl buttons ── */
+.ctrl-btn           { font-size: 9px !important; padding: 5px 10px !important; }
+
+/* ── Dividers / misc ── */
+.divider            { font-size: 10px !important; }
+.section-sub        { font-size: 9px !important; !important; }
+
+/* ── Mobile: even tighter ── */
+@media(max-width: 768px) {
+  .rv-section-title-text { font-size: 14px !important; }
+  .rv-welcome-name, .welcome-name { font-size: 18px !important; }
+  .card-value        { font-size: 20px !important; }
+  .rv-stat-value     { font-size: 18px !important; }
+  .timer-disp        { font-size: 30px !important; }
+  .ring-pct          { font-size: 22px !important; }
+  .overview-num      { font-size: 22px !important; }
+  .palace-id-display { font-size: 14px !important; }
+}
+
+/* ── SIDEBAR: remove heavy backdrop-filter, use solid bg ── */
+@media(min-width: 769px) {
+  .sidebar {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #111115 !important;
+  }
+}
 </style>
 </head>
 <body>
-
-<!-- ══ LANDING PAGE ══ -->
-<div id="landing-page">
-  <section class="lp-hero">
-    <div class="lp-bg"></div>
-    <div class="lp-bar"></div>
-    <div class="lp-logo">RECOVO</div>
-    <div class="lp-content">
-      <div class="lp-eyebrow">Performance Training Platform</div>
-      <h1 class="lp-title">BE YOUR<br><span>BEST</span></h1>
-      <p class="lp-sub">Train smarter. Recover faster. Track everything.<br>Built for athletes who refuse to settle.</p>
-      <button class="lp-join-btn" onclick="openJoinModal()">Join Now</button>
-      <div class="lp-early">
-        <span class="lp-badge">Early Access</span>
-        <span>Limited spots — be the first in</span>
-      </div>
-    </div>
-    <div class="lp-stats">
-      <div class="lp-stat"><div class="lp-stat-num">2.4K+</div><div class="lp-stat-label">Athletes</div></div>
-      <div class="lp-divider"></div>
-      <div class="lp-stat"><div class="lp-stat-num">180+</div><div class="lp-stat-label">Coaches</div></div>
-      <div class="lp-divider"></div>
-      <div class="lp-stat"><div class="lp-stat-num">98%</div><div class="lp-stat-label">Satisfaction</div></div>
-    </div>
-  </section>
-</div>
-
-<!-- ══ JOIN MODAL ══ -->
-<div id="join-modal">
-  <div class="jm-card">
-    <div class="jm-header">
-      <div class="jm-title">How do you want to <span>train?</span></div>
-      <div class="jm-sub">Choose how you'd like to get started with RECOVO</div>
-    </div>
-    <div class="jm-body">
-      <button class="jm-option" onclick="startOnWeb()">
-        <div class="jm-option-icon">🌐</div>
-        <div class="jm-option-body">
-          <div class="jm-option-title">Use on Web</div>
-          <div class="jm-option-desc">Start right now in your browser — no download needed</div>
-        </div>
-        <div class="jm-option-badge">Available Now</div>
-      </button>
-      <button class="jm-option" onclick="downloadAPK()">
-        <div class="jm-option-icon">📱</div>
-        <div class="jm-option-body">
-          <div class="jm-option-title">Download Android App</div>
-          <div class="jm-option-desc">Install the APK for the full native experience</div>
-        </div>
-        <div class="jm-option-badge coming">Coming Soon</div>
-      </button>
-    </div>
-    <div class="jm-close" onclick="closeJoinModal()">✕ Close</div>
-  </div>
-</div>
 
 <!-- AUTH -->
 <div id="auth-screen">
@@ -3801,27 +4140,6 @@ function togglePwVisibility(inputId, iconId) {
   }
   input.focus();
 }
-
-// ── LANDING PAGE ──
-function openJoinModal() {
-  document.getElementById('join-modal').classList.add('open');
-}
-function closeJoinModal() {
-  document.getElementById('join-modal').classList.remove('open');
-}
-function startOnWeb() {
-  document.getElementById('join-modal').classList.remove('open');
-  document.getElementById('landing-page').style.display = 'none';
-}
-function downloadAPK() {
-  // Add your APK link here when it's ready:
-  // window.location.href = 'https://yourlink.com/recovo.apk';
-  alert('APK coming soon! Use the web version for now.');
-}
-// Close modal if user clicks the dark backdrop
-document.getElementById('join-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeJoinModal();
-});
 
 // ── PATCH: Unlock Daily Status after joinPalace / createPalace ──────────────
 // These wrap the obfuscated originals to fire _unlockDailyStatus on success.
